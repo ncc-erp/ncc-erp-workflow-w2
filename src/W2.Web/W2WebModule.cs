@@ -42,7 +42,6 @@ using W2.Web.Settings;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using W2.Identity;
-using Volo.Abp.IdentityServer;
 
 namespace W2.Web;
 
@@ -80,16 +79,6 @@ public class W2WebModule : AbpModule
         {
             identityBuilder.AddSignInManager<CustomSignInManager>();
             identityBuilder.AddUserManager<CustomUserManager>();
-        });
-
-        PreConfigure<AbpIdentityServerBuilderOptions>(options =>
-        {
-            options.AddDeveloperSigningCredential = false;
-        });
-
-        PreConfigure<IIdentityServerBuilder>(identityServerBuilder =>
-        {
-            identityServerBuilder.AddDeveloperSigningCredential(false, Guid.NewGuid().ToString());
         });
     }
 
