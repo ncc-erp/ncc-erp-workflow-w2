@@ -42,6 +42,7 @@ using W2.Web.Settings;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using W2.Identity;
+using W2.Web.Extensions;
 
 namespace W2.Web;
 
@@ -112,6 +113,8 @@ public class W2WebModule : AbpModule
         {
             options.Contributors.Add(new SocialLoginSettingsPageContributor());
         });
+
+        context.Services.AddSameSiteCookiePolicy();
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -294,5 +297,6 @@ public class W2WebModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+        app.UseCookiePolicy();
     }
 }

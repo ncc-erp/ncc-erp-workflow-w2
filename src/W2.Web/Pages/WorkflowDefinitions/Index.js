@@ -46,7 +46,8 @@
                                             ? JSON.stringify(data.record.inputDefinition.propertyDefinitions)
                                             : null
                                     });
-                                }
+                                },
+                                visible: abp.auth.isGranted("WorkflowManagement.WorkflowInstances.Create")
                             },
                             {
                                 text: l('WorkflowDefinition:DefineInput'),
@@ -54,14 +55,15 @@
                                     defineWorkflowInputModal.open({ workflowDefinitionId: data.record.definitionId });
                                 },
                                 visible: function (record) {
-                                    return !!!record.inputDefinition;
+                                    return abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design") && !!!record.inputDefinition;
                                 }
                             },
                             {
                                 text: l('WorkflowDefinition:OpenDesigner'),
                                 action: function (data) {
                                     window.open(abp.appPath + 'Designer?workflowDefinitionId=' + data.record.definitionId);
-                                }
+                                },
+                                visible: abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design")
                             }
                         ]
                     }
