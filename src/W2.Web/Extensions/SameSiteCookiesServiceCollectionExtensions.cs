@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace W2.Web.Extensions
 {
@@ -25,7 +26,7 @@ namespace W2.Web.Extensions
             if (options.SameSite == SameSiteMode.None)
             {
                 var userAgent = httpContext.Request.Headers["User-Agent"].ToString();
-                if (!httpContext.Request.IsHttps || DisallowsSameSiteNone(userAgent))
+                if (DisallowsSameSiteNone(userAgent))
                 {
                     // For .NET Core < 3.1 set SameSite = (SameSiteMode)(-1)
                     options.SameSite = SameSiteMode.Unspecified;
@@ -65,7 +66,26 @@ namespace W2.Web.Extensions
                 return true;
             }
 
+            var chromeVersion = GetChromeVersion(userAgent);
+
+            if (chromeVersion >= 80)
+            {
+                return true;
+            }
+
             return false;
+        }
+
+        private static int GetChromeVersion(string userAgent)
+        {
+            try
+            {
+                return Convert.ToInt32(userAgent.Split("Chrome/")[1].Split('.')[0]);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
         }
     }
 }
