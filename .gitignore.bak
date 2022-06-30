@@ -263,5 +263,3 @@ src/W2.Blazor.Server.Tiered/Logs/*
 
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
-
-!**/packages/Volo.Abp.AspNetCore.Mvc.UI.Theme.Basic/
