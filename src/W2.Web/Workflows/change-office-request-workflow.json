@@ -1,0 +1,660 @@
+{
+  "$id": "1",
+  "definitionId": "292f088ae23048818d2275854e2df065",
+  "versionId": "6a53310471d34e34884e870888d86bb0",
+  "name": "ChangeOfficeRequestWorkflow",
+  "displayName": "Change Office Request Workflow",
+  "version": 15,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "WorkflowBurst",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "createdAt": "2022-06-06T10:46:42.2580209Z",
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "8f4878f3-acb1-46f7-88f7-f02091a3092a",
+      "type": "HttpEndpoint",
+      "name": "ReceivedChangeOfficeRequest",
+      "displayName": "Received Change Office Request",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "5",
+          "name": "Path",
+          "expressions": {
+            "$id": "6",
+            "Literal": "change-office-request"
+          }
+        },
+        {
+          "$id": "7",
+          "name": "Methods",
+          "expressions": {
+            "$id": "8",
+            "Json": "[\"POST\"]"
+          }
+        },
+        {
+          "$id": "9",
+          "name": "ReadContent",
+          "expressions": {
+            "$id": "10",
+            "Literal": "true"
+          }
+        },
+        {
+          "$id": "11",
+          "name": "TargetType",
+          "expressions": {
+            "$id": "12"
+          }
+        },
+        {
+          "$id": "13",
+          "name": "Schema",
+          "syntax": "Literal",
+          "expressions": {
+            "$id": "14",
+            "Literal": ""
+          }
+        },
+        {
+          "$id": "15",
+          "name": "Authorize",
+          "expressions": {
+            "$id": "16"
+          }
+        },
+        {
+          "$id": "17",
+          "name": "Policy",
+          "expressions": {
+            "$id": "18"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "19",
+      "activityId": "95d7c957-bf18-4c73-8627-898a7436fefb",
+      "type": "SendEmail",
+      "displayName": "Send Email To PM",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "20",
+          "name": "From",
+          "expressions": {
+            "$id": "21",
+            "Literal": "noreply@test.me"
+          }
+        },
+        {
+          "$id": "22",
+          "name": "To",
+          "expressions": {
+            "$id": "23",
+            "Json": "[\"pm@test.me\"]"
+          }
+        },
+        {
+          "$id": "24",
+          "name": "Subject",
+          "expressions": {
+            "$id": "25",
+            "Literal": "Change Office Request"
+          }
+        },
+        {
+          "$id": "26",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "27"
+          }
+        },
+        {
+          "$id": "28",
+          "name": "Body",
+          "syntax": "Liquid",
+          "expressions": {
+            "$id": "29",
+            "Literal": "",
+            "Liquid": "Hi PM,\r\n\r\n<p>A change request has been submitted!</p>\r\n<div>\r\n<p>Username: {{ Variables.Request.username }}</p>\r\n<p>Email: {{ Variables.Request.email }}</p>\r\n<p>Office: {{ Variables.Request.office }}</p>\r\n\r\n<p>Please review this request!</p>\r\n<p><a href=\"{{ 'PMApprove' | signal_url }}\">Approve Request</a></p>\r\n<p><a href=\"{{ 'PMReject' | signal_url }}\">Reject Request</a></p>"
+          }
+        },
+        {
+          "$id": "30",
+          "name": "Cc",
+          "expressions": {
+            "$id": "31"
+          }
+        },
+        {
+          "$id": "32",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "33"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "34",
+      "activityId": "9907c219-8fd2-4d9a-b3b7-dde9f6e03fcb",
+      "type": "Fork",
+      "displayName": "Fork",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "35",
+          "name": "Branches",
+          "expressions": {
+            "$id": "36",
+            "Json": "[\"PM\",\"OfficeLead\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "37",
+      "activityId": "1e3842f6-89ce-4ae8-bf97-5935316077b0",
+      "type": "SendEmail",
+      "displayName": "Send Email to Office Lead",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "38",
+          "name": "From",
+          "expressions": {
+            "$id": "39",
+            "Literal": "noreply@test.me"
+          }
+        },
+        {
+          "$id": "40",
+          "name": "To",
+          "expressions": {
+            "$id": "41",
+            "Json": "[\"officelead@test.me\"]"
+          }
+        },
+        {
+          "$id": "42",
+          "name": "Subject",
+          "expressions": {
+            "$id": "43",
+            "Literal": "Change Office Request"
+          }
+        },
+        {
+          "$id": "44",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "45"
+          }
+        },
+        {
+          "$id": "46",
+          "name": "Body",
+          "syntax": "Liquid",
+          "expressions": {
+            "$id": "47",
+            "Liquid": "Hi Office Lead,\r\n\r\n<p>A change request has been submitted!</p>\r\n<div>\r\n<p>Username: {{ Variables.Request.username }}</p>\r\n<p>Email: {{ Variables.Request.email }}</p>\r\n<p>Office: {{ Variables.Request.office }}</p>\r\n\r\n<p>Please review this request!</p>\r\n<p><a href=\"{{ 'OfficeLeadApprove' | signal_url }}\">Approve Request</a></p>\r\n<p><a href=\"{{ 'OfficeLeadReject' | signal_url }}\">Reject Request</a></p>"
+          }
+        },
+        {
+          "$id": "48",
+          "name": "Cc",
+          "expressions": {
+            "$id": "49"
+          }
+        },
+        {
+          "$id": "50",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "51"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "52",
+      "activityId": "0f0b28a2-445e-4879-9346-aadbf642063a",
+      "type": "Finish",
+      "displayName": "Request was Approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "53",
+          "name": "ActivityOutput",
+          "expressions": {
+            "$id": "54"
+          }
+        },
+        {
+          "$id": "55",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "56"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "57",
+      "activityId": "7a035783-1321-4e9e-86d5-130539160d11",
+      "type": "Finish",
+      "displayName": "Request was Rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "58",
+          "name": "ActivityOutput",
+          "expressions": {
+            "$id": "59"
+          }
+        },
+        {
+          "$id": "60",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "61"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "62",
+      "activityId": "534ad5df-b1d4-4fe1-9882-eb6c87ab1d93",
+      "type": "SetVariable",
+      "displayName": "Set Variable",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "63",
+          "name": "VariableName",
+          "expressions": {
+            "$id": "64",
+            "Literal": "Request"
+          }
+        },
+        {
+          "$id": "65",
+          "name": "Value",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "66",
+            "JavaScript": "input.Body"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "67",
+      "activityId": "54776bef-27dc-4bee-820b-6cd1c8939d7a",
+      "type": "SignalReceived",
+      "displayName": "PM Approves",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "68",
+          "name": "Signal",
+          "expressions": {
+            "$id": "69",
+            "Literal": "PMApprove"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "70",
+      "activityId": "de985db0-38c9-471f-bda0-7a6d2327d350",
+      "type": "Fork",
+      "displayName": "PM Reviews",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "71",
+          "name": "Branches",
+          "expressions": {
+            "$id": "72",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "73",
+      "activityId": "8e463ef7-36e1-45e1-9a1a-4afc903c55e4",
+      "type": "SignalReceived",
+      "displayName": "PM Rejects",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "74",
+          "name": "Signal",
+          "expressions": {
+            "$id": "75",
+            "Literal": "PMReject"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "76",
+      "activityId": "b1c46108-7ee3-4695-9ba0-9e9bc4a89d17",
+      "type": "Fork",
+      "displayName": "Office Lead Reviews",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "77",
+          "name": "Branches",
+          "expressions": {
+            "$id": "78",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "79",
+      "activityId": "b30ab517-5055-483d-84f4-59f1192e4b3d",
+      "type": "SignalReceived",
+      "displayName": "Office Lead Approves",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "80",
+          "name": "Signal",
+          "expressions": {
+            "$id": "81",
+            "Literal": "OfficeLeadApprove"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "82",
+      "activityId": "628a8c01-5da1-4967-97f4-572c3ee0cc2e",
+      "type": "Join",
+      "displayName": "Join",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "83",
+          "name": "Mode",
+          "expressions": {
+            "$id": "84"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "85",
+      "activityId": "e8471942-02dd-4cf4-a6ee-6f0599aef238",
+      "type": "SignalReceived",
+      "displayName": "Office Lead Rejects",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "86",
+          "name": "Signal",
+          "expressions": {
+            "$id": "87",
+            "Literal": "OfficeLeadReject"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "88",
+      "activityId": "5e031a84-ff1e-4bdf-8af4-dd3a42502a40",
+      "type": "Join",
+      "displayName": "Join",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "89",
+          "name": "Mode",
+          "expressions": {
+            "$id": "90",
+            "Literal": "WaitAny"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "91",
+      "activityId": "fed0d2ba-f830-461a-a103-ef9269b5055b",
+      "type": "RunWorkflow",
+      "displayName": "Trigger Asm Request Workflow",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "92",
+          "name": "WorkflowDefinitionId",
+          "expressions": {
+            "$id": "93",
+            "Literal": "06a01d07dc5d4c6f8758b6bd31ec8d1f"
+          }
+        },
+        {
+          "$id": "94",
+          "name": "Input",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "95",
+            "JavaScript": "const request = new AsmRequestSubmittedInput();\r\nrequest.Id = Guid.NewGuid();\r\nreturn request;"
+          }
+        },
+        {
+          "$id": "96",
+          "name": "PossibleOutcomes",
+          "expressions": {
+            "$id": "97"
+          }
+        },
+        {
+          "$id": "98",
+          "name": "Mode",
+          "expressions": {
+            "$id": "99"
+          }
+        },
+        {
+          "$id": "100",
+          "name": "TenantId",
+          "expressions": {
+            "$id": "101"
+          }
+        },
+        {
+          "$id": "102",
+          "name": "CorrelationId",
+          "expressions": {
+            "$id": "103"
+          }
+        },
+        {
+          "$id": "104",
+          "name": "ContextId",
+          "expressions": {
+            "$id": "105"
+          }
+        },
+        {
+          "$id": "106",
+          "name": "CustomAttributes",
+          "expressions": {
+            "$id": "107"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    }
+  ],
+  "connections": [
+    {
+      "$id": "108",
+      "sourceActivityId": "9907c219-8fd2-4d9a-b3b7-dde9f6e03fcb",
+      "targetActivityId": "95d7c957-bf18-4c73-8627-898a7436fefb",
+      "outcome": "PM"
+    },
+    {
+      "$id": "109",
+      "sourceActivityId": "9907c219-8fd2-4d9a-b3b7-dde9f6e03fcb",
+      "targetActivityId": "1e3842f6-89ce-4ae8-bf97-5935316077b0",
+      "outcome": "OfficeLead"
+    },
+    {
+      "$id": "110",
+      "sourceActivityId": "8f4878f3-acb1-46f7-88f7-f02091a3092a",
+      "targetActivityId": "534ad5df-b1d4-4fe1-9882-eb6c87ab1d93",
+      "outcome": "Done"
+    },
+    {
+      "$id": "111",
+      "sourceActivityId": "534ad5df-b1d4-4fe1-9882-eb6c87ab1d93",
+      "targetActivityId": "9907c219-8fd2-4d9a-b3b7-dde9f6e03fcb",
+      "outcome": "Done"
+    },
+    {
+      "$id": "112",
+      "sourceActivityId": "95d7c957-bf18-4c73-8627-898a7436fefb",
+      "targetActivityId": "de985db0-38c9-471f-bda0-7a6d2327d350",
+      "outcome": "Done"
+    },
+    {
+      "$id": "113",
+      "sourceActivityId": "de985db0-38c9-471f-bda0-7a6d2327d350",
+      "targetActivityId": "54776bef-27dc-4bee-820b-6cd1c8939d7a",
+      "outcome": "Approve"
+    },
+    {
+      "$id": "114",
+      "sourceActivityId": "de985db0-38c9-471f-bda0-7a6d2327d350",
+      "targetActivityId": "8e463ef7-36e1-45e1-9a1a-4afc903c55e4",
+      "outcome": "Reject"
+    },
+    {
+      "$id": "115",
+      "sourceActivityId": "1e3842f6-89ce-4ae8-bf97-5935316077b0",
+      "targetActivityId": "b1c46108-7ee3-4695-9ba0-9e9bc4a89d17",
+      "outcome": "Done"
+    },
+    {
+      "$id": "116",
+      "sourceActivityId": "b1c46108-7ee3-4695-9ba0-9e9bc4a89d17",
+      "targetActivityId": "b30ab517-5055-483d-84f4-59f1192e4b3d",
+      "outcome": "Approve"
+    },
+    {
+      "$id": "117",
+      "sourceActivityId": "b30ab517-5055-483d-84f4-59f1192e4b3d",
+      "targetActivityId": "628a8c01-5da1-4967-97f4-572c3ee0cc2e",
+      "outcome": "Done"
+    },
+    {
+      "$id": "118",
+      "sourceActivityId": "b1c46108-7ee3-4695-9ba0-9e9bc4a89d17",
+      "targetActivityId": "e8471942-02dd-4cf4-a6ee-6f0599aef238",
+      "outcome": "Reject"
+    },
+    {
+      "$id": "119",
+      "sourceActivityId": "54776bef-27dc-4bee-820b-6cd1c8939d7a",
+      "targetActivityId": "628a8c01-5da1-4967-97f4-572c3ee0cc2e",
+      "outcome": "Done"
+    },
+    {
+      "$id": "120",
+      "sourceActivityId": "8e463ef7-36e1-45e1-9a1a-4afc903c55e4",
+      "targetActivityId": "5e031a84-ff1e-4bdf-8af4-dd3a42502a40",
+      "outcome": "Done"
+    },
+    {
+      "$id": "121",
+      "sourceActivityId": "5e031a84-ff1e-4bdf-8af4-dd3a42502a40",
+      "targetActivityId": "7a035783-1321-4e9e-86d5-130539160d11",
+      "outcome": "Done"
+    },
+    {
+      "$id": "122",
+      "sourceActivityId": "e8471942-02dd-4cf4-a6ee-6f0599aef238",
+      "targetActivityId": "5e031a84-ff1e-4bdf-8af4-dd3a42502a40",
+      "outcome": "Done"
+    },
+    {
+      "$id": "123",
+      "sourceActivityId": "628a8c01-5da1-4967-97f4-572c3ee0cc2e",
+      "targetActivityId": "fed0d2ba-f830-461a-a103-ef9269b5055b",
+      "outcome": "Done"
+    },
+    {
+      "$id": "124",
+      "sourceActivityId": "fed0d2ba-f830-461a-a103-ef9269b5055b",
+      "targetActivityId": "0f0b28a2-445e-4879-9346-aadbf642063a",
+      "outcome": "Done"
+    }
+  ],
+  "id": "6a53310471d34e34884e870888d86bb0"
+}

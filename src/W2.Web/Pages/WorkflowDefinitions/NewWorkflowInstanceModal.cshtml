@@ -1,0 +1,51 @@
+﻿@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using W2.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using W2.WorkflowDefinitions
+@model W2.Web.Pages.WorkflowDefinitions.NewWorkflowInstanceModalModel
+@{
+    Layout = null;
+    var countProperties = Model.PropertyDefinitionViewModels.Count;
+}
+
+<form method="post" asp-page="/WorkflowDefinitions/NewWorkflowInstanceModal"
+    data-check-form-on-close="false">
+    <abp-modal size="Large">
+        <abp-modal-header title="New Workflow Instance"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input asp-for="WorkflowDefinitionId" type="hidden" />
+            @for (int i = 0; i < countProperties; i++)
+            {
+                var propertyDefinition = Model.PropertyDefinitionViewModels[i];
+                var inputName = $"WorkflowInput[{propertyDefinition.Name}]";
+                <div class="row">
+                    <div class="col">
+                        <div class="mb-3">
+                            <label class="form-label" for="@inputName">@propertyDefinition.Name</label>
+                            @switch (propertyDefinition.Type)
+                            {
+                                case WorkflowInputDefinitionProperyType.Text:
+                                    <input id="@inputName" name="@inputName" 
+                                        type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
+                                    break;
+                                case WorkflowInputDefinitionProperyType.Numeric:
+                                    <input id="@inputName" name="@inputName" 
+                                        type="number" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
+                                    break;
+                                case WorkflowInputDefinitionProperyType.DateTime:
+                                    <input id="@inputName" name="@inputName" 
+                                        type="date" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
+                                    break;
+                                case WorkflowInputDefinitionProperyType.JsonObject:
+                                    <textarea id="@inputName" name="@inputName" rows="4"></textarea>
+                                    break;
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

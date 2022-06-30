@@ -1,0 +1,27 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using W2.Localization
+
+@model W2.Web.Pages.WorkflowDefinitions.IndexModel
+@{
+}
+
+@inject IStringLocalizer<W2Resource> L
+
+@section scripts
+{
+    <abp-script src="/Pages/WorkflowDefinitions/Index.js" />
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["Menu:WorkflowManagement:WorkflowDefinitions"]</abp-card-title>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table id="WorkflowDefinitionsTable" striped-rows="true" />
+    </abp-card-body>
+</abp-card>

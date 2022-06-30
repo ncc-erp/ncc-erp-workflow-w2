@@ -1,0 +1,31 @@
+﻿@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using W2.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model W2.Web.Pages.WorkflowDefinitions.DefineWorkflowInputModalModel
+@inject IHtmlLocalizer<W2Resource> L
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page="/WorkflowDefinitions/DefineWorkflowInputModal">
+    <abp-modal size="Large">
+        <abp-modal-header title="Define Workflow Input"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input asp-for="WorkflowInputDefinition.WorkflowDefinitionId" type="hidden" />
+            <div id="PropertiesContainer">
+                <div class="row property-wrapper">
+                    <div class="col">
+                        <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Name" />
+                    </div>
+                    <div class="col">
+                        <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Type" />
+                    </div>
+                </div>
+            </div>
+            <abp-button id="AddProperty" button-type="Primary" icon="fa-solid fa-plus"></abp-button>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+

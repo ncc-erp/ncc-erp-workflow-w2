@@ -1,0 +1,30 @@
+{
+  "culture": "en",
+  "texts": {
+    "Menu:Home": "Home",
+    "Welcome": "Welcome",
+    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io.",
+    "Menu:WorkflowManagement": "Workflow Management",
+    "Menu:WorkflowManagement:WorkflowDefinitions": "Workflow Definitions",
+    "Menu:WorkflowManagement:WorkflowInstances": "Workflow Instances",
+    "WorkflowDefinition:Name": "Name",
+    "WorkflowDefinition:DisplayName": "Display Name",
+    "WorkflowDefinition:Version": "Version",
+    "WorkflowDefinition:IsPublished": "Published",
+    "WorkflowDefinition:Actions": "Actions",
+    "WorkflowDefinition:NewWorkflowInstance": "New Instance",
+    "WorkflowDefinition:OpenDesigner": "Open Designer",
+    "Exception:NoStartableWorkflowFound": "Startable workflow not found",
+    "Exception:WorkflowDefinitionNotFound": "Workflow definition not found",
+    "WorkflowDefinition:DefineInput": "Define Input",
+    "Settings:SocialLoginSettings": "Social Login Setting",
+    "Settings:SocialLoginSettings:EnableSocialLogin": "Enable social login",
+    "Permissions:WorkflowManagementGroup": "Workflow management",
+    "Permissions:WorkflowDefinitions": "Workflow definitions",
+    "Permissions:WorkflowDefinitions:Design": "Design workflows",
+    "Permissions:WorkflowInstances": "Workflow instances",
+    "Permissions:WorkflowInstances:Create": "Create",
+    "Permissions:Settings": "Settings",
+    "Permissions:Settings:SocialLoginSettings": "Social Login Settings"
+  }
+}

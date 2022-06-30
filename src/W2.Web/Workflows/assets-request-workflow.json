@@ -1,0 +1,595 @@
+{
+  "$id": "1",
+  "definitionId": "06a01d07dc5d4c6f8758b6bd31ec8d1f",
+  "versionId": "7ef425ce7b7146c6aa4d823dbe4e2f1b",
+  "name": "AssetsRequestWorkflow",
+  "displayName": "Assets Request Approval Workflow",
+  "version": 14,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "WorkflowBurst",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "tag": "AssetsRequestApproval",
+  "createdAt": "2022-06-06T10:40:50.9204068Z",
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "a8be0182-22d8-4fa8-b77e-26dfbb30ed0a",
+      "type": "SetVariable",
+      "displayName": "Set Request Id",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "5",
+          "name": "VariableName",
+          "expressions": {
+            "$id": "6",
+            "Literal": "RequestId"
+          }
+        },
+        {
+          "$id": "7",
+          "name": "Value",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "8",
+            "Literal": "",
+            "JavaScript": "return (activityExecutionContext.Input.Body.Id || activityExecutionContext.Input.Body.id)"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "9",
+      "activityId": "c9de676c-c913-4a5b-8f26-250645d729e4",
+      "type": "PublishKafkaMessage",
+      "displayName": "Notify IT Head",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "10",
+          "name": "MessageObject",
+          "syntax": "Variable",
+          "expressions": {
+            "$id": "11",
+            "Variable": "RequestId"
+          }
+        },
+        {
+          "$id": "12",
+          "name": "MessageType",
+          "expressions": {
+            "$id": "13",
+            "Literal": "AssetsRequestSubmittedITHead"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "14",
+      "activityId": "3f655302-c034-4bcc-829b-38fbdb531744",
+      "type": "Fork",
+      "displayName": "IT Head Reviews",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "15",
+          "name": "Branches",
+          "expressions": {
+            "$id": "16",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "17",
+      "activityId": "2202f030-2db2-43d0-9628-83d271055798",
+      "type": "SignalReceived",
+      "displayName": "IT Head Approved Request",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "18",
+          "name": "Signal",
+          "expressions": {
+            "$id": "19",
+            "Literal": "ithead-approved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "20",
+      "activityId": "d3b4cc51-ac86-41fa-b39c-9af997dda106",
+      "type": "SignalReceived",
+      "displayName": "IT Head Rejected Request",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "21",
+          "name": "Signal",
+          "expressions": {
+            "$id": "22",
+            "Literal": "ithead-rejected"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "23",
+      "activityId": "e6a7f2df-63ec-40a2-871b-934db0288af1",
+      "type": "Correlate",
+      "displayName": "Set correlationId",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "24",
+          "name": "Value",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "25",
+            "Literal": "",
+            "JavaScript": "return getVariable(\"RequestId\")"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "26",
+      "activityId": "eff481bd-94a7-4352-9684-44b1cc2d966c",
+      "type": "PublishKafkaMessage",
+      "displayName": "Notify Finance",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "27",
+          "name": "MessageObject",
+          "syntax": "Variable",
+          "expressions": {
+            "$id": "28",
+            "Variable": "RequestId"
+          }
+        },
+        {
+          "$id": "29",
+          "name": "MessageType",
+          "expressions": {
+            "$id": "30",
+            "Literal": "AssetsRequestITHeadApproved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "31",
+      "activityId": "bafb26d8-c045-4166-91d6-58dc795e26d2",
+      "type": "Fork",
+      "displayName": "Finance Review",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "32",
+          "name": "Branches",
+          "expressions": {
+            "$id": "33",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "34",
+      "activityId": "4ea4bc2c-f059-49b5-bb47-8119a89abba9",
+      "type": "SignalReceived",
+      "displayName": "Finance Approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "35",
+          "name": "Signal",
+          "expressions": {
+            "$id": "36",
+            "Literal": "finance-approved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "37",
+      "activityId": "e1dbe20a-fcab-40fc-8086-e56290f9288c",
+      "type": "SignalReceived",
+      "displayName": "Finance Rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "38",
+          "name": "Signal",
+          "expressions": {
+            "$id": "39",
+            "Literal": "finance-rejected"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "40",
+      "activityId": "7a0ec6c0-1ef2-47d7-a836-a653a194b723",
+      "type": "PublishKafkaMessage",
+      "displayName": "Notify Nhan",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "41",
+          "name": "MessageObject",
+          "syntax": "Variable",
+          "expressions": {
+            "$id": "42",
+            "Variable": "RequestId"
+          }
+        },
+        {
+          "$id": "43",
+          "name": "MessageType",
+          "expressions": {
+            "$id": "44",
+            "Literal": "AssetsRequestFinanceApproved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "45",
+      "activityId": "55b680d1-800a-4c8c-a652-b9a82697693a",
+      "type": "SignalReceived",
+      "displayName": "Nhan Approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "46",
+          "name": "Signal",
+          "expressions": {
+            "$id": "47",
+            "Literal": "nhan-approved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "48",
+      "activityId": "c7bc7f32-500d-4b90-a6ff-8a58ed4301ab",
+      "type": "SignalReceived",
+      "displayName": "Nhan Rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "49",
+          "name": "Signal",
+          "expressions": {
+            "$id": "50",
+            "Literal": "nhan-rejected"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "51",
+      "activityId": "74bc184c-592a-4dac-811a-942fef1770e6",
+      "type": "Fork",
+      "displayName": "Nhan Reviews",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "52",
+          "name": "Branches",
+          "expressions": {
+            "$id": "53",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "54",
+      "activityId": "703187f8-25c3-46f9-a464-afd489e40a1e",
+      "type": "PublishKafkaMessage",
+      "displayName": "Notify IT",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "55",
+          "name": "MessageObject",
+          "syntax": "Variable",
+          "expressions": {
+            "$id": "56",
+            "Variable": "RequestId"
+          }
+        },
+        {
+          "$id": "57",
+          "name": "MessageType",
+          "expressions": {
+            "$id": "58",
+            "Literal": "AssetsRequestNhanApproved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "59",
+      "activityId": "3703d519-9020-43fe-8af1-d7d4255db18c",
+      "type": "SignalReceived",
+      "displayName": "Assets Assigned",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "60",
+          "name": "Signal",
+          "expressions": {
+            "$id": "61",
+            "Literal": "assigned"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "62",
+      "activityId": "95a004fb-1045-4c75-a274-31678f83cc96",
+      "type": "Finish",
+      "displayName": "Request Was Approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "63",
+          "name": "ActivityOutput",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "64",
+            "JavaScript": "return getVariable(\"RequestId\")"
+          }
+        },
+        {
+          "$id": "65",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "66",
+            "Json": "[\"RequestApproved\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "67",
+      "activityId": "74e80c50-b0d1-45ec-8555-832ed8181658",
+      "type": "Finish",
+      "displayName": "Request Was Rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "68",
+          "name": "ActivityOutput",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "69",
+            "JavaScript": "return (\"Request \" + getVariable(\"RequestId\") + \" rejected\")"
+          }
+        },
+        {
+          "$id": "70",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "71",
+            "Json": "[\"RequestRejected\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "72",
+      "activityId": "c4b05bbf-e881-4160-8167-19d30eebe22a",
+      "type": "GetAssetsRequest",
+      "displayName": "Get Assets Request",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "73",
+          "name": "Request",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "74",
+            "JavaScript": "activityExecutionContext.Input"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    }
+  ],
+  "connections": [
+    {
+      "$id": "75",
+      "sourceActivityId": "c9de676c-c913-4a5b-8f26-250645d729e4",
+      "targetActivityId": "3f655302-c034-4bcc-829b-38fbdb531744",
+      "outcome": "Done"
+    },
+    {
+      "$id": "76",
+      "sourceActivityId": "3f655302-c034-4bcc-829b-38fbdb531744",
+      "targetActivityId": "2202f030-2db2-43d0-9628-83d271055798",
+      "outcome": "Approve"
+    },
+    {
+      "$id": "77",
+      "sourceActivityId": "3f655302-c034-4bcc-829b-38fbdb531744",
+      "targetActivityId": "d3b4cc51-ac86-41fa-b39c-9af997dda106",
+      "outcome": "Reject"
+    },
+    {
+      "$id": "78",
+      "sourceActivityId": "a8be0182-22d8-4fa8-b77e-26dfbb30ed0a",
+      "targetActivityId": "e6a7f2df-63ec-40a2-871b-934db0288af1",
+      "outcome": "Done"
+    },
+    {
+      "$id": "79",
+      "sourceActivityId": "e6a7f2df-63ec-40a2-871b-934db0288af1",
+      "targetActivityId": "c9de676c-c913-4a5b-8f26-250645d729e4",
+      "outcome": "Done"
+    },
+    {
+      "$id": "80",
+      "sourceActivityId": "2202f030-2db2-43d0-9628-83d271055798",
+      "targetActivityId": "eff481bd-94a7-4352-9684-44b1cc2d966c",
+      "outcome": "Done"
+    },
+    {
+      "$id": "81",
+      "sourceActivityId": "eff481bd-94a7-4352-9684-44b1cc2d966c",
+      "targetActivityId": "bafb26d8-c045-4166-91d6-58dc795e26d2",
+      "outcome": "Done"
+    },
+    {
+      "$id": "82",
+      "sourceActivityId": "bafb26d8-c045-4166-91d6-58dc795e26d2",
+      "targetActivityId": "4ea4bc2c-f059-49b5-bb47-8119a89abba9",
+      "outcome": "Approve"
+    },
+    {
+      "$id": "83",
+      "sourceActivityId": "bafb26d8-c045-4166-91d6-58dc795e26d2",
+      "targetActivityId": "e1dbe20a-fcab-40fc-8086-e56290f9288c",
+      "outcome": "Reject"
+    },
+    {
+      "$id": "84",
+      "sourceActivityId": "4ea4bc2c-f059-49b5-bb47-8119a89abba9",
+      "targetActivityId": "7a0ec6c0-1ef2-47d7-a836-a653a194b723",
+      "outcome": "Done"
+    },
+    {
+      "$id": "85",
+      "sourceActivityId": "7a0ec6c0-1ef2-47d7-a836-a653a194b723",
+      "targetActivityId": "74bc184c-592a-4dac-811a-942fef1770e6",
+      "outcome": "Done"
+    },
+    {
+      "$id": "86",
+      "sourceActivityId": "74bc184c-592a-4dac-811a-942fef1770e6",
+      "targetActivityId": "55b680d1-800a-4c8c-a652-b9a82697693a",
+      "outcome": "Approve"
+    },
+    {
+      "$id": "87",
+      "sourceActivityId": "74bc184c-592a-4dac-811a-942fef1770e6",
+      "targetActivityId": "c7bc7f32-500d-4b90-a6ff-8a58ed4301ab",
+      "outcome": "Reject"
+    },
+    {
+      "$id": "88",
+      "sourceActivityId": "55b680d1-800a-4c8c-a652-b9a82697693a",
+      "targetActivityId": "703187f8-25c3-46f9-a464-afd489e40a1e",
+      "outcome": "Done"
+    },
+    {
+      "$id": "89",
+      "sourceActivityId": "703187f8-25c3-46f9-a464-afd489e40a1e",
+      "targetActivityId": "3703d519-9020-43fe-8af1-d7d4255db18c",
+      "outcome": "Done"
+    },
+    {
+      "$id": "90",
+      "sourceActivityId": "3703d519-9020-43fe-8af1-d7d4255db18c",
+      "targetActivityId": "95a004fb-1045-4c75-a274-31678f83cc96",
+      "outcome": "Done"
+    },
+    {
+      "$id": "91",
+      "sourceActivityId": "d3b4cc51-ac86-41fa-b39c-9af997dda106",
+      "targetActivityId": "74e80c50-b0d1-45ec-8555-832ed8181658",
+      "outcome": "Done"
+    },
+    {
+      "$id": "92",
+      "sourceActivityId": "e1dbe20a-fcab-40fc-8086-e56290f9288c",
+      "targetActivityId": "74e80c50-b0d1-45ec-8555-832ed8181658",
+      "outcome": "Done"
+    },
+    {
+      "$id": "93",
+      "sourceActivityId": "c7bc7f32-500d-4b90-a6ff-8a58ed4301ab",
+      "targetActivityId": "74e80c50-b0d1-45ec-8555-832ed8181658",
+      "outcome": "Done"
+    },
+    {
+      "$id": "94",
+      "sourceActivityId": "c4b05bbf-e881-4160-8167-19d30eebe22a",
+      "targetActivityId": "a8be0182-22d8-4fa8-b77e-26dfbb30ed0a",
+      "outcome": "Done"
+    }
+  ],
+  "id": "7ef425ce7b7146c6aa4d823dbe4e2f1b"
+}
