@@ -135,13 +135,7 @@ public class W2WebModule : AbpModule
                 bundle =>
                 {
                     bundle.AddFiles(
-                        "/global-styles.css",
-                        "/libs/jquery/jquery.js",
-                        "/libs/bootstrap/js/bootstrap.js",
-                        "/libs/toastr/toastr.min.js",
-                        "/libs/bootstrap/css/bootstrap.css",
-                        "/libs/font-awesome/css/font-awesome.css",
-                        "/libs/toastr/toastr.css"
+                        "/global-styles.css"
                     );
                 }
             );
