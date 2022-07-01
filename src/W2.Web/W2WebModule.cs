@@ -43,6 +43,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using W2.Identity;
 using W2.Web.Extensions;
+using Microsoft.AspNetCore.Http;
 
 namespace W2.Web;
 
@@ -253,7 +254,12 @@ public class W2WebModule : AbpModule
                 options.ClientId = configuration["Authentication:Google:ClientId"];
                 options.ClientSecret = configuration["Authentication:Google:ClientSecret"];
                 options.SaveTokens = true;
+                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
             });
+        context.Services.ConfigureExternalCookie(options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.Lax;
+        });
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)

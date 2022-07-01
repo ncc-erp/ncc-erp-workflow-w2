@@ -31,6 +31,7 @@ namespace W2.Web.Extensions
             else if (options.SameSite == SameSiteMode.None)
             {
                 options.SameSite = SameSiteMode.Unspecified;
+                options.Secure = false;
             }
         }
     }
