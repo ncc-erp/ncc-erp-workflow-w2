@@ -288,15 +288,7 @@ public class W2WebModule : AbpModule
 
         app.UseUnitOfWork();
         app.UseIdentityServer();
-
-        var httpOnly = Convert.ToBoolean(context.GetConfiguration()["Authentication:IsHttpOnly"]);
-        var cookiePolicyOptions = new CookiePolicyOptions { Secure = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest };
-        if (httpOnly)
-        {
-            cookiePolicyOptions.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
-        }
-        app.UseCookiePolicy(cookiePolicyOptions);
-
+        app.UseCookiePolicy();
         app.UseAuthorization();
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
