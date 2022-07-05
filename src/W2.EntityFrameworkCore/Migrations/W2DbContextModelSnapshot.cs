@@ -2016,20 +2016,17 @@ namespace W2.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<string>("Properties")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
 
-                    b.Property<string>("WorkflowDefinitionId")
+                    b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WorkflowDefinitionId");
+                    b.HasIndex("WorkflowInstanceId");
 
                     b.ToTable("WorkflowInstanceStarters", (string)null);
                 });

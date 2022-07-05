@@ -1,0 +1,18 @@
+﻿@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model W2.Web.Pages.WorkflowDefinitions.CreateModalModel
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page="/WorkflowDefinitions/CreateModal" formtarget="_blank">
+    <abp-modal>
+        <abp-modal-header title="Create Workflow Definition"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input asp-for="WorkflowDefinition.Name"></abp-input>
+            <abp-input asp-for="WorkflowDefinition.DisplayName"></abp-input>
+            <abp-input asp-for="WorkflowDefinition.Tag"></abp-input>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

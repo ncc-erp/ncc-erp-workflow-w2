@@ -17,6 +17,7 @@ namespace W2.Settings
             _settingManager = settingManager;
         }
 
+        [Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
         public async Task<SocialLoginSettingsDto> GetSocialLoginSettingsAsync()
         {
             var socialLoginSettingsDto = new SocialLoginSettingsDto();

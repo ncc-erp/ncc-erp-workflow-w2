@@ -1,10 +1,13 @@
 ﻿@page
+@using Microsoft.AspNetCore.Hosting
 @using Microsoft.AspNetCore.Mvc.Localization
+@using Microsoft.Extensions.Hosting
 @using Volo.Abp.Account.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Theming
 @using W2.Web.Pages.Account
 @inject IHtmlLocalizer<AccountResource> L
 @inject IThemeManager ThemeManager
+@inject IWebHostEnvironment HostingEnvironment
 @model CustomLoginModel
 
 @{
@@ -14,7 +17,7 @@
 <div class="card mt-3 shadow-sm rounded">
     <div class="card-body p-5">
         <h4>@L["Login"]</h4>
-        @if (Model.EnableLocalLogin)
+        @if (HostingEnvironment.IsDevelopment() && Model.EnableLocalLogin)
         {
             <form method="post" class="mt-4">
                 <div class="mb-3">

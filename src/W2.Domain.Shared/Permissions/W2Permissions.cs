@@ -8,6 +8,7 @@ public static class W2Permissions
     public const string WorkflowManagementWorkflowDefinitionsDesign = WorkflowManagementGroup + ".WorkflowDefinitions.Design";
     public const string WorkflowManagementWorkflowInstances = WorkflowManagementGroup + ".WorkflowInstances";
     public const string WorkflowManagementWorkflowInstancesCreate = WorkflowManagementGroup + ".WorkflowInstances.Create";
+    public const string WorkflowManagementWorkflowInstancesViewAll = WorkflowManagementGroup + ".WorkflowInstances.ViewAll";
 
     //Settings
     public const string WorkflowManagementSettings = "Settings";

@@ -1,4 +1,4 @@
-﻿@page
+﻿@page "/"
 @using Microsoft.Extensions.Localization
 @using W2.Localization
 
@@ -18,6 +18,9 @@
         <abp-row>
             <abp-column size-md="_6">
                 <abp-card-title>@L["Menu:WorkflowManagement:WorkflowDefinitions"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <abp-button button-type="Primary" icon="plus" id="CreateWorkflowDefinition" text="@L["WorkflowDefinition:Create"]"></abp-button>
             </abp-column>
         </abp-row>
     </abp-card-header>

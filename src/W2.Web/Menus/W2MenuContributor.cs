@@ -6,6 +6,7 @@ using Volo.Abp.SettingManagement.Web.Navigation;
 using Volo.Abp.TenantManagement.Web.Navigation;
 using Volo.Abp.UI.Navigation;
 using W2.Permissions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace W2.Web.Menus;
 
@@ -24,16 +25,9 @@ public class W2MenuContributor : IMenuContributor
         var administration = context.Menu.GetAdministration();
         var l = context.GetLocalizer<W2Resource>();
 
-        context.Menu.Items.Insert(
-            0,
-            new ApplicationMenuItem(
-                W2Menus.Home,
-                l["Menu:Home"],
-                "~/",
-                icon: "fas fa-home",
-                order: 0
-            )
-        );
+        var workflowInstanceMenuText = await context.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll)
+            ? l["WorkflowInstance:AllInstances"]
+            : l["WorkflowInstance:MyInstances"];
 
         context.Menu.AddItem(
             new ApplicationMenuItem(W2Menus.WorkflowManagement, l["Menu:WorkflowManagement"])
@@ -41,12 +35,13 @@ public class W2MenuContributor : IMenuContributor
                     name: W2Menus.WorkflowDefinitions,
                     displayName: l["Menu:WorkflowManagement:WorkflowDefinitions"],
                     requiredPermissionName: W2Permissions.WorkflowManagementWorkflowDefinitions,
-                    url: "/WorkflowDefinitions"
+                    url: "/"
                 ))
                 .AddItem(new ApplicationMenuItem(
                     name: W2Menus.WorkflowInstances,
-                    displayName: l["Menu:WorkflowManagement:WorkflowInstances"],
-                    requiredPermissionName: W2Permissions.WorkflowManagementWorkflowInstances
+                    displayName: workflowInstanceMenuText,
+                    requiredPermissionName: W2Permissions.WorkflowManagementWorkflowInstances,
+                    url: "/WorkflowInstances/"
                 ))
         );
 

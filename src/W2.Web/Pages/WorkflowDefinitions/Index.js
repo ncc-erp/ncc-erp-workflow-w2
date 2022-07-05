@@ -9,6 +9,8 @@
         modalClass: 'DefineWorkflowInputModal'
     });
 
+    var createWorkflowDefinitionModal = new abp.ModalManager(abp.appPath + 'WorkflowDefinitions/CreateModal');
+
     var dataTable = $('#WorkflowDefinitionsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
@@ -34,7 +36,7 @@
                     data: "isPublished",
                 },
                 {
-                    title: l('WorkflowDefinition:Actions'),
+                    title: l('Actions'),
                     rowAction: {
                         items: [
                             {
@@ -61,7 +63,25 @@
                             {
                                 text: l('WorkflowDefinition:OpenDesigner'),
                                 action: function (data) {
-                                    window.open(abp.appPath + 'Designer?workflowDefinitionId=' + data.record.definitionId);
+                                    window.open(abp.appPath + 'WorkflowDefinitions/Designer?workflowDefinitionId=' + data.record.definitionId);
+                                },
+                                visible: abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design")
+                            },
+                            {
+                                text: l('Delete'),
+                                action: function (data) {
+                                    w2.workflowDefinitions.workflowDefinition
+                                        .delete(data.record.definitionId)
+                                        .then(function () {
+                                            dataTable.ajax.reload();
+                                            abp.notify.success(l('SuccessfullyDeleted'));
+                                        });
+                                },
+                                confirmMessage: function (data) {
+                                    return l(
+                                        'WorkflowDefinition:DeleteConfirmationMessage',
+                                        data.record.displayName
+                                    );
                                 },
                                 visible: abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design")
                             }
@@ -74,5 +94,28 @@
 
     defineWorkflowInputModal.onResult(function () {
         dataTable.ajax.reload();
+    });
+
+    $("#CreateWorkflowDefinition").click(function (e) {
+        e.preventDefault();
+        createWorkflowDefinitionModal.open();
+    });
+
+    createWorkflowDefinitionModal.onResult(function () {
+        if (arguments?.length > 1) {
+            arguments[1].xhr.then(res => {
+                window.open(abp.appPath + 'WorkflowDefinitions/Designer?workflowDefinitionId=' + res);
+            });
+        }
+
+        dataTable.ajax.reload();
+    });
+
+    newWorkflowInstanceModal.onResult(function () {
+        if (arguments?.length > 1) {
+            arguments[1].xhr.then(res => {
+                window.open(abp.appPath + 'WorkflowInstances/Designer?id=' + res);
+            });
+        }
     });
 });

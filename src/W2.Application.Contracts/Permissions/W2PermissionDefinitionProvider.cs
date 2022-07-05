@@ -27,6 +27,10 @@ public class W2PermissionDefinitionProvider : PermissionDefinitionProvider
             W2Permissions.WorkflowManagementWorkflowInstancesCreate,
             L("Permissions:WorkflowInstances:Create")
         );
+        workflowInstancesPermission.AddChild(
+            W2Permissions.WorkflowManagementWorkflowInstancesViewAll,
+            L("Permissions:WorkflowInstances:ViewAll")
+        );
         var settingPermission = workflowManagementGroup
             .AddPermission(
                 W2Permissions.WorkflowManagementSettings,

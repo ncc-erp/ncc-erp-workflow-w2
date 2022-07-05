@@ -13,16 +13,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Elsa.Activities.Email" Version="2.8.2" />
     <PackageReference Include="Volo.Abp.Account.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.Identity.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="5.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="WorkflowInstances\" />
   </ItemGroup>
 
 </Project>

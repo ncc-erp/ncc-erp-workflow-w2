@@ -35,15 +35,20 @@ using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.SqlServer;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa;
-using W2.Web.Activities;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 using W2.Web.Settings;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using W2.Identity;
 using W2.Web.Extensions;
 using Microsoft.AspNetCore.Http;
+using Volo.Abp.AspNetCore.MultiTenancy;
+using Volo.Abp.MultiTenancy;
+using W2.Configurations;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using W2.Permissions;
+using W2.Activities;
+using W2.NotificationHandlers;
 
 namespace W2.Web;
 
@@ -100,6 +105,8 @@ public class W2WebModule : AbpModule
         ConfigureSwaggerServices(context.Services);
         ConfigureElsa(context, configuration);
         ConfigureExternalLogins(context, configuration);
+        ConfigureMultiTenancy(configuration);
+        ConfigureRazorPages();
 
         context.Services.AddAbpApiVersioning(options =>
         {
@@ -231,12 +238,14 @@ public class W2WebModule : AbpModule
             .AddEmailActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Smtp)).Bind)
             .AddQuartzTemporalActivities()
             .AddJavaScriptActivities()
-            .AddActivitiesFrom<PublishKafkaMessage>()
+            .AddActivitiesFrom<CustomEmail>()
             .AddWorkflowsFrom<ElsaConfiguration>());
 
         context.Services
             .AddElsaApiEndpoints()
             .AddRazorPages();
+
+        context.Services.AddNotificationHandlersFrom<CustomSignalJavaScriptHandler>();
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
@@ -247,10 +256,7 @@ public class W2WebModule : AbpModule
     private void ConfigureExternalLogins(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services
-            .AddAuthentication(options =>
-            {
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-            })
+            .AddAuthentication()
             .AddGoogle(options =>
             {
                 options.ClientId = configuration["Authentication:Google:ClientId"];
@@ -261,6 +267,32 @@ public class W2WebModule : AbpModule
         context.Services.ConfigureExternalCookie(options =>
         {
             options.Cookie.SameSite = SameSiteMode.Lax;
+        });
+    }
+
+    private void ConfigureMultiTenancy(IConfiguration configuration)
+    {
+        Configure<AbpAspNetCoreMultiTenancyOptions>(options =>
+        {
+            options.TenantKey = W2Consts.TenantKey;
+        });
+
+        var domainFormat = configuration["TenantDomainFormat"];
+        if (!domainFormat.IsNullOrEmpty())
+        {
+            Configure<AbpTenantResolveOptions>(options =>
+            {
+                options.AddDomainTenantResolver(domainFormat);
+            });
+        }
+    }
+
+    private void ConfigureRazorPages()
+    {
+        Configure<RazorPagesOptions>(options =>
+        {
+            options.Conventions.AuthorizeFolder("/WorkflowDefinitions", W2Permissions.WorkflowManagementWorkflowDefinitions);
+            options.Conventions.AuthorizeFolder("/WorkflowInstances", W2Permissions.WorkflowManagementWorkflowInstances);
         });
     }
 

@@ -18,5 +18,10 @@ namespace W2.Web.Pages.Account
         public CustomLoginModel(IAuthenticationSchemeProvider schemeProvider, IOptions<AbpAccountOptions> accountOptions, IOptions<IdentityOptions> identityOptions) : base(schemeProvider, accountOptions, identityOptions)
         {
         }
+
+        public override Task<IActionResult> OnGetExternalLoginCallbackAsync(string returnUrl = "", string returnUrlHash = "", string remoteError = null)
+        {
+            return base.OnGetExternalLoginCallbackAsync(returnUrl, returnUrlHash, remoteError);
+        }
     }
 }

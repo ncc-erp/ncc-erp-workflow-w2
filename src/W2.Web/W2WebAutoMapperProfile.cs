@@ -14,5 +14,6 @@ public class W2WebAutoMapperProfile : Profile
         CreateMap<DefineWorkflowInputViewModel, WorkflowCustomInputDefinitionDto>()
             .ForMember(d => d.PropertyDefinitions, options => options.MapFrom(s => s.PropertyDefinitionViewModels));
         CreateMap<SocialLoginSettingsDto, Pages.SettingManagement.Components.SocialLoginSettingGroup.SocialLoginSettingGroupViewComponent.UpdateSocialLoginSettingsViewModel>();
+        CreateMap<CreateWorkflowDefinitionViewModel, CreateWorkflowDefinitionDto>();
     }
 }

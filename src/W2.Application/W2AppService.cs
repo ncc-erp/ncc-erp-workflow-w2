@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using W2.Localization;
+﻿using W2.Localization;
 using Volo.Abp.Application.Services;
+using Elsa.Activities.Http.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace W2;
 
@@ -10,10 +10,35 @@ namespace W2;
  */
 public abstract class W2AppService : ApplicationService
 {
-    protected string CurrentTenantStrId => CurrentTenant?.Id?.ToString();
+    private readonly JsonSerializerSettings _jsonSerializerSettings;
+
+    protected string CurrentTenantStrId => CurrentTenant?.Id?.ToString();    
 
     protected W2AppService()
     {
         LocalizationResource = typeof(W2Resource);
+        _jsonSerializerSettings = new JsonSerializerSettings 
+        { 
+            ContractResolver = new CamelCasePropertyNamesContractResolver() 
+            { 
+                NamingStrategy = new CamelCaseNamingStrategy(false, false) 
+            } 
+        };
+    }
+
+    protected HttpRequestModel GetHttpRequestModel(string method, object requestBody = null)
+    {
+        var requestBodyJson = requestBody == null
+            ? null
+            : JsonConvert.SerializeObject(requestBody, _jsonSerializerSettings);
+
+        return new HttpRequestModel(
+            null,
+            method,
+            null,
+            null,
+            null,
+            Body: requestBody
+        );
     }
 }

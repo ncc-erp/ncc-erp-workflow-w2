@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Elsa.Models;
+using System;
 using System.Linq;
 using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
 
 namespace W2;
 
@@ -30,5 +32,14 @@ public class W2ApplicationAutoMapperProfile : Profile
                     Type = i.Type
                 })
                 .ToList()));
+        CreateMap<CreateWorkflowDefinitionDto, WorkflowDefinition>();
+        CreateMap<WorkflowInstance, WorkflowInstanceDto>()
+            .ForMember(d => d.WorkflowDefinitionId, options => options.MapFrom(s => s.DefinitionId))
+            .ForMember(d => d.CreatedAt, options => options.MapFrom(s => s.CreatedAt.ToDateTimeUtc()))
+            .ForMember(d => d.Status, options => options.MapFrom(s => s.WorkflowStatus.ToString()))
+            .ForMember(d => d.LastExecutedAt, options => options.MapFrom((s, d) =>
+            {
+                return s.LastExecutedAt.HasValue ? s.LastExecutedAt.Value.ToDateTimeUtc() : (DateTime?)null;
+            }));
     }
 }

@@ -1,10 +1,10 @@
-﻿namespace W2.Web
+﻿namespace W2.Configurations
 {
     public class ElsaConfiguration
     {
         public string ConnectionString { get; set; } = string.Empty;
-        public ElsaConfigurationServerSection? Server { get; set; }
-        public ElsaConfigurationSmtpSection? Smtp { get; set; }
+        public ElsaConfigurationServerSection Server { get; set; }
+        public ElsaConfigurationSmtpSection Smtp { get; set; }
     }
 
     public class ElsaConfigurationServerSection

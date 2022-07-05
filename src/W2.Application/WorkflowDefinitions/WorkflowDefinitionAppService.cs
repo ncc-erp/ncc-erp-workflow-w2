@@ -3,8 +3,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,20 +19,20 @@ namespace W2.WorkflowDefinitions
     public class WorkflowDefinitionAppService : W2AppService, IWorkflowDefinitionAppService
     {
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-        private readonly IWorkflowLaunchpad _workflowLaunchpad;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
+        private readonly IWorkflowPublisher _workflowPublisher;
 
         public WorkflowDefinitionAppService(
-            IWorkflowDefinitionStore workflowDefinitionStore, 
-            IWorkflowLaunchpad workflowLaunchpad, 
-            IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository)
+            IWorkflowDefinitionStore workflowDefinitionStore,
+            IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
+            IWorkflowPublisher workflowPublisher)
         {
             _workflowDefinitionStore = workflowDefinitionStore;
-            _workflowLaunchpad = workflowLaunchpad;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
+            _workflowPublisher = workflowPublisher;
         }
 
-        public async Task<ListResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync()
+        public async Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync()
         {
             var specification = new ManyWorkflowDefinitionsLatestVersionSpecification(CurrentTenantStrId, null);
             var workflowDefinitions = (await _workflowDefinitionStore
@@ -58,23 +56,7 @@ namespace W2.WorkflowDefinitions
                 summary.InputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>(inputDefinition);
             }
 
-            return new ListResultDto<WorkflowDefinitionSummaryDto>(workflowDefinitionSummaries);
-        }
-
-        public async Task<string> CreateNewInstanceAsync(ExecuteWorkflowDefinitionDto input)
-        {
-            var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(input.WorkflowDefinitionId, tenantId: CurrentTenantStrId);
-            
-            if (startableWorkflow == null)
-            {
-                throw new UserFriendlyException(L["Exception:NoStartableWorkflowFound"]);
-            }
-
-            var httpRequestModel = new Elsa.Activities.Http.Models.HttpRequestModel(null, "POST", null, null, null, RawBody: JsonConvert.SerializeObject(input.Input, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() { NamingStrategy = new CamelCaseNamingStrategy(false, false) } }));
-
-            var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
-
-            return executionResult.WorkflowInstance.Id;
+            return new PagedResultDto<WorkflowDefinitionSummaryDto>(workflowDefinitionSummaries.Count, workflowDefinitionSummaries);
         }
 
         public async Task<WorkflowDefinitionSummaryDto> GetByDefinitionIdAsync(string definitionId)
@@ -89,11 +71,28 @@ namespace W2.WorkflowDefinitions
             return ObjectMapper.Map<WorkflowDefinition, WorkflowDefinitionSummaryDto>(workflowDefinition);
         }
 
+        [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
         public async Task CreateWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)
         {
             await _workflowCustomInputDefinitionRepository.InsertAsync(
                 ObjectMapper.Map<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>(input)
             );
+        }
+
+        [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        public async Task<string> CreateWorkflowDefinitionAsync(CreateWorkflowDefinitionDto input)
+        {
+            var workflowDefinition = ObjectMapper.Map<CreateWorkflowDefinitionDto, WorkflowDefinition>(input);
+
+            await _workflowPublisher.SaveDraftAsync(workflowDefinition);
+
+            return workflowDefinition.Id;
+        }
+
+        [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        public async Task DeleteAsync(string id)
+        {
+            await _workflowPublisher.DeleteAsync(id, VersionOptions.All);
         }
     }
 }

@@ -6,16 +6,20 @@ using System.Dynamic;
 using System.Threading.Tasks;
 using W2.Web.Pages.WorkflowDefinitions.Models;
 using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
+using W2.Permissions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace W2.Web.Pages.WorkflowDefinitions
 {
+    [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
     public class NewWorkflowInstanceModalModel : W2PageModel
     {
-        private readonly IWorkflowDefinitionAppService _workflowDefinitionAppService;
+        private readonly IWorkflowInstanceAppService _workflowInstanceAppService;
 
-        public NewWorkflowInstanceModalModel(IWorkflowDefinitionAppService workflowDefinitionAppService)
+        public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService)
         {
-            _workflowDefinitionAppService = workflowDefinitionAppService;
+            _workflowInstanceAppService = workflowInstanceAppService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -38,13 +42,13 @@ namespace W2.Web.Pages.WorkflowDefinitions
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await _workflowDefinitionAppService.CreateNewInstanceAsync(new ExecuteWorkflowDefinitionDto
+            var workflowInstanceId = await _workflowInstanceAppService.CreateNewInstanceAsync(new CreateNewWorkflowInstanceDto
             {
                 WorkflowDefinitionId = WorkflowDefinitionId,
                 Input = WorkflowInput
             });
 
-            return NoContent();
+            return Content(workflowInstanceId);
         }
     }
 }

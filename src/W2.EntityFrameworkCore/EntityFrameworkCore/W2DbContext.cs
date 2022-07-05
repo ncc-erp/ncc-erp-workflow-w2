@@ -91,9 +91,8 @@ public class W2DbContext :
         builder.Entity<WorkflowInstanceStarter>(b =>
         {
             b.ToTable("WorkflowInstanceStarters");
-            b.Property(x => x.Properties).HasConversion(new ElsaEFJsonValueConverter<Dictionary<string, object>>(), ValueComparer.CreateDefault(typeof(Dictionary<string, object>), false));
-            b.Property(x => x.WorkflowDefinitionId).IsRequired();
-            b.HasIndex(x => x.WorkflowDefinitionId);
+            b.Property(x => x.WorkflowInstanceId).IsRequired();
+            b.HasIndex(x => x.WorkflowInstanceId);
         });
 
         builder.Entity<WorkflowCustomInputDefinition>(b =>
