@@ -1,0 +1,744 @@
+{
+  "$id": "1",
+  "definitionId": "ea0360da-8d19-1acf-616c-3a04dfa54ac6",
+  "versionId": "0089aa51-e916-ba2f-35bb-3a04e068f3ad",
+  "name": "ChangeOfficeWorkflow",
+  "displayName": "Change Office",
+  "version": 5,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "Suspended",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "tag": "change-office",
+  "createdAt": "2022-07-05T12:00:54.7012138Z",
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "9a2a66ab-14a9-41c9-b569-7a6f0efe9509",
+      "type": "HttpEndpoint",
+      "name": "ChangeOfficeWorkflow",
+      "displayName": "Change Office Workflow",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "5",
+          "name": "Path",
+          "expressions": {
+            "$id": "6",
+            "Literal": "change-office"
+          }
+        },
+        {
+          "$id": "7",
+          "name": "Methods",
+          "expressions": {
+            "$id": "8",
+            "Json": "[\"POST\"]"
+          }
+        },
+        {
+          "$id": "9",
+          "name": "ReadContent",
+          "expressions": {
+            "$id": "10"
+          }
+        },
+        {
+          "$id": "11",
+          "name": "TargetType",
+          "expressions": {
+            "$id": "12"
+          }
+        },
+        {
+          "$id": "13",
+          "name": "Schema",
+          "syntax": "Literal",
+          "expressions": {
+            "$id": "14",
+            "Literal": ""
+          }
+        },
+        {
+          "$id": "15",
+          "name": "Authorize",
+          "expressions": {
+            "$id": "16",
+            "Literal": "true"
+          }
+        },
+        {
+          "$id": "17",
+          "name": "Policy",
+          "expressions": {
+            "$id": "18"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "19",
+      "activityId": "91e4ccc6-d85b-4853-bfe6-53b784dd93b5",
+      "type": "SetVariable",
+      "displayName": "Set Request Info",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "20",
+          "name": "VariableName",
+          "expressions": {
+            "$id": "21",
+            "Literal": "Request"
+          }
+        },
+        {
+          "$id": "22",
+          "name": "Value",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "23",
+            "JavaScript": "input.Body"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "24",
+      "activityId": "7958fdc6-e183-4996-817a-5844f8704f5e",
+      "type": "Fork",
+      "displayName": "Send Email To Reviewers",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "25",
+          "name": "Branches",
+          "expressions": {
+            "$id": "26",
+            "Json": "[\"Head of Office\",\"PM\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "27",
+      "activityId": "3b38c3ac-71f4-43c3-8539-bdb939b05c71",
+      "type": "CustomEmail",
+      "displayName": "Send Email to Head of Office",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "28",
+          "name": "To",
+          "expressions": {
+            "$id": "29",
+            "Json": "[\"ha.nguyen@ncc.asia\"]"
+          }
+        },
+        {
+          "$id": "30",
+          "name": "Subject",
+          "expressions": {
+            "$id": "31",
+            "Literal": "Change Office Request"
+          }
+        },
+        {
+          "$id": "32",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "33"
+          }
+        },
+        {
+          "$id": "34",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "35",
+            "JavaScript": "const request = getVariable(\"Request\");\r\nconst emailBody = `\r\n<p><b>Yêu cầu chuyển văn phòng</b></p>\r\n<p>Họ tên: ${request.Name}</p>\r\n<p>Mail: ${request.Email}</p>\r\n<p>Chuyển tới văn phòng: ${request.Office}</p>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.HoOApproved)}\">Duyệt</a>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.HoORejected)}\">Từ chối</a>\r\n`;\r\nreturn emailBody;"
+          }
+        },
+        {
+          "$id": "36",
+          "name": "Cc",
+          "expressions": {
+            "$id": "37"
+          }
+        },
+        {
+          "$id": "38",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "39"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "40",
+      "activityId": "7016d87a-9c46-46e9-9fc3-539e51fb89e4",
+      "type": "CustomEmail",
+      "displayName": "Send Email To PM",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "41",
+          "name": "To",
+          "expressions": {
+            "$id": "42",
+            "Json": "[\"ha.nguyen@ncc.asia\"]"
+          }
+        },
+        {
+          "$id": "43",
+          "name": "Subject",
+          "expressions": {
+            "$id": "44",
+            "Literal": "Change Office Request"
+          }
+        },
+        {
+          "$id": "45",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "46"
+          }
+        },
+        {
+          "$id": "47",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "48",
+            "JavaScript": "const request = getVariable(\"Request\");\r\nconst emailBody = `\r\n<p><b>Yêu cầu chuyển văn phòng</b></p>\r\n<p>Họ tên: ${request.Name}</p>\r\n<p>Mail: ${request.Email}</p>\r\n<p>Chuyển tới văn phòng: ${request.Office}</p>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.PMApproved)}\">Duyệt</a>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.PMRejected)}\">Từ chối</a>\r\n`;\r\nreturn emailBody;"
+          }
+        },
+        {
+          "$id": "49",
+          "name": "Cc",
+          "expressions": {
+            "$id": "50"
+          }
+        },
+        {
+          "$id": "51",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "52"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "53",
+      "activityId": "408b226f-7ada-4c7d-a101-af4e9993a7f9",
+      "type": "Fork",
+      "displayName": "Head of Office Reviews",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "54",
+          "name": "Branches",
+          "expressions": {
+            "$id": "55",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "56",
+      "activityId": "b1460542-4328-45ff-b45a-cf52ca9cf6dc",
+      "type": "Fork",
+      "displayName": "PM Reviews",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "57",
+          "name": "Branches",
+          "expressions": {
+            "$id": "58",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "59",
+      "activityId": "7ed01735-f3e1-4691-b48a-90d31a988419",
+      "type": "CustomEmail",
+      "displayName": "Send Rejected Email to Issuer",
+      "description": "Rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "60",
+          "name": "To",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "61",
+            "Json": "[]",
+            "JavaScript": "return [ getVariable(\"Request\").Email ];"
+          }
+        },
+        {
+          "$id": "62",
+          "name": "Subject",
+          "expressions": {
+            "$id": "63",
+            "Literal": "Yêu cầu chuyển văn phòng bị từ chối"
+          }
+        },
+        {
+          "$id": "64",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "65"
+          }
+        },
+        {
+          "$id": "66",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "67",
+            "Literal": "",
+            "JavaScript": "return `\r\nHi ${getVariable(\"Request\").Name}\r\n\r\nGiám đốc văn phòng đã từ chối yêu cầu của bạn!\r\n`;"
+          }
+        },
+        {
+          "$id": "68",
+          "name": "Cc",
+          "expressions": {
+            "$id": "69"
+          }
+        },
+        {
+          "$id": "70",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "71"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "72",
+      "activityId": "19671b07-ca36-4576-8a83-220f694f16c9",
+      "type": "Finish",
+      "displayName": "Request is rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "73",
+          "name": "ActivityOutput",
+          "expressions": {
+            "$id": "74",
+            "Literal": "Yêu cầu bị từ chối"
+          }
+        },
+        {
+          "$id": "75",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "76"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "77",
+      "activityId": "642b89d2-bd61-4415-aeea-60d8427bcff4",
+      "type": "SignalReceived",
+      "displayName": "Head of Office rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "78",
+          "name": "Signal",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "79",
+            "JavaScript": "workflowSignals.HoORejected"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "80",
+      "activityId": "b0f68c49-b5f1-4430-94df-741d5cf58d30",
+      "type": "SignalReceived",
+      "displayName": "Head of Office approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "81",
+          "name": "Signal",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "82",
+            "JavaScript": "workflowSignals.HoOApproved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "83",
+      "activityId": "aeba9d90-adb6-47ec-b300-d5b17d4cad4e",
+      "type": "SignalReceived",
+      "displayName": "PM approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "84",
+          "name": "Signal",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "85",
+            "JavaScript": "workflowSignals.PMApproved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "86",
+      "activityId": "749f5a81-94c6-49d4-be47-5dec43c5df33",
+      "type": "SignalReceived",
+      "displayName": "PM rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "87",
+          "name": "Signal",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "88",
+            "JavaScript": "workflowSignals.PMRejected"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "89",
+      "activityId": "3adf6eea-2f7c-4b6e-b080-c2bab3365288",
+      "type": "CustomEmail",
+      "displayName": "Send Rejected Email to Issuer",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "90",
+          "name": "To",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "91",
+            "JavaScript": "return [ getVariable(\"Request\").Email ];"
+          }
+        },
+        {
+          "$id": "92",
+          "name": "Subject",
+          "expressions": {
+            "$id": "93",
+            "Literal": "Yêu cầu chuyển văn phòng bị từ chối"
+          }
+        },
+        {
+          "$id": "94",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "95"
+          }
+        },
+        {
+          "$id": "96",
+          "name": "Body",
+          "expressions": {
+            "$id": "97",
+            "Literal": "PM đã từ chối yêu cầu của bạn"
+          }
+        },
+        {
+          "$id": "98",
+          "name": "Cc",
+          "expressions": {
+            "$id": "99"
+          }
+        },
+        {
+          "$id": "100",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "101"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "102",
+      "activityId": "10bef8ac-2856-4d74-81ba-f1e549794459",
+      "type": "Join",
+      "displayName": "Both approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "103",
+          "name": "Mode",
+          "expressions": {
+            "$id": "104"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "105",
+      "activityId": "fd8a3c11-ee8c-40a9-b521-2e8baa33be8e",
+      "type": "CustomEmail",
+      "displayName": "Send Approved Email to Issuer",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "106",
+          "name": "To",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "107",
+            "JavaScript": "return [ getVariable(\"Request\").Email ];"
+          }
+        },
+        {
+          "$id": "108",
+          "name": "Subject",
+          "expressions": {
+            "$id": "109",
+            "Literal": "Yêu cầu chuyển văn phòng đã được duyệt"
+          }
+        },
+        {
+          "$id": "110",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "111"
+          }
+        },
+        {
+          "$id": "112",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "113",
+            "JavaScript": "return `\r\nHi ${getVariable(\"Request\").Name}\r\n\r\nYêu cầu chuyển văn phòng của bạn đã được duyệt\r\n`;"
+          }
+        },
+        {
+          "$id": "114",
+          "name": "Cc",
+          "expressions": {
+            "$id": "115"
+          }
+        },
+        {
+          "$id": "116",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "117"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "118",
+      "activityId": "b66bb9e4-5d96-4f51-a428-51d406c63270",
+      "type": "Finish",
+      "displayName": "Request is approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "119",
+          "name": "ActivityOutput",
+          "expressions": {
+            "$id": "120",
+            "Literal": "Successful"
+          }
+        },
+        {
+          "$id": "121",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "122"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    }
+  ],
+  "connections": [
+    {
+      "$id": "123",
+      "sourceActivityId": "9a2a66ab-14a9-41c9-b569-7a6f0efe9509",
+      "targetActivityId": "91e4ccc6-d85b-4853-bfe6-53b784dd93b5",
+      "outcome": "Done"
+    },
+    {
+      "$id": "124",
+      "sourceActivityId": "91e4ccc6-d85b-4853-bfe6-53b784dd93b5",
+      "targetActivityId": "7958fdc6-e183-4996-817a-5844f8704f5e",
+      "outcome": "Done"
+    },
+    {
+      "$id": "125",
+      "sourceActivityId": "7958fdc6-e183-4996-817a-5844f8704f5e",
+      "targetActivityId": "3b38c3ac-71f4-43c3-8539-bdb939b05c71",
+      "outcome": "Head of Office"
+    },
+    {
+      "$id": "126",
+      "sourceActivityId": "7958fdc6-e183-4996-817a-5844f8704f5e",
+      "targetActivityId": "7016d87a-9c46-46e9-9fc3-539e51fb89e4",
+      "outcome": "PM"
+    },
+    {
+      "$id": "127",
+      "sourceActivityId": "3b38c3ac-71f4-43c3-8539-bdb939b05c71",
+      "targetActivityId": "408b226f-7ada-4c7d-a101-af4e9993a7f9",
+      "outcome": "Done"
+    },
+    {
+      "$id": "128",
+      "sourceActivityId": "7016d87a-9c46-46e9-9fc3-539e51fb89e4",
+      "targetActivityId": "b1460542-4328-45ff-b45a-cf52ca9cf6dc",
+      "outcome": "Done"
+    },
+    {
+      "$id": "129",
+      "sourceActivityId": "7ed01735-f3e1-4691-b48a-90d31a988419",
+      "targetActivityId": "19671b07-ca36-4576-8a83-220f694f16c9",
+      "outcome": "Done"
+    },
+    {
+      "$id": "130",
+      "sourceActivityId": "408b226f-7ada-4c7d-a101-af4e9993a7f9",
+      "targetActivityId": "642b89d2-bd61-4415-aeea-60d8427bcff4",
+      "outcome": "Reject"
+    },
+    {
+      "$id": "131",
+      "sourceActivityId": "642b89d2-bd61-4415-aeea-60d8427bcff4",
+      "targetActivityId": "7ed01735-f3e1-4691-b48a-90d31a988419",
+      "outcome": "Done"
+    },
+    {
+      "$id": "132",
+      "sourceActivityId": "408b226f-7ada-4c7d-a101-af4e9993a7f9",
+      "targetActivityId": "b0f68c49-b5f1-4430-94df-741d5cf58d30",
+      "outcome": "Approve"
+    },
+    {
+      "$id": "133",
+      "sourceActivityId": "b1460542-4328-45ff-b45a-cf52ca9cf6dc",
+      "targetActivityId": "aeba9d90-adb6-47ec-b300-d5b17d4cad4e",
+      "outcome": "Approve"
+    },
+    {
+      "$id": "134",
+      "sourceActivityId": "b1460542-4328-45ff-b45a-cf52ca9cf6dc",
+      "targetActivityId": "749f5a81-94c6-49d4-be47-5dec43c5df33",
+      "outcome": "Reject"
+    },
+    {
+      "$id": "135",
+      "sourceActivityId": "749f5a81-94c6-49d4-be47-5dec43c5df33",
+      "targetActivityId": "3adf6eea-2f7c-4b6e-b080-c2bab3365288",
+      "outcome": "Done"
+    },
+    {
+      "$id": "136",
+      "sourceActivityId": "3adf6eea-2f7c-4b6e-b080-c2bab3365288",
+      "targetActivityId": "19671b07-ca36-4576-8a83-220f694f16c9",
+      "outcome": "Done"
+    },
+    {
+      "$id": "137",
+      "sourceActivityId": "b0f68c49-b5f1-4430-94df-741d5cf58d30",
+      "targetActivityId": "10bef8ac-2856-4d74-81ba-f1e549794459",
+      "outcome": "Done"
+    },
+    {
+      "$id": "138",
+      "sourceActivityId": "aeba9d90-adb6-47ec-b300-d5b17d4cad4e",
+      "targetActivityId": "10bef8ac-2856-4d74-81ba-f1e549794459",
+      "outcome": "Done"
+    },
+    {
+      "$id": "139",
+      "sourceActivityId": "10bef8ac-2856-4d74-81ba-f1e549794459",
+      "targetActivityId": "fd8a3c11-ee8c-40a9-b521-2e8baa33be8e",
+      "outcome": "Done"
+    },
+    {
+      "$id": "140",
+      "sourceActivityId": "fd8a3c11-ee8c-40a9-b521-2e8baa33be8e",
+      "targetActivityId": "b66bb9e4-5d96-4f51-a428-51d406c63270",
+      "outcome": "Done"
+    }
+  ],
+  "id": "0089aa51-e916-ba2f-35bb-3a04e068f3ad"
+}
