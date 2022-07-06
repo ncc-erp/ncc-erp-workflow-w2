@@ -1,12 +1,15 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
 @using W2.Localization
+@using W2.Permissions
 
 @model W2.Web.Pages.WorkflowDefinitions.IndexModel
 @{
 }
 
 @inject IStringLocalizer<W2Resource> L
+@inject IAuthorizationService AuthorizationService
 
 @section scripts
 {
@@ -19,9 +22,12 @@
             <abp-column size-md="_6">
                 <abp-card-title>@L["Menu:WorkflowManagement:WorkflowDefinitions"]</abp-card-title>
             </abp-column>
-            <abp-column size-md="_6" class="text-end">
-                <abp-button button-type="Primary" icon="plus" id="CreateWorkflowDefinition" text="@L["WorkflowDefinition:Create"]"></abp-button>
-            </abp-column>
+            @if(await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign))
+            {
+                <abp-column size-md="_6" class="text-end">
+                    <abp-button button-type="Primary" icon="plus" id="CreateWorkflowDefinition" text="@L["WorkflowDefinition:Create"]"></abp-button>
+                </abp-column>
+            }            
         </abp-row>
     </abp-card-header>
     <abp-card-body>
