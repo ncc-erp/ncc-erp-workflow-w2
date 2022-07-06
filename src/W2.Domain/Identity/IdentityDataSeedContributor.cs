@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Options;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
-using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.TenantManagement;
 using W2.Permissions;
@@ -17,7 +15,6 @@ namespace W2.Identity
     {
         private readonly IdentityRoleManager _identityRoleManager;
         private readonly IGuidGenerator _guidGenerator;
-        private readonly ICurrentTenant _currentTenant;
         private readonly IPermissionManager _permissionManager;
         private readonly Configurations.TenantConfiguration _tenantConfiguration;
         private readonly ITenantRepository _tenantRepository;
@@ -25,7 +22,6 @@ namespace W2.Identity
 
         public IdentityDataSeedContributor(IdentityRoleManager identityRoleManager,
             IGuidGenerator guidGenerator,
-            ICurrentTenant currentTenant,
             IPermissionManager permissionManager,
             IOptions<Configurations.TenantConfiguration> tenantConfigurationOptions,
             ITenantRepository tenantRepository,
@@ -33,7 +29,6 @@ namespace W2.Identity
         {
             _identityRoleManager = identityRoleManager;
             _guidGenerator = guidGenerator;
-            _currentTenant = currentTenant;
             _permissionManager = permissionManager;
             _tenantConfiguration = tenantConfigurationOptions.Value;
             _tenantRepository = tenantRepository;
@@ -42,14 +37,12 @@ namespace W2.Identity
 
         public async Task SeedAsync(DataSeedContext context)
         {
-            using (_currentTenant.Change(context.TenantId))
+            if (!context.TenantId.HasValue)
             {
-                if (!_currentTenant.IsAvailable)
-                {
-                    await SeedDefaultTenantsAsync();
-                }
-                await SeedDefaultRoleAsync(context);
+                await SeedDefaultTenantsAsync();
             }
+            await SeedDefaultRoleAsync(context);
+            await SeedDesignerRoleAsync(context);
         }
 
         private async Task SeedDefaultTenantsAsync()
@@ -89,6 +82,27 @@ namespace W2.Identity
             await _permissionManager.SetForRoleAsync(RoleNames.DefaultUser, W2Permissions.WorkflowManagementWorkflowDefinitions, true);
             await _permissionManager.SetForRoleAsync(RoleNames.DefaultUser, W2Permissions.WorkflowManagementWorkflowInstances, true);
             await _permissionManager.SetForRoleAsync(RoleNames.DefaultUser, W2Permissions.WorkflowManagementWorkflowInstancesCreate, true);
+        }
+
+        private async Task SeedDesignerRoleAsync(DataSeedContext context)
+        {
+            if (await _identityRoleManager.RoleExistsAsync(RoleNames.Designer))
+            {
+                return;
+            }
+
+            var designerRole = new IdentityRole(
+                _guidGenerator.Create(),
+                RoleNames.Designer,
+                context.TenantId
+            )
+            {
+                IsPublic = true
+            };
+            await _identityRoleManager.CreateAsync(designerRole);
+
+            await _permissionManager.SetForRoleAsync(RoleNames.Designer, W2Permissions.WorkflowManagementWorkflowDefinitions, true);
+            await _permissionManager.SetForRoleAsync(RoleNames.Designer, W2Permissions.WorkflowManagementWorkflowDefinitionsDesign, true);
         }
     }
 }

@@ -48,7 +48,7 @@ using W2.Configurations;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using W2.Permissions;
 using W2.Activities;
-using W2.NotificationHandlers;
+using W2.Scripting;
 
 namespace W2.Web;
 
@@ -245,7 +245,9 @@ public class W2WebModule : AbpModule
             .AddElsaApiEndpoints()
             .AddRazorPages();
 
-        context.Services.AddNotificationHandlersFrom<CustomSignalJavaScriptHandler>();
+        context.Services
+            .AddNotificationHandlersFrom<CustomSignalJavaScriptHandler>()
+            .AddJavaScriptTypeDefinitionProvider<CustomTypeDefinitionProvider>();
 
         Configure<AbpAntiForgeryOptions>(options =>
         {

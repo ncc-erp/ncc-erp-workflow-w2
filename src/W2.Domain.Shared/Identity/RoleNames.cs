@@ -3,5 +3,6 @@
     public class RoleNames
     {
         public const string DefaultUser = "DefaultUser";
+        public const string Designer = "Designer";
     }
 }

@@ -1,35 +1,37 @@
 ﻿using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Signaling.Extensions;
+using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace W2.NotificationHandlers
+namespace W2.Scripting
 {
-    public class CustomSignalJavaScriptHandler : INotificationHandler<EvaluatingJavaScriptExpression>
+    public class CustomSignalJavaScriptHandler : INotificationHandler<EvaluatingJavaScriptExpression>, INotificationHandler<RenderingTypeScriptDefinitions>
     {
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var absoluteUrlProvider = notification.ActivityExecutionContext.GetService<IAbsoluteUrlProvider>();
 
             var engine = notification.Engine;
-            engine.SetValue("workflowSignals", new
-            {
-                W2Consts.WorkflowSignals.PMApproved,
-                W2Consts.WorkflowSignals.PMRejected,
-                W2Consts.WorkflowSignals.HoOApproved,
-                W2Consts.WorkflowSignals.HoORejected,
-            });
+            engine.SetValue("workflowSignals", new WorkflowSignals());
             Func<string, string> getCustomSignalUrl = signal => {
                 var url = $"/Signals?token={notification.ActivityExecutionContext.GenerateSignalToken(signal)}";
                 return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
             };
             engine.SetValue("getCustomSignalUrl", getCustomSignalUrl);
+
+            return Task.CompletedTask;
+        }
+
+        public Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
+        {
+            var output = notification.Output;
+
+            output.AppendLine("declare function getCustomSignalUrl(signal: string): string");
+            output.AppendLine("declare const workflowSignals: WorkflowSignals");
 
             return Task.CompletedTask;
         }
