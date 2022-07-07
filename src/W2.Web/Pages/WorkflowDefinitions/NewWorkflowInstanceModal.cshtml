@@ -37,8 +37,8 @@
                                     <input id="@inputName" name="@inputName" 
                                         type="date" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
-                                case WorkflowInputDefinitionProperyType.JsonObject:
-                                    <textarea id="@inputName" name="@inputName" rows="4"></textarea>
+                                case WorkflowInputDefinitionProperyType.TextMultiLine:
+                                    <textarea id="@inputName" class="form-control" name="@inputName" rows="4" value="@Model.WorkflowInput[propertyDefinition.Name]"></textarea>
                                     break;
                             }
                         </div>

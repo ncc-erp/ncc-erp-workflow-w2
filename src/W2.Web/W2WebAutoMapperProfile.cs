@@ -13,6 +13,8 @@ public class W2WebAutoMapperProfile : Profile
         CreateMap<WorkflowCustomInputPropertyDefinitionViewModel, WorkflowCustomInputPropertyDefinitionDto>();
         CreateMap<DefineWorkflowInputViewModel, WorkflowCustomInputDefinitionDto>()
             .ForMember(d => d.PropertyDefinitions, options => options.MapFrom(s => s.PropertyDefinitionViewModels));
+        CreateMap<WorkflowCustomInputDefinitionDto, DefineWorkflowInputViewModel > ()
+            .ForMember(d => d.PropertyDefinitionViewModels, options => options.MapFrom(s => s.PropertyDefinitions));
         CreateMap<SocialLoginSettingsDto, Pages.SettingManagement.Components.SocialLoginSettingGroup.SocialLoginSettingGroupViewComponent.UpdateSocialLoginSettingsViewModel>();
         CreateMap<CreateWorkflowDefinitionViewModel, CreateWorkflowDefinitionDto>();
     }
