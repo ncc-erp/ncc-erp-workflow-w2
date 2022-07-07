@@ -12,7 +12,7 @@ pool:
 jobs:
   - job: DotNetBuild
     steps:
-      - script: 
+      - script: |
           export PATH=$PATH:/opt/dotnet6/
           cd src/W2.DbMigrator
           dotnet6 publish -c Release
