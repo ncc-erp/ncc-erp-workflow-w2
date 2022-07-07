@@ -32,7 +32,7 @@ jobs:
 
       - script: |
           export PATH=$PATH:/opt/dotnet3/
-          cd src/
+          cd src/W2.Web/
           dotnet3 publish -c Release
         displayName: 'Dotnet Build Host'
 
