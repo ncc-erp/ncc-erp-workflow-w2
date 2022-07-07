@@ -54,10 +54,12 @@
                             {
                                 text: l('WorkflowDefinition:DefineInput'),
                                 action: function (data) {
-                                    defineWorkflowInputModal.open({ workflowDefinitionId: data.record.definitionId });
+                                    defineWorkflowInputModal.open({
+                                        workflowDefinitionId: data.record.definitionId
+                                    });
                                 },
                                 visible: function (record) {
-                                    return abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design") && !!!record.inputDefinition;
+                                    return abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design");
                                 }
                             },
                             {

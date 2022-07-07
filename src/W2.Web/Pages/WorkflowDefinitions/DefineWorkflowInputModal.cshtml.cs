@@ -22,19 +22,29 @@ namespace W2.Web.Pages.WorkflowDefinitions
 
         public async Task OnGetAsync(string workflowDefinitionId)
         {
-            WorkflowInputDefinition = new DefineWorkflowInputViewModel { WorkflowDefinitionId = workflowDefinitionId };
-            WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
+            var workflowDefinitionSummary = await _workflowDefinitionAppService.GetByDefinitionIdAsync(workflowDefinitionId);
+            WorkflowInputDefinition = new DefineWorkflowInputViewModel
             {
-                Name = "",
-                Type = WorkflowInputDefinitionProperyType.Text
-            });
-
-            await _workflowDefinitionAppService.GetByDefinitionIdAsync(workflowDefinitionId);
+                Id = workflowDefinitionSummary.InputDefinition?.Id,
+                WorkflowDefinitionId = workflowDefinitionId
+            };
+            if (workflowDefinitionSummary.InputDefinition == null)
+            {
+                WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
+                {
+                    Name = "",
+                    Type = WorkflowInputDefinitionProperyType.Text
+                });
+            }
+            else
+            {
+                WorkflowInputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinitionDto, DefineWorkflowInputViewModel>(workflowDefinitionSummary.InputDefinition);
+            }
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await _workflowDefinitionAppService.CreateWorkflowInputDefinitionAsync(
+            await _workflowDefinitionAppService.SaveWorkflowInputDefinitionAsync(
                 ObjectMapper.Map<DefineWorkflowInputViewModel, WorkflowCustomInputDefinitionDto>(WorkflowInputDefinition)
             );
 

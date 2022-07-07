@@ -68,15 +68,32 @@ namespace W2.WorkflowDefinitions
                 throw new UserFriendlyException(L["Exception:WorkflowDefinitionNotFound"]);
             }
 
-            return ObjectMapper.Map<WorkflowDefinition, WorkflowDefinitionSummaryDto>(workflowDefinition);
+            var workflowDefinitionDto = ObjectMapper.Map<WorkflowDefinition, WorkflowDefinitionSummaryDto>(workflowDefinition);
+            var inputDefinition = await _workflowCustomInputDefinitionRepository
+                .FindAsync(x => x.WorkflowDefinitionId == workflowDefinition.DefinitionId);
+            if (inputDefinition != null)
+            {
+                workflowDefinitionDto.InputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>(inputDefinition);
+            }
+
+            return workflowDefinitionDto;
         }
 
         [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
-        public async Task CreateWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)
+        public async Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)
         {
-            await _workflowCustomInputDefinitionRepository.InsertAsync(
-                ObjectMapper.Map<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>(input)
-            );
+            if (input.Id == default)
+            {
+                await _workflowCustomInputDefinitionRepository.InsertAsync(
+                    ObjectMapper.Map<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>(input)
+                );
+            }
+            else
+            {
+                var inputDefinition = await _workflowCustomInputDefinitionRepository.GetAsync(input.Id);
+                ObjectMapper.Map(input, inputDefinition);
+                await _workflowCustomInputDefinitionRepository.UpdateAsync(inputDefinition);
+            }
         }
 
         [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]

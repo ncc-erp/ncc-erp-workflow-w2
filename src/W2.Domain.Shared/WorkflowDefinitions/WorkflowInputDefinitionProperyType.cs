@@ -8,7 +8,6 @@ namespace W2.WorkflowDefinitions
     {
         Text,
         Numeric,
-        JsonObject,
         DateTime,
         DropdownList,
         TextMultiLine

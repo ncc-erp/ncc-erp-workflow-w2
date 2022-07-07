@@ -7,6 +7,12 @@
             e.preventDefault();
             addPropertyElements();
         });
+
+        $modal.find('#ClearProperties').click(function (e) {
+            e.preventDefault();
+            console.log("123");
+            $($modal.find('#PropertiesContainer')).empty();
+        });
     };
 
     function addPropertyElements() {
@@ -38,8 +44,9 @@
                             aria-invalid="false">
                             <option selected="selected" value="Text">Text</option>
                             <option value="Numeric">Numeric</option>
-                            <option value="JsonObject">JsonObject</option>
                             <option value="DateTime">DateTime</option>
+                            <option value="DropdownList">DropdownList</option>
+                            <option value="TextMultiLine">TextMultiLine</option>
                         </select>
                         <span class="text-danger field-validation-valid"
                             data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].Type" data-valmsg-replace="true"></span>
