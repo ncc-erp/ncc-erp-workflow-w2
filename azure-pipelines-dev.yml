@@ -31,9 +31,9 @@ jobs:
         displayName: 'Publish Artifacts Migrator'
 
       - script: |
-          export PATH=$PATH:/opt/dotnet3/
+          export PATH=$PATH:/opt/dotnet6/
           cd src/W2.Web/
-          dotnet3 publish -c Release
+          dotnet6 publish -c Release
         displayName: 'Dotnet Build Host'
 
       - script: |
