@@ -26,7 +26,7 @@ jobs:
       - task: PublishBuildArtifacts@1
         inputs:
           PathtoPublish: 'src/W2.DbMigrator/bin/Release/net6.0/publish/backend_migrator.zip'
-          ArtifactName: 'dev-dotnet-migrator-project'
+          ArtifactName: 'dev-dotnet-migrator-w2'
           publishLocation: 'Container'
         displayName: 'Publish Artifacts Migrator'
 
@@ -44,6 +44,6 @@ jobs:
       - task: PublishBuildArtifacts@1
         inputs:
           PathtoPublish: 'src/W2.Web/bin/Release/net6.0/publish/backend_publish.zip'
-          ArtifactName: 'dev-dotnet-host-project'
+          ArtifactName: 'dev-dotnet-host-w2'
           publishLocation: 'Container'
         displayName: 'Publish Artifacts Host'
