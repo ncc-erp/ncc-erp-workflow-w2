@@ -7,4 +7,5 @@ namespace W2.Web;
 public class W2BrandingProvider : DefaultBrandingProvider
 {
     public override string AppName => "W2";
+    public override string LogoUrl => "/logo.png";
 }

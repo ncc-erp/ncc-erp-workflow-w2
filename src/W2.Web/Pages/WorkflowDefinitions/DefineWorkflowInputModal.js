@@ -10,10 +10,13 @@
 
         $modal.find('#ClearProperties').click(function (e) {
             e.preventDefault();
-            console.log("123");
-            $($modal.find('#PropertiesContainer')).empty();
+            clearProperties($modal);
         });
     };
+
+    function clearProperties(modal) {
+        modal.find('#PropertiesContainer').empty();
+    }
 
     function addPropertyElements() {
         let count = $('.property-wrapper').length;

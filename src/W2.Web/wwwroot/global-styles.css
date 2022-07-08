@@ -1,1 +1,17 @@
 /* Your Global Styles */
+#main-navbar {
+    background-color: #222834 !important;
+}
+
+.navbar-brand img {
+    width: 32px;
+}
+
+.brand-text {
+    font-size: 1.63625rem;
+    line-height: 1.2;
+    font-weight: 600;
+    margin-bottom: 0;
+    color: rgba(255, 255, 255, 0.55);
+    vertical-align: middle;
+}
