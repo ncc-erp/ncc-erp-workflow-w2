@@ -39,7 +39,7 @@
                                         type="date" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.TextMultiLine:
-                                    <textarea id="@inputId" name="@inputName" hidden="hidden"/>
+                                    <textarea id="@inputId" name="@inputName" hidden="hidden"></textarea>
                                     <div id="container_@propertyDefinition.Name" style="height:200px;"></div>
                                     <script>
                                         const editor = new Quill('#container_@propertyDefinition.Name', {
