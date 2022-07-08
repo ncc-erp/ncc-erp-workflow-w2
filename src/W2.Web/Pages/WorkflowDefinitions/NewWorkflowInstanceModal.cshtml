@@ -19,6 +19,7 @@
             {
                 var propertyDefinition = Model.PropertyDefinitionViewModels[i];
                 var inputName = $"WorkflowInput[{propertyDefinition.Name}]";
+                var inputId = $"input_{propertyDefinition.Name}";
                 <div class="row">
                     <div class="col">
                         <div class="mb-3">
@@ -26,19 +27,37 @@
                             @switch (propertyDefinition.Type)
                             {
                                 case WorkflowInputDefinitionProperyType.Text:
-                                    <input id="@inputName" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" 
                                         type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.Numeric:
-                                    <input id="@inputName" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" 
                                         type="number" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.DateTime:
-                                    <input id="@inputName" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" 
                                         type="date" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.TextMultiLine:
-                                    <textarea id="@inputName" class="form-control" name="@inputName" rows="4" value="@Model.WorkflowInput[propertyDefinition.Name]"></textarea>
+                                    <textarea id="@inputId" name="@inputName" hidden="hidden"/>
+                                    <div id="container_@propertyDefinition.Name" style="height:200px;"></div>
+                                    <script>
+                                        const editor = new Quill('#container_@propertyDefinition.Name', {
+                                            modules: {
+                                                toolbar: [
+                                                    [{ 'font': [] }],
+                                                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                                                    ['bold', 'italic', 'underline', 'strike'],
+                                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                                    ['image', 'code-block']
+                                                ]
+                                            },
+                                            theme: 'snow'
+                                        });
+                                        editor.on('text-change', function() {
+                                            $('#@inputId').val(editor.root.innerHTML);
+                                        });
+                                    </script>
                                     break;
                             }
                         </div>

@@ -5,15 +5,19 @@
 @using W2.Permissions
 
 @model W2.Web.Pages.WorkflowDefinitions.IndexModel
-@{
-}
 
 @inject IStringLocalizer<W2Resource> L
 @inject IAuthorizationService AuthorizationService
 
+@section styles 
+{
+    <abp-style src="/quill/quill.snow.min.css" />
+    <abp-style src="/quill/quill.bubble.min.css" />
+}
 @section scripts
 {
     <abp-script src="/Pages/WorkflowDefinitions/Index.js" />
+    <abp-script src="/quill/quill.min.js" />
 }
 
 <abp-card>
