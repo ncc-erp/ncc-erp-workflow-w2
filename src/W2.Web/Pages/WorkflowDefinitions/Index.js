@@ -17,6 +17,7 @@
             searching: false,
             paging: false,
             scrollX: true,
+            ordering: false,
             ajax: abp.libs.datatables.createAjax(w2.workflowDefinitions.workflowDefinition.listAll),
             columnDefs: [
                 {
@@ -36,63 +37,82 @@
                     data: "isPublished",
                 },
                 {
-                    title: l('Actions'),
+                    title: "",
                     rowAction: {
-                        items: [
-                            {
-                                text: l('WorkflowDefinition:NewWorkflowInstance'),
-                                action: function (data) {
-                                    newWorkflowInstanceModal.open({
-                                        workflowDefinitionId: data.record.definitionId,
-                                        propertiesDefinitionJson: data.record.inputDefinition
-                                            ? JSON.stringify(data.record.inputDefinition.propertyDefinitions)
-                                            : null
-                                    });
-                                },
-                                visible: abp.auth.isGranted("WorkflowManagement.WorkflowInstances.Create")
-                            },
-                            {
-                                text: l('WorkflowDefinition:DefineInput'),
-                                action: function (data) {
-                                    defineWorkflowInputModal.open({
-                                        workflowDefinitionId: data.record.definitionId
-                                    });
-                                },
-                                visible: function (record) {
-                                    return abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design");
-                                }
-                            },
-                            {
-                                text: l('WorkflowDefinition:OpenDesigner'),
-                                action: function (data) {
-                                    window.open(abp.appPath + 'WorkflowDefinitions/Designer?workflowDefinitionId=' + data.record.definitionId);
-                                },
-                                visible: abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design")
-                            },
-                            {
-                                text: l('Delete'),
-                                action: function (data) {
-                                    w2.workflowDefinitions.workflowDefinition
-                                        .delete(data.record.definitionId)
-                                        .then(function () {
-                                            dataTable.ajax.reload();
-                                            abp.notify.success(l('SuccessfullyDeleted'));
-                                        });
-                                },
-                                confirmMessage: function (data) {
-                                    return l(
-                                        'WorkflowDefinition:DeleteConfirmationMessage',
-                                        data.record.displayName
-                                    );
-                                },
-                                visible: abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design")
-                            }
-                        ]
+                        items: buildRowActionItems()
                     }
                 }
             ]
         })
     );
+
+    function buildRowActionItems() {
+        const items = [];
+        if (abp.auth.isGranted("WorkflowManagement.WorkflowInstances.Create")) {
+            items.push(
+                {
+                    text: l('WorkflowDefinition:NewWorkflowInstance'),
+                    action: function (data) {
+                        newWorkflowInstanceModal.open({
+                            workflowDefinitionId: data.record.definitionId,
+                            propertiesDefinitionJson: data.record.inputDefinition
+                                ? JSON.stringify(data.record.inputDefinition.propertyDefinitions)
+                                : null
+                        });
+                    },
+                    visible: abp.auth.isGranted("WorkflowManagement.WorkflowInstances.Create")
+                }
+            );
+        }
+        const hasDesignWorkflowPermission = abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design");
+        if (hasDesignWorkflowPermission) {
+            items.push(...
+                [
+                    {
+                        text: l('WorkflowDefinition:DefineInput'),
+                        action: function (data) {
+                            defineWorkflowInputModal.open({
+                                workflowDefinitionId: data.record.definitionId
+                            });
+                        },
+                        visible: hasDesignWorkflowPermission
+                    },
+                    {
+                        text: l('WorkflowDefinition:OpenDesigner'),
+                        action: function (data) {
+                            window.open(abp.appPath + 'WorkflowDefinitions/Designer?workflowDefinitionId=' + data.record.definitionId);
+                        },
+                        visible: hasDesignWorkflowPermission
+                    },
+                    {
+                        text: l('Delete'),
+                        action: function (data) {
+                            w2.workflowDefinitions.workflowDefinition
+                                .delete(data.record.definitionId)
+                                .then(function () {
+                                    dataTable.ajax.reload();
+                                    abp.notify.success(l('SuccessfullyDeleted'));
+                                });
+                        },
+                        confirmMessage: function (data) {
+                            return l(
+                                'WorkflowDefinition:DeleteConfirmationMessage',
+                                data.record.displayName
+                            );
+                        },
+                        visible: hasDesignWorkflowPermission
+                    }
+                ]
+            );
+        }
+
+        if (items.length == 1) {
+            items[0].displayNameHtml = true;
+            items[0].text = `<i class="fa fa-plus" title="${l('WorkflowDefinition:NewWorkflowInstance')}"></i>`;
+        }
+
+        return items;
+    }
 
     defineWorkflowInputModal.onResult(function () {
         dataTable.ajax.reload();
