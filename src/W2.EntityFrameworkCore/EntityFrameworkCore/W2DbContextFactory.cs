@@ -17,7 +17,7 @@ public class W2DbContextFactory : IDesignTimeDbContextFactory<W2DbContext>
         var configuration = BuildConfiguration();
 
         var builder = new DbContextOptionsBuilder<W2DbContext>()
-            .UseSqlServer(configuration.GetConnectionString("Default"));
+            .UseNpgsql(configuration.GetConnectionString("Default"));
 
         return new W2DbContext(builder.Options);
     }

@@ -1,10 +1,10 @@
 {
   "$id": "1",
-  "definitionId": "ea0360da-8d19-1acf-616c-3a04dfa54ac6",
-  "versionId": "0089aa51-e916-ba2f-35bb-3a04e068f3ad",
+  "definitionId": "00cbaa80-4d09-9392-bee4-3a04e460dce9",
+  "versionId": "eba06e7d-4c97-83fa-006f-3a04e460dce8",
   "name": "ChangeOfficeWorkflow",
   "displayName": "Change Office",
-  "version": 5,
+  "version": 1,
   "variables": {
     "$id": "2",
     "data": {}
@@ -19,7 +19,7 @@
   "isPublished": true,
   "isLatest": true,
   "tag": "change-office",
-  "createdAt": "2022-07-05T12:00:54.7012138Z",
+  "createdAt": "2022-07-06T06:30:33.4510577Z",
   "activities": [
     {
       "$id": "4",
@@ -740,5 +740,5 @@
       "outcome": "Done"
     }
   ],
-  "id": "0089aa51-e916-ba2f-35bb-3a04e068f3ad"
+  "id": "eba06e7d-4c97-83fa-006f-3a04e460dce8"
 }
