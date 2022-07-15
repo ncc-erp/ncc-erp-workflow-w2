@@ -119,6 +119,7 @@ namespace W2.Web.Pages.Account
             await IdentityOptions.SetAsync();
 
             var user = new IdentityUser(GuidGenerator.Create(), emailAddress, emailAddress, CurrentTenant.Id);
+            user.Name = externalLoginInfo.Principal.Identities.First().Name;
 
             (await UserManager.CreateAsync(user)).CheckErrors();
             (await UserManager.AddDefaultRolesAsync(user)).CheckErrors();

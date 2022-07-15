@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Threading.Tasks;
 using W2.Web.Pages.WorkflowDefinitions.Models;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 using W2.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using W2.ExternalResources;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace W2.Web.Pages.WorkflowDefinitions
 {
@@ -16,10 +17,13 @@ namespace W2.Web.Pages.WorkflowDefinitions
     public class NewWorkflowInstanceModalModel : W2PageModel
     {
         private readonly IWorkflowInstanceAppService _workflowInstanceAppService;
+        private readonly IExternalResourceAppService _externalResourceAppService;
 
-        public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService)
+        public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService, 
+            IExternalResourceAppService externalResourceAppService)
         {
             _workflowInstanceAppService = workflowInstanceAppService;
+            _externalResourceAppService = externalResourceAppService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -30,13 +34,26 @@ namespace W2.Web.Pages.WorkflowDefinitions
         [BindProperty]
         [FromForm]
         public Dictionary<string, string> WorkflowInput { get; set; } = new Dictionary<string, string>();
+        public List<SelectListItem> UserSelectListItems { get; set; } = new List<SelectListItem>();
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
             PropertyDefinitionViewModels = JsonConvert.DeserializeObject<List<WorkflowCustomInputPropertyDefinitionViewModel>>(PropertiesDefinitionJson);
             foreach (var propertyDefinition in PropertyDefinitionViewModels)
             {
                 WorkflowInput.Add(propertyDefinition.Name, null);
+            }
+
+            if (PropertyDefinitionViewModels.Any(x => x.Type == WorkflowInputDefinitionProperyType.UserList))
+            {
+                var users = await _externalResourceAppService.GetAllUsersInfoAsync();
+                UserSelectListItems = users
+                    .Select(x => new SelectListItem
+                    {
+                        Text = x.Name,
+                        Value = x.Email
+                    })
+                    .ToList();
             }
         }
 

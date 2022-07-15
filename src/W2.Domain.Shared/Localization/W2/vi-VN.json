@@ -39,6 +39,8 @@
     "Permissions:WorkflowInstances:Create": "Create",
     "Permissions:WorkflowInstances:ViewAll": "View All",
     "Permissions:Settings": "Settings",
-    "Permissions:Settings:SocialLoginSettings": "Social Login Settings"
+    "Permissions:Settings:SocialLoginSettings": "Social Login Settings",
+    "Email:NewInstanceCreatedMessage": "Your request has been sent for approval.",
+    "Email:NewInstanceCreatedSubject": "Request has been sent"
   }
 }

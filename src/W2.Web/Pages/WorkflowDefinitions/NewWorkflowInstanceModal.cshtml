@@ -38,7 +38,7 @@
                                     <input id="@inputId" name="@inputName" 
                                         type="date" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
-                                case WorkflowInputDefinitionProperyType.TextMultiLine:
+                                case WorkflowInputDefinitionProperyType.RichText:
                                     <textarea id="@inputId" name="@inputName" hidden="hidden"></textarea>
                                     <div id="container_@propertyDefinition.Name" style="height:200px;"></div>
                                     <script>
@@ -59,6 +59,21 @@
                                                 $('#@inputId').val(editor.root.innerHTML);
                                             });
                                         }
+                                    </script>
+                                    break;
+                                case WorkflowInputDefinitionProperyType.UserList:
+                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                        @foreach(var item in Model.UserSelectListItems)
+                                        {
+                                            <option value="@item.Value">@item.Text (@item.Value)</option>
+                                        }
+                                    </select>
+                                    <script type="text/javascript">
+                                    {
+                                        $('#@inputId').select2({
+                                            dropdownParent: $('#@inputId').parent()
+                                        });
+                                    }
                                     </script>
                                     break;
                             }

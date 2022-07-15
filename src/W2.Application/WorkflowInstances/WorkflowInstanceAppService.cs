@@ -3,6 +3,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -15,8 +16,11 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Emailing;
+using Volo.Abp.TextTemplating;
 using W2.Permissions;
 using W2.Specifications;
+using W2.Templates;
 
 namespace W2.WorkflowInstances
 {
@@ -29,13 +33,17 @@ namespace W2.WorkflowInstances
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
         private readonly IWorkflowInstanceDeleter _workflowInstanceDeleter;
+        private readonly IEmailSender _emailSender;
+        private readonly ITemplateRenderer _templateRenderer;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
-            IWorkflowInstanceDeleter workflowInstanceDeleter)
+            IWorkflowInstanceDeleter workflowInstanceDeleter,
+            IEmailSender emailSender,
+            ITemplateRenderer templateRenderer)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -43,6 +51,8 @@ namespace W2.WorkflowInstances
             _workflowDefinitionStore = workflowDefinitionStore;
             _canceller = canceller;
             _workflowInstanceDeleter = workflowInstanceDeleter;
+            _emailSender = emailSender;
+            _templateRenderer = templateRenderer;
         }
 
         public async Task CancelAsync(string id)
@@ -73,7 +83,11 @@ namespace W2.WorkflowInstances
             var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
             
             var instance = executionResult.WorkflowInstance;
-            var workflowInstanceStarter = new WorkflowInstanceStarter { WorkflowInstanceId = instance.Id };
+            var workflowInstanceStarter = new WorkflowInstanceStarter 
+            { 
+                WorkflowInstanceId = instance.Id,
+                Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
+            };
             
             await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
 
@@ -81,6 +95,8 @@ namespace W2.WorkflowInstances
             {
                 throw new UserFriendlyException(L["Exception:WorkflowInstanceExecutionFailed"]);
             }
+
+            await SendNewInstanceCreatedEmail();
 
             return instance.Id;
         }
@@ -157,6 +173,23 @@ namespace W2.WorkflowInstances
             }
 
             return new PagedResultDto<WorkflowInstanceDto>(instanceDtos.Count, instanceDtos);
+        }
+
+        private async Task SendNewInstanceCreatedEmail()
+        {
+            var body = await _templateRenderer.RenderAsync(
+                CustomTemplateNames.NewInstanceCreatedEmail,
+                new
+                {
+                    Name = CurrentUser.Name
+                }
+            );
+
+            await _emailSender.SendAsync(
+                CurrentUser.Email,
+                L["Email:NewInstanceCreatedSubject"],
+                body
+            );
         }
     }
 }

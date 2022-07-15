@@ -1,11 +1,15 @@
 ﻿using Volo.Abp.Account;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
+using Refit;
 using Volo.Abp.Modularity;
 using Volo.Abp.ObjectExtending;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using W2.ExternalResources;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace W2;
 
@@ -24,5 +28,15 @@ public class W2ApplicationContractsModule : AbpModule
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         W2DtoExtensions.Configure();
+    }
+
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+        //TODO: Config hrm client
+        //var configuration = context.Services.GetConfiguration();
+        //context.Services
+        //    .AddRefitClient<IHrmClient>()
+        //    .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]));
+        context.Services.AddTransient<IHrmClient, DummyHrmClient>();
     }
 }

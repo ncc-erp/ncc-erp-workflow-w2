@@ -92,6 +92,7 @@ public class W2DbContext :
         {
             b.ToTable("WorkflowInstanceStarters");
             b.Property(x => x.WorkflowInstanceId).IsRequired();
+            b.Property(x => x.Input).HasConversion(new ElsaEFJsonValueConverter<Dictionary<string, string>>(), ValueComparer.CreateDefault(typeof(Dictionary<string, string>), false));
             b.HasIndex(x => x.WorkflowInstanceId);
         });
 

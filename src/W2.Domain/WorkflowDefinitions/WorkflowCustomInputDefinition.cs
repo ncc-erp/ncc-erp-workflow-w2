@@ -5,7 +5,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace W2.WorkflowDefinitions
 {
-    public class WorkflowCustomInputDefinition : CreationAuditedAggregateRoot<Guid>, IMultiTenant
+    public class WorkflowCustomInputDefinition : CreationAuditedEntity<Guid>, IMultiTenant
     {
         public string WorkflowDefinitionId { get; set; }
         public ICollection<WorkflowCustomInputPropertyDefinition> PropertyDefinitions { get; set; } = new List<WorkflowCustomInputPropertyDefinition>();

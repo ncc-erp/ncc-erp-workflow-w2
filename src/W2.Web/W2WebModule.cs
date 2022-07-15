@@ -192,6 +192,11 @@ public class W2WebModule : AbpModule
                 options.FileSets.ReplaceEmbeddedByPhysical<W2WebModule>(hostingEnvironment.ContentRootPath);
             });
         }
+
+        Configure<AbpVirtualFileSystemOptions>(options =>
+        {
+            options.FileSets.AddEmbedded<W2WebModule>("W2.Web");
+        });
     }
 
     private void ConfigureLocalizationServices()

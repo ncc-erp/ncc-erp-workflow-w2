@@ -23,11 +23,19 @@
                     for (int i = 0; i < Model.WorkflowInputDefinition.PropertyDefinitionViewModels.Count; i++)
                     {
                         <div class="row property-wrapper">
-                            <div class="col">
-                                <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Name" />
+                            <div class="col-5">
+                                <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Name" class="property-name" />
+                            </div>
+                            <div class="col-5">
+                                <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Type" class="property-type" />
                             </div>
                             <div class="col">
-                                <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Type" />
+                                <div class="mb-3">
+                                    <label class="form-label" style="width:100%;">&nbsp;</label>
+                                    <button class="remove-row btn btn-danger" type="button">
+                                        <i class="fa fa-minus"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     }
@@ -35,17 +43,25 @@
                 else
                 {
                     <div class="row property-wrapper">
-                        <div class="col">
-                            <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Name" />
+                        <div class="col-5">
+                            <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Name" class="property-name" />
+                        </div>
+                        <div class="col-5">
+                            <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Type" class="property-type" />
                         </div>
                         <div class="col">
-                            <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Type" />
+                            <div class="mb-3">
+                                <label class="form-label" style="width:100%;">&nbsp;</label>
+                                <button class="remove-row btn btn-danger" type="button">
+                                    <i class="fa fa-minus"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 }
             </div>
             <abp-button id="AddProperty" button-type="Primary" icon="fa-solid fa-plus" text="Add Property"></abp-button>
-            <abp-button id="ClearProperties" button-type="Primary" icon="fa-solid fa-minus" style="margin-left:10px;" text="Clear All"></abp-button>
+            <abp-button id="ClearProperties" button-type="Danger" icon="fa-solid fa-minus" style="margin-left:10px;" text="Clear All"></abp-button>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>

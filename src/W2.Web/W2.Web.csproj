@@ -22,6 +22,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="EmailTemplates\NewInstanceCreatedEmail.tpl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="EmailTemplates\*.tpl" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Pages\**\*.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
