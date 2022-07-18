@@ -53,7 +53,18 @@ namespace W2.WorkflowDefinitions
                 {
                     continue;
                 }
-                summary.InputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>(inputDefinition);
+                try
+                {
+                    summary.InputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>(inputDefinition);
+                }
+                catch (ArgumentException)
+                {
+                    summary.InputDefinition = null;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
             }
 
             return new PagedResultDto<WorkflowDefinitionSummaryDto>(workflowDefinitionSummaries.Count, workflowDefinitionSummaries);
