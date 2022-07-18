@@ -48,6 +48,11 @@ namespace W2.Web.Pages.WorkflowDefinitions
                 }
                 catch (System.Exception ex)
                 {
+                    WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
+                    {
+                        Name = "",
+                        Type = WorkflowInputDefinitionProperyType.Text
+                    });
                     _logger.LogException(ex);
                 }
             }
