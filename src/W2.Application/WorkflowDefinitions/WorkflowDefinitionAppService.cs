@@ -45,7 +45,7 @@ namespace W2.WorkflowDefinitions
             var inputDefinitions = await _workflowCustomInputDefinitionRepository
                 .GetListAsync(x => definitionIds.Contains(x.WorkflowDefinitionId));
             var workflowDefinitionSummaries = ObjectMapper.Map<List<WorkflowDefinition>, List<WorkflowDefinitionSummaryDto>>(workflowDefinitions);
-            
+
             foreach (var summary in workflowDefinitionSummaries)
             {
                 var inputDefinition = inputDefinitions.FirstOrDefault(x => x.WorkflowDefinitionId == summary.DefinitionId);
@@ -53,18 +53,7 @@ namespace W2.WorkflowDefinitions
                 {
                     continue;
                 }
-                try
-                {
-                    summary.InputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>(inputDefinition);
-                }
-                catch (ArgumentException)
-                {
-                    summary.InputDefinition = null;
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                summary.InputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>(inputDefinition);
             }
 
             return new PagedResultDto<WorkflowDefinitionSummaryDto>(workflowDefinitionSummaries.Count, workflowDefinitionSummaries);

@@ -17,17 +17,14 @@ namespace W2.Activities
         Outcomes = new[] { OutcomeNames.Done, "Unexpected Error" })]
     public class CustomEmail : SendEmail
     {
-        private readonly SmtpOptions _options;
-
         public CustomEmail(ISmtpService smtpService, 
             IOptions<SmtpOptions> options, 
             IHttpClientFactory httpClientFactory, 
             IContentSerializer contentSerializer) 
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
-            _options = options.Value;
         }
 
-        public new string From => _options.DefaultSender;
+        public new string From => string.Empty;
     }
 }
