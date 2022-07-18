@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using W2.Permissions;
 using W2.Web.Pages.WorkflowDefinitions.Models;
@@ -11,10 +12,13 @@ namespace W2.Web.Pages.WorkflowDefinitions
     public class DefineWorkflowInputModalModel : W2PageModel
     {
         private readonly IWorkflowDefinitionAppService _workflowDefinitionAppService;
+        private readonly ILogger<DefineWorkflowInputModalModel> _logger;
 
-        public DefineWorkflowInputModalModel(IWorkflowDefinitionAppService workflowDefinitionAppService)
+        public DefineWorkflowInputModalModel(IWorkflowDefinitionAppService workflowDefinitionAppService, 
+            ILogger<DefineWorkflowInputModalModel> logger)
         {
             _workflowDefinitionAppService = workflowDefinitionAppService;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -38,7 +42,14 @@ namespace W2.Web.Pages.WorkflowDefinitions
             }
             else
             {
-                WorkflowInputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinitionDto, DefineWorkflowInputViewModel>(workflowDefinitionSummary.InputDefinition);
+                try
+                {
+                    WorkflowInputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinitionDto, DefineWorkflowInputViewModel>(workflowDefinitionSummary.InputDefinition);
+                }
+                catch (System.Exception ex)
+                {
+                    _logger.LogException(ex);
+                }
             }
         }
 
