@@ -79,16 +79,16 @@ namespace W2.WorkflowInstances
             }
 
             var httpRequestModel = GetHttpRequestModel(nameof(HttpMethod.Post), input.Input);
-            
+
             var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
-            
+
             var instance = executionResult.WorkflowInstance;
-            var workflowInstanceStarter = new WorkflowInstanceStarter 
-            { 
+            var workflowInstanceStarter = new WorkflowInstanceStarter
+            {
                 WorkflowInstanceId = instance.Id,
                 Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
             };
-            
+
             await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
 
             if (!executionResult.Executed)
@@ -141,7 +141,7 @@ namespace W2.WorkflowInstances
                 specification = specification.WithWorkflowDefinition(input.WorkflowDefinitionId);
             }
             var orderBySpecification = OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!);
-            
+
             var instances = (await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification)).ToList();
             var instanceDtos = ObjectMapper.Map<List<WorkflowInstance>, List<WorkflowInstanceDto>>(instances);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
@@ -169,7 +169,7 @@ namespace W2.WorkflowInstances
                     continue;
                 }
                 instanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
-                
+
             }
 
             return new PagedResultDto<WorkflowInstanceDto>(instanceDtos.Count, instanceDtos);
@@ -181,7 +181,8 @@ namespace W2.WorkflowInstances
                 CustomTemplateNames.NewInstanceCreatedEmail,
                 new
                 {
-                    Name = CurrentUser.Name
+                    Name = CurrentUser.Name,
+                    Message = string.Format(L["Email:NewInstanceCreatedMessage"])
                 }
             );
 
@@ -190,6 +191,7 @@ namespace W2.WorkflowInstances
                 L["Email:NewInstanceCreatedSubject"],
                 body
             );
+
         }
     }
 }

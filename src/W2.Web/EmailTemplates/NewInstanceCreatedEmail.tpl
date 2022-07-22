@@ -6,6 +6,6 @@
 <body>
     Hi {{model.name}},
     <br/>
-    {{L "Email:NewInstanceCreatedMessage"}}
+    {{model.body}}
 </body>
 </html>
