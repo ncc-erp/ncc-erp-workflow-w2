@@ -4,19 +4,23 @@
 @using Microsoft.Extensions.Hosting
 @using Volo.Abp.Account.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Theming
+@using W2.Localization
 @using W2.Web.Pages.Account
 @inject IHtmlLocalizer<AccountResource> L
 @inject IThemeManager ThemeManager
 @inject IWebHostEnvironment HostingEnvironment
+@inject IHtmlLocalizer<W2Resource> W2L
+
 @model CustomLoginModel
 
 @{
+    var a = Model;
     Layout = ThemeManager.CurrentTheme.GetLayout(StandardLayouts.Account);
 }
 
 <div class="card mt-3 shadow-sm rounded">
     <div class="card-body p-5">
-        <h4>@L["Login"]</h4>
+        <h4 class="text-center">@W2L["Login"]</h4>
         @if (HostingEnvironment.IsDevelopment() && Model.EnableLocalLogin)
         {
             <form method="post" class="mt-4">
@@ -55,8 +59,9 @@
                 @foreach (var provider in Model.VisibleExternalProviders)
                 {
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg mt-4" name="provider"
+                        <button type="submit" class="btn btn-outline-primary btn-lg mt-4" name="provider"
                             value="@provider.AuthenticationScheme" title="@L["LogInUsingYourProviderAccount", provider.DisplayName]">
+                            <img src="~/images/google-logo.png" />
                             Login with @provider.DisplayName
                         </button>
                     </div>
