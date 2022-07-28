@@ -13,6 +13,8 @@ namespace W2.WorkflowDefinitions
         [Display(Name = "Rich Text")]
         RichText,
         [Display(Name = "User List")]
-        UserList
+        UserList,     
+        [Display(Name = "My Project")]
+        MyProject
     }
 }

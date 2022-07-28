@@ -76,6 +76,21 @@
                                     }
                                     </script>
                                     break;
+                                case WorkflowInputDefinitionProperyType.MyProject:
+                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                        @foreach(var item in Model.ProjectSelectListItems)
+                                        {
+                                            <option value="@item.Value">@item.Text (@item.Value)</option>
+                                        }
+                                    </select>
+                                    <script type="text/javascript">
+                                    {
+                                        $('#@inputId').select2({
+                                            dropdownParent: $('#@inputId').parent()
+                                        });
+                                    }
+                                    </script>
+                                    break;
                             }
                         </div>
                     </div>

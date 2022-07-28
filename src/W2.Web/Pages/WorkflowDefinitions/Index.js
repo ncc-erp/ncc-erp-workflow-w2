@@ -342,33 +342,40 @@ $(function () {
             scrollX: true,
             ordering: false,
             ajax: abp.libs.datatables.createAjax(w2.workflowDefinitions.workflowDefinition.listAll),
-            columnDefs: [
-                {
-                    title: l('WorkflowDefinition:Name'),
-                    data: "name"
-                },
-                {
-                    title: l('WorkflowDefinition:DisplayName'),
-                    data: "displayName",
-                },
-                {
-                    title: l('WorkflowDefinition:Version'),
-                    data: "version"
-                },
-                {
-                    title: l('WorkflowDefinition:IsPublished'),
-                    data: "isPublished",
-                },
-                {
-                    title: "",
-                    rowAction: {
-                        items: buildRowActionItems(),
-                        multiple: true
-                    }
-                }
-            ]
+            columnDefs: buildColumn()
         })
     );
+
+    function buildColumn() {
+        const hasDesignWorkflowPermission = abp.auth.isGranted("WorkflowManagement.WorkflowDefinitions.Design")
+        var items = []
+        if (hasDesignWorkflowPermission)
+            items.push({
+                title: l('WorkflowDefinition:Name'),
+                data: "name"
+            })
+        items.push({
+            title: l('WorkflowDefinition:DisplayName'),
+            data: "displayName",
+        })
+        if (hasDesignWorkflowPermission)
+            items.push({
+                title: l('WorkflowDefinition:Version'),
+                data: "version"
+            },
+            {
+                title: l('WorkflowDefinition:IsPublished'),
+                data: "isPublished",
+                })
+        items.push({
+            title: "",
+            rowAction: {
+                items: buildRowActionItems(),
+                multiple: true
+            }
+        })
+        return items
+    }
 
     function buildRowActionItems() {
         const items = [];

@@ -21,16 +21,16 @@ namespace W2.Activities
 {
     [Action(
         Category = "Email",
-        DisplayName = "Send email to instance creator",
-        Description = "Send an email to current instance creator.",
+        DisplayName = "Send email to instance creator and other",
+        Description = "Send an email to current instance creator and other.",
         Outcomes = new[] { OutcomeNames.Done, "Unexpected Error" })]
-    public class SendEmailToInstanceCreator : CustomEmail
+    public class SendEmailToInstanceCreatorAndOther : CustomEmail
     {
         private readonly IRepository<WorkflowInstanceStarter, Guid> _workflowInstanceStarterRepository;
         private readonly IStringLocalizer<W2Resource> _localizer;
         private readonly IdentityUserManager _userManager;
 
-        public SendEmailToInstanceCreator(ISmtpService smtpService,
+        public SendEmailToInstanceCreatorAndOther(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             IContentSerializer contentSerializer,
@@ -44,7 +44,6 @@ namespace W2.Activities
             _userManager = userManager;
         }
 
-        public new ICollection<string> To { get; set; }
         public new ICollection<string> Cc { get; set; }
         public new ICollection<string> Bcc { get; set; }
 
@@ -62,7 +61,11 @@ namespace W2.Activities
             try
             {
                 var user = await _userManager.GetByIdAsync(instanceStarter.CreatorId.Value);
-                base.To = new List<string> { user.Email };
+
+                if(To == null)
+                    To = new List<string>();
+                if(!To.Contains(user.Email))
+                    To.Add(user.Email);
 
                 return await base.OnExecuteAsync(context);
             }

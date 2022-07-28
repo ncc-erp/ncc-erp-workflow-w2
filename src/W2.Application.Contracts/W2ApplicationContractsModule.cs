@@ -32,11 +32,9 @@ public class W2ApplicationContractsModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        //TODO: Config hrm client
-        //var configuration = context.Services.GetConfiguration();
-        //context.Services
-        //    .AddRefitClient<IHrmClient>()
-        //    .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]));
-        context.Services.AddTransient<IHrmClient, DummyHrmClient>();
+        var configuration = context.Services.GetConfiguration();
+        context.Services
+            .AddRefitClient<IHrmClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]));
     }
 }
