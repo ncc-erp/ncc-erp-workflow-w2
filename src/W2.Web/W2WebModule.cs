@@ -249,7 +249,7 @@ public class W2WebModule : AbpModule
             .AddEmailActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Smtp)).Bind)
             .AddQuartzTemporalActivities()
             .AddJavaScriptActivities()
-            .AddActivitiesFrom<CustomEmail>()
+            .AddActivitiesFrom<W2ApplicationModule>()
             .AddWorkflowsFrom<ElsaConfiguration>());
 
         context.Services

@@ -8,10 +8,10 @@ namespace W2.ExternalResources
     public class ExternalResourceAppService : W2AppService, IExternalResourceAppService
     {
         private readonly IDistributedCache<AllUserInfoCacheItem> _userInfoCache;
-        private readonly IHrmClient _hrmClient;
+        private readonly IHrmClientApi _hrmClient;
 
-        public ExternalResourceAppService(IDistributedCache<AllUserInfoCacheItem> userInfoCache, 
-            IHrmClient hrmClient)
+        public ExternalResourceAppService(IDistributedCache<AllUserInfoCacheItem> userInfoCache,
+            IHrmClientApi hrmClient)
         {
             _userInfoCache = userInfoCache;
             _hrmClient = hrmClient;
@@ -26,6 +26,12 @@ namespace W2.ExternalResources
             );
         }
 
+        public async Task<List<ProjectItem>> GetCurrentUserProjectsAsync()
+        {
+            var email = CurrentUser.Email;
+            return await GetUserProjectsFromApiAsync(email);
+        }
+
         public async Task RefreshAllUsersInfoAsync()
         {
             await _userInfoCache.RefreshAsync(AllUserInfoCacheItem.CacheKey);
@@ -33,12 +39,24 @@ namespace W2.ExternalResources
 
         private async Task<AllUserInfoCacheItem> GetAllUsersInfoFromApiAsync()
         {
-            var users = (await _hrmClient.GetUsersAsync())
+            var response = await _hrmClient.GetUsersAsync();
+            var users = response.Result != null ? response.Result
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Email)
-                .ToList();
+                .ToList() : new List<UserInfoCacheItem>();
 
             return new AllUserInfoCacheItem(users);
+        }
+
+        private async Task<List<ProjectItem>> GetUserProjectsFromApiAsync(string email)
+        {
+            var response = await _hrmClient.GetUserProjectAsync(email);
+            var projects = response.Result != null ? response.Result
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Code)
+                .ToList() : new List<ProjectItem>();
+
+            return projects;
         }
     }
 }

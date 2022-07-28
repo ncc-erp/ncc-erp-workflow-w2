@@ -13,7 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Identity;
+using Volo.Abp.Users;
 using W2.Localization;
 using W2.WorkflowInstances;
 
@@ -21,48 +21,39 @@ namespace W2.Activities
 {
     [Action(
         Category = "Email",
-        DisplayName = "Send email to instance creator",
-        Description = "Send an email to current instance creator.",
+        DisplayName = "Send email to instance creator and other",
+        Description = "Send an email to current instance creator and other.",
         Outcomes = new[] { OutcomeNames.Done, "Unexpected Error" })]
-    public class SendEmailToInstanceCreator : CustomEmail
+    public class SendEmailToInstanceCreatorAndOther : CustomEmail
     {
-        private readonly IRepository<WorkflowInstanceStarter, Guid> _workflowInstanceStarterRepository;
-        private readonly IStringLocalizer<W2Resource> _localizer;
-        private readonly IdentityUserManager _userManager;
+        private readonly ICurrentUser _currentUser;
 
-        public SendEmailToInstanceCreator(ISmtpService smtpService,
+        public SendEmailToInstanceCreatorAndOther(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             IContentSerializer contentSerializer,
             IRepository<WorkflowInstanceStarter, Guid> workflowInstanceStarterRepository,
             IStringLocalizer<W2Resource> localizer,
-            IdentityUserManager userManager)
+            ICurrentUser currentUser)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
-            _workflowInstanceStarterRepository = workflowInstanceStarterRepository;
-            _localizer = localizer;
-            _userManager = userManager;
+            _currentUser = currentUser;
         }
 
-        public new ICollection<string> To { get; set; }
         public new ICollection<string> Cc { get; set; }
         public new ICollection<string> Bcc { get; set; }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var instanceStarter = await _workflowInstanceStarterRepository.FindAsync(x => x.WorkflowInstanceId == context.WorkflowInstance.Id);
             var outcomes = new List<string> { OutcomeNames.Done };
-            if (instanceStarter == null)
-            {
-                outcomes.Add("Unexpected Error");
-                context.JournalData.Add("Error", _localizer["Exception:InstanceNotFound"]);
-                return Outcomes(outcomes);
-            }
 
             try
             {
-                var user = await _userManager.GetByIdAsync(instanceStarter.CreatorId.Value);
-                base.To = new List<string> { user.Email };
+                if (base.To == null)
+                    base.To = new List<string>();
+
+                if (!To.Contains(_currentUser.Email))
+                    base.To.Add(_currentUser.Email);
 
                 return await base.OnExecuteAsync(context);
             }

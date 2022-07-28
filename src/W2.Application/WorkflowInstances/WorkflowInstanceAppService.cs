@@ -96,8 +96,6 @@ namespace W2.WorkflowInstances
                 throw new UserFriendlyException(L["Exception:WorkflowInstanceExecutionFailed"]);
             }
 
-            await SendNewInstanceCreatedEmail();
-
             return instance.Id;
         }
 
@@ -173,25 +171,6 @@ namespace W2.WorkflowInstances
             }
 
             return new PagedResultDto<WorkflowInstanceDto>(instanceDtos.Count, instanceDtos);
-        }
-
-        private async Task SendNewInstanceCreatedEmail()
-        {
-            var body = await _templateRenderer.RenderAsync(
-                CustomTemplateNames.NewInstanceCreatedEmail,
-                new
-                {
-                    Name = CurrentUser.Name,
-                    Message = string.Format(L["Email:NewInstanceCreatedMessage"])
-                }
-            );
-
-            await _emailSender.SendAsync(
-                CurrentUser.Email,
-                L["Email:NewInstanceCreatedSubject"],
-                body
-            );
-
         }
     }
 }

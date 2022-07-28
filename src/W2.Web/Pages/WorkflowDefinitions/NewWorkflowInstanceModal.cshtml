@@ -12,7 +12,7 @@
 <form method="post" asp-page="/WorkflowDefinitions/NewWorkflowInstanceModal"
     data-check-form-on-close="false">
     <abp-modal size="Large">
-        <abp-modal-header title="New Workflow Instance"></abp-modal-header>
+        <abp-modal-header title="New Request"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="WorkflowDefinitionId" type="hidden" />
             @for (int i = 0; i < countProperties; i++)
@@ -64,6 +64,21 @@
                                 case WorkflowInputDefinitionProperyType.UserList:
                                     <select id="@inputId" name="@inputName" style="width:100%;">
                                         @foreach(var item in Model.UserSelectListItems)
+                                        {
+                                            <option value="@item.Value">@item.Text (@item.Value)</option>
+                                        }
+                                    </select>
+                                    <script type="text/javascript">
+                                    {
+                                        $('#@inputId').select2({
+                                            dropdownParent: $('#@inputId').parent()
+                                        });
+                                    }
+                                    </script>
+                                    break;
+                                case WorkflowInputDefinitionProperyType.MyProject:
+                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                        @foreach(var item in Model.ProjectSelectListItems)
                                         {
                                             <option value="@item.Value">@item.Text (@item.Value)</option>
                                         }
