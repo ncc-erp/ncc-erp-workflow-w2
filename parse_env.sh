@@ -8,6 +8,8 @@ sed "s/API_URL/$API_URL/g" -i appsettings.json
 sed "s/DB_HOST/$DB_HOST/g" -i appsettings.json
 sed "s/DB_NAME/$DB_NAME/g" -i appsettings.json
 sed "s/DB_PASS/$DB_PASS/g" -i appsettings.json
+sed "s/DB_PORT/$DB_PORT/g" -i appsettings.json
+sed "s/DB_USER/$DB_USER/g" -i appsettings.json
 sed "s/PASSPHRASE/$PASSPHRASE/g" -i appsettings.json
 sed "s/SES_HOST/$SES_HOST/g" -i appsettings.json
 sed "s/SES_USER/$SES_USER/g" -i appsettings.json
