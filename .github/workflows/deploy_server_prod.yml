@@ -11,10 +11,19 @@ jobs:
     runs-on:  [self-hosted, w2, dev]
     name: Build Workflow W2 Production
     environment: production
+    outputs:
+      date_time: ${{ step.pushtos3.outputs.date_time }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     
+    - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
     - name: Build Migrator
       run: |
         export PATH=$PATH:/opt/dotnet6/
@@ -26,12 +35,7 @@ jobs:
         cd src/W2.DbMigrator/bin/Release/net6.0/publish/
         rm -rf appsettings.json
         zip -r migrator.zip *
-    - name: Publish Migrator
-      uses: actions/upload-artifact@v3
-      with:
-        path: src/W2.DbMigrator/bin/Release/net6.0/publish/migrator.zip
-        name: w2-migrator
-    
+
     - name: Build Host
       run: |
         export PATH=$PATH:/opt/dotnet6/
@@ -48,13 +52,17 @@ jobs:
         cd src/W2.Web/bin/Release/net6.0/publish/
         rm -rf appsettings.json
         zip -r host.zip *
-        
-    - name: Publish Host
-      uses: actions/upload-artifact@v3
-      with:
-        path: src/W2.Web/bin/Release/net6.0/publish/host.zip
-        name: w2-host
-        
+
+    - name: Pushlish Migrator & Host to S3\
+      id: pushtos3
+      run: |
+        export DATE_TIME=$(date +%Hh-%Mm-%d-%m-%Y)
+        export MIGRATOR="migrator-${DATE_TIME}.zip"
+        export HOST="host-${DATE_TIME}.zip"
+        aws s3 cp src/W2.Web/bin/Release/net6.0/publish/host.zip s3://ncc-erp/prod/publish/w2/host/$HOST
+        aws s3 cp src/W2.DbMigrator/bin/Release/net6.0/publish/migrator.zip s3://ncc-erp/prod/publish/w2/migrator/$MIGRATOR
+
+        echo "::set-output name=date_time::$DATE_TIME"
   deploy:
     runs-on:  [self-hosted, w2, prod]
     name: Deploy Workflow W2 Production
@@ -64,7 +72,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-      
+    
+    - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
     - name: Update Appsettings and Backup Database
       run: |
         bash parse_env.sh
@@ -95,6 +110,15 @@ jobs:
       with:
         name: w2-host
         path: /var/www/app/w2/prod-dotnet-host-w2/
+    
+    - name: Download Migrator & Host from S3
+      run: |
+        export MIGRATOR="migrator-${DATE_TIME}.zip"
+        export HOST="host-${DATE_TIME}.zip"
+        aws s3 cp s3://ncc-erp/prod/publish/w2/host/$HOST /var/www/app/w2/prod-dotnet-host-w2/host.zip
+        aws s3 cp s3://ncc-erp/prod/publish/w2/migrator/$MIGRATOR /var/www/migrator/w2/prod-dotnet-migrator-w2/migrator.zip
+      env:
+        DATE_TIME: ${{ needs.build.outputs.date_time}}
     
     - name: Migrate Database
       run: |
