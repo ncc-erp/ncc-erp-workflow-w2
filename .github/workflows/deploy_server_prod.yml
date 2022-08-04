@@ -1,16 +1,16 @@
-name: Deploy Workflow W2 Dev
+name: Deploy Workflow W2 prod
 on:
   push:
     branches:
-      - dev
+      - master
     tags:
       - '*'
 
 jobs:
   build:
-    runs-on:  [self-hosted, w2, dev ]
-    name: Build Workflow W2 Dev
-    environment: dev
+    runs-on:  [self-hosted, w2, dev]
+    name: Build Workflow W2 Production
+    environment: production
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -56,63 +56,64 @@ jobs:
         name: w2-host
         
   deploy:
-    runs-on:  [self-hosted, w2, dev]
-    name: Deploy Workflow W2 Dev
-    environment: dev
+    runs-on:  [self-hosted, w2, prod]
+    name: Deploy Workflow W2 Production
+    environment: prod
     needs:
       - build
     steps:
     - name: Checkout
       uses: actions/checkout@v3
       
-    - name: Update Appsettings
+    - name: Update Appsettings and Backup Database
       run: |
         bash parse_env.sh
+        cd /home/erp/.backup_db/ && bash backup_w2.sh
       env:
-        API_URL: ${{ secrets.API_URL_DEV }}
-        DB_HOST: ${{ secrets.DB_HOST_DEV }}
-        DB_NAME: ${{ secrets.DB_NAME_DEV }}
-        DB_PASS: ${{ secrets.DB_PASS_DEV }}
-        DB_USER: ${{ secrets.DB_USER_DEV }}
-        DB_PORT: ${{ secrets.DB_PORT_DEV }}
-        PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
-        SES_HOST: ${{ secrets.SES_HOST_DEV }}
-        SES_USER: ${{ secrets.SES_USER_DEV }}
-        SES_PASS: ${{ secrets.SES_PASS_DEV }}
-        GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
-        GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
-        TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
+        API_URL: ${{ secrets.API_URL_PROD }}
+        DB_HOST: ${{ secrets.DB_HOST_prod }}
+        DB_NAME: ${{ secrets.DB_NAME_prod }}
+        DB_PASS: ${{ secrets.DB_PASS_prod }}
+        DB_USER: ${{ secrets.DB_USER_prod }}
+        DB_PORT: ${{ secrets.DB_PORT_prod }}
+        PASSPHRASE: ${{ secrets.PASSPHRASE_prod }}
+        SES_HOST: ${{ secrets.SES_HOST_prod }}
+        SES_USER: ${{ secrets.SES_USER_prod }}
+        SES_PASS: ${{ secrets.SES_PASS_prod }}
+        GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
+        GG_SECRET: ${{ secrets.GG_SECRET_prod }}
+        TALENT_DF: ${{ secrets.TALENT_DF_prod }}
         
     - name: Download Artifact Migrator
       uses: actions/download-artifact@v3
       with:
         name: w2-migrator
-        path: /var/www/migrator/w2/dev-dotnet-migrator-w2/
+        path: /var/www/migrator/w2/prod-dotnet-migrator-w2/
     
     - name: Download Artifact Host
       uses: actions/download-artifact@v3
       with:
         name: w2-host
-        path: /var/www/app/w2/dev-dotnet-host-w2/
+        path: /var/www/app/w2/prod-dotnet-host-w2/
     
     - name: Migrate Database
       run: |
         export PATH=$PATH:/opt/dotnet6/
-        cp appsettings.json /var/www/migrator/w2/dev-dotnet-migrator-w2/
-        cd /var/www/migrator/w2/dev-dotnet-migrator-w2/
+        cp appsettings.json /var/www/migrator/w2/prod-dotnet-migrator-w2/
+        cd /var/www/migrator/w2/prod-dotnet-migrator-w2/
         unzip -qo migrator.zip && rm -rf migrator.zip
         dotnet6 W2.DbMigrator.dll -q
     
     - name: Restart Server
       run: |
         sudo service erp-w2 stop
-        cp appsettings.json /var/www/app/w2/dev-dotnet-host-w2/
-        cd /var/www/app/w2/dev-dotnet-host-w2/
+        cp appsettings.json /var/www/app/w2/prod-dotnet-host-w2/
+        cd /var/www/app/w2/prod-dotnet-host-w2/
         unzip -qo host.zip && rm -rf host.zip
-        mkdir -p /var/www/app/w2/dev-dotnet-host-w2/Logs/
-        touch /var/www/app/w2/dev-dotnet-host-w2/Logs/logs.txt
+        mkdir -p /var/www/app/w2/prod-dotnet-host-w2/Logs/
+        touch /var/www/app/w2/prod-dotnet-host-w2/Logs/logs.txt
         chmod 777 -R Logs/
         chmod 777 -R wwwroot/
-        cp appsettings.json appsettings.Development.json
+        cp appsettings.json appsettings.Production.json
         sudo service erp-w2 start
         sudo service erp-w2 status
