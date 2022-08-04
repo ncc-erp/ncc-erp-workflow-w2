@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -21,8 +22,10 @@ namespace W2.Web.Pages.Account
 {
     public class CustomLoginModel : LoginModel
     {
-        public CustomLoginModel(IAuthenticationSchemeProvider schemeProvider, IOptions<AbpAccountOptions> accountOptions, IOptions<IdentityOptions> identityOptions) : base(schemeProvider, accountOptions, identityOptions)
+        private readonly IConfiguration _configuration;
+        public CustomLoginModel(IAuthenticationSchemeProvider schemeProvider, IOptions<AbpAccountOptions> accountOptions, IOptions<IdentityOptions> identityOptions, IConfiguration configuration) : base(schemeProvider, accountOptions, identityOptions)
         {
+            _configuration = configuration;
         }
 
         public override async Task<IActionResult> OnGetExternalLoginCallbackAsync(string returnUrl = "", string returnUrlHash = "", string remoteError = null)
@@ -37,6 +40,14 @@ namespace W2.Web.Pages.Account
 
             var loginInfo = await SignInManager.GetExternalLoginInfoAsync();
             if (loginInfo == null)
+            {
+                Logger.LogWarning("External login info is not available");
+                return RedirectToPage("./Login");
+            }
+
+            var emailAdress = loginInfo.Principal.FindFirstValue(ClaimTypes.Email).Split("@").Last();
+
+            if (!emailAdress.Equals(_configuration.GetValue<string>("Authentication:Google:Domain")))
             {
                 Logger.LogWarning("External login info is not available");
                 return RedirectToPage("./Login");
@@ -119,6 +130,7 @@ namespace W2.Web.Pages.Account
             await IdentityOptions.SetAsync();
 
             var user = new IdentityUser(GuidGenerator.Create(), emailAddress, emailAddress, CurrentTenant.Id);
+            user.Name = externalLoginInfo.Principal.Identities.First().Name;
 
             (await UserManager.CreateAsync(user)).CheckErrors();
             (await UserManager.AddDefaultRolesAsync(user)).CheckErrors();

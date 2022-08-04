@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using W2.Permissions;
 using W2.Web.Pages.WorkflowDefinitions.Models;
@@ -11,10 +12,13 @@ namespace W2.Web.Pages.WorkflowDefinitions
     public class DefineWorkflowInputModalModel : W2PageModel
     {
         private readonly IWorkflowDefinitionAppService _workflowDefinitionAppService;
+        private readonly ILogger<DefineWorkflowInputModalModel> _logger;
 
-        public DefineWorkflowInputModalModel(IWorkflowDefinitionAppService workflowDefinitionAppService)
+        public DefineWorkflowInputModalModel(IWorkflowDefinitionAppService workflowDefinitionAppService, 
+            ILogger<DefineWorkflowInputModalModel> logger)
         {
             _workflowDefinitionAppService = workflowDefinitionAppService;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -22,19 +26,41 @@ namespace W2.Web.Pages.WorkflowDefinitions
 
         public async Task OnGetAsync(string workflowDefinitionId)
         {
-            WorkflowInputDefinition = new DefineWorkflowInputViewModel { WorkflowDefinitionId = workflowDefinitionId };
-            WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
+            var workflowDefinitionSummary = await _workflowDefinitionAppService.GetByDefinitionIdAsync(workflowDefinitionId);
+            WorkflowInputDefinition = new DefineWorkflowInputViewModel
             {
-                Name = "",
-                Type = WorkflowInputDefinitionProperyType.Text
-            });
-
-            await _workflowDefinitionAppService.GetByDefinitionIdAsync(workflowDefinitionId);
+                Id = workflowDefinitionSummary.InputDefinition?.Id,
+                WorkflowDefinitionId = workflowDefinitionId
+            };
+            if (workflowDefinitionSummary.InputDefinition == null)
+            {
+                WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
+                {
+                    Name = "",
+                    Type = WorkflowInputDefinitionProperyType.Text
+                });
+            }
+            else
+            {
+                try
+                {
+                    WorkflowInputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinitionDto, DefineWorkflowInputViewModel>(workflowDefinitionSummary.InputDefinition);
+                }
+                catch (System.Exception ex)
+                {
+                    WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
+                    {
+                        Name = "",
+                        Type = WorkflowInputDefinitionProperyType.Text
+                    });
+                    _logger.LogException(ex);
+                }
+            }
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await _workflowDefinitionAppService.CreateWorkflowInputDefinitionAsync(
+            await _workflowDefinitionAppService.SaveWorkflowInputDefinitionAsync(
                 ObjectMapper.Map<DefineWorkflowInputViewModel, WorkflowCustomInputDefinitionDto>(WorkflowInputDefinition)
             );
 

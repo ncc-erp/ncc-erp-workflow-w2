@@ -17,5 +17,8 @@
         public string Host { get; set; } = string.Empty;
         public string Port { get; set; } = string.Empty;
         public string DefaultSender { get; set; } = string.Empty;
+        public string UserName { get; set; }
+        public string Password { get; set; }
+        public bool RequireCredentials { get; set; }
     }
 }

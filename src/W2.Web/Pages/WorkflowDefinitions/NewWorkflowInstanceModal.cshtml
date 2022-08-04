@@ -12,13 +12,14 @@
 <form method="post" asp-page="/WorkflowDefinitions/NewWorkflowInstanceModal"
     data-check-form-on-close="false">
     <abp-modal size="Large">
-        <abp-modal-header title="New Workflow Instance"></abp-modal-header>
+        <abp-modal-header title="New Request"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="WorkflowDefinitionId" type="hidden" />
             @for (int i = 0; i < countProperties; i++)
             {
                 var propertyDefinition = Model.PropertyDefinitionViewModels[i];
                 var inputName = $"WorkflowInput[{propertyDefinition.Name}]";
+                var inputId = $"input_{propertyDefinition.Name}";
                 <div class="row">
                     <div class="col">
                         <div class="mb-3">
@@ -26,19 +27,69 @@
                             @switch (propertyDefinition.Type)
                             {
                                 case WorkflowInputDefinitionProperyType.Text:
-                                    <input id="@inputName" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" 
                                         type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.Numeric:
-                                    <input id="@inputName" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" 
                                         type="number" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
-                                case WorkflowInputDefinitionProperyType.DateTime:
-                                    <input id="@inputName" name="@inputName" 
+                                case WorkflowInputDefinitionProperyType.DateTime: 
+                                    <input id="@inputId" name="@inputName" 
                                         type="date" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
-                                case WorkflowInputDefinitionProperyType.TextMultiLine:
-                                    <textarea id="@inputName" class="form-control" name="@inputName" rows="4" value="@Model.WorkflowInput[propertyDefinition.Name]"></textarea>
+                                case WorkflowInputDefinitionProperyType.RichText:
+                                    <textarea id="@inputId" name="@inputName" hidden="hidden"></textarea>
+                                    <div id="container_@propertyDefinition.Name" style="height:200px;"></div>
+                                    <script>
+                                        {
+                                            const editor = new Quill('#container_@propertyDefinition.Name', {
+                                                modules: {
+                                                    toolbar: [
+                                                        [{ 'font': [] }],
+                                                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                                                        ['bold', 'italic', 'underline', 'strike'],
+                                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                                        ['image', 'code-block']
+                                                    ]
+                                                },
+                                                theme: 'snow'
+                                            });
+                                            editor.on('text-change', function() {
+                                                $('#@inputId').val(editor.root.innerHTML);
+                                            });
+                                        }
+                                    </script>
+                                    break;
+                                case WorkflowInputDefinitionProperyType.UserList:
+                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                        @foreach(var item in Model.UserSelectListItems)
+                                        {
+                                            <option value="@item.Value">@item.Text (@item.Value)</option>
+                                        }
+                                    </select>
+                                    <script type="text/javascript">
+                                    {
+                                        $('#@inputId').select2({
+                                            dropdownParent: $('#@inputId').parent()
+                                        });
+                                    }
+                                    </script>
+                                    break;
+                                case WorkflowInputDefinitionProperyType.MyProject:
+                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                        @foreach(var item in Model.ProjectSelectListItems)
+                                        {
+                                            <option value="@item.Value">@item.Text (@item.Value)</option>
+                                        }
+                                    </select>
+                                    <script type="text/javascript">
+                                    {
+                                        $('#@inputId').select2({
+                                            dropdownParent: $('#@inputId').parent()
+                                        });
+                                    }
+                                    </script>
                                     break;
                             }
                         </div>

@@ -1,16 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace W2.WorkflowDefinitions
 {
     public enum WorkflowInputDefinitionProperyType
     {
+        [Display(Name = "Text")]
         Text,
+        [Display(Name = "Numeric")]
         Numeric,
-        JsonObject,
+        [Display(Name = "Date Time")]
         DateTime,
-        DropdownList,
-        TextMultiLine
+        [Display(Name = "Rich Text")]
+        RichText,
+        [Display(Name = "User List")]
+        UserList,     
+        [Display(Name = "My Project")]
+        MyProject
     }
 }

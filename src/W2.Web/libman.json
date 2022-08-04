@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "quill@1.3.7",
+      "destination": "wwwroot/quill/",
+      "files": [
+        "quill.min.js",
+        "quill.bubble.min.css",
+        "quill.bubble.min.css.map",
+        "quill.core.min.css",
+        "quill.core.min.js",
+        "quill.core.min.css.map",
+        "quill.core.min.js.map",
+        "quill.snow.min.css",
+        "quill.snow.min.css.map",
+        "quill.min.js.map"
+      ]
+    }
+  ]
+}

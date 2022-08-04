@@ -28,7 +28,6 @@ namespace W2.EntityFrameworkCore
                 settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
                 settings.Converters.Add(new TypeJsonConverter());
                 settings.Converters.Add(new FlagEnumConverter(new DefaultNamingStrategy()));
-                settings.Converters.Add(new TypeJsonConverter());
                 settings.Converters.Add(new VersionOptionsJsonConverter());
                 settings.Converters.Add(new InlineFunctionJsonConverter());
 

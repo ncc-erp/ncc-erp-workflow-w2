@@ -1,1 +1,26 @@
 /* Your Global Styles */
+#main-navbar {
+    background-color: #222834 !important;
+}
+
+.navbar-brand img {
+    width: 32px;
+}
+
+.brand-text {
+    font-size: 1.63625rem;
+    line-height: 1.2;
+    font-weight: 600;
+    margin-bottom: 0;
+    color: rgba(255, 255, 255, 0.55);
+    vertical-align: middle;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0.375rem 0.75rem;
+    line-height: unset;
+}
+
+.select2-container .select2-selection--single {
+    height: unset;
+}

@@ -9,7 +9,7 @@ namespace W2.WorkflowDefinitions
     {
         Task<WorkflowDefinitionSummaryDto> GetByDefinitionIdAsync(string definitionId);
         Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync();
-        Task CreateWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input);
+        Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input);
         Task<string> CreateWorkflowDefinitionAsync(CreateWorkflowDefinitionDto input);
         Task DeleteAsync(string id);
     }

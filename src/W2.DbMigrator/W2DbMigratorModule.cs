@@ -2,8 +2,9 @@
 using Volo.Abp.Autofac;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Modularity;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.Timing;
+using System;
 
 namespace W2.DbMigrator;
 
@@ -20,5 +21,10 @@ public class W2DbMigratorModule : AbpModule
 
         var configuration = context.Services.GetConfiguration();
         Configure<Configurations.TenantConfiguration>(configuration.GetSection(nameof(Configurations.TenantConfiguration)));
+
+        Configure<AbpClockOptions>(options =>
+        {
+            options.Kind = DateTimeKind.Utc;
+        });
     }
 }

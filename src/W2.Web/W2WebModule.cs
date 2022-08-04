@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -32,7 +32,6 @@ using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
-using Elsa.Persistence.EntityFramework.SqlServer;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
@@ -49,6 +48,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using W2.Permissions;
 using W2.Activities;
 using W2.Scripting;
+using Elsa.Persistence.EntityFramework.PostgreSql;
+using Volo.Abp.Timing;
 
 namespace W2.Web;
 
@@ -123,6 +124,11 @@ public class W2WebModule : AbpModule
         });
 
         context.Services.AddSameSiteCookiePolicy();
+
+        Configure<AbpClockOptions>(options =>
+        {
+            options.Kind = DateTimeKind.Utc;
+        });
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -186,6 +192,11 @@ public class W2WebModule : AbpModule
                 options.FileSets.ReplaceEmbeddedByPhysical<W2WebModule>(hostingEnvironment.ContentRootPath);
             });
         }
+
+        Configure<AbpVirtualFileSystemOptions>(options =>
+        {
+            options.FileSets.AddEmbedded<W2WebModule>("W2.Web");
+        });
     }
 
     private void ConfigureLocalizationServices()
@@ -193,7 +204,7 @@ public class W2WebModule : AbpModule
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Languages.Add(new LanguageInfo("en", "en", "English"));
-            options.Languages.Add(new LanguageInfo("en-GB", "en-GB", "English (UK)"));
+            //options.Languages.Add(new LanguageInfo("vi-VN", "vi-VN", "Tiếng Việt"));
         });
     }
 
@@ -231,14 +242,14 @@ public class W2WebModule : AbpModule
 
         context.Services.AddElsa(options => options
             .UseEntityFrameworkPersistence(
-                ef => ef.UseSqlServer(elsaConfigurationSection.GetValue<string>(nameof(ElsaConfiguration.ConnectionString))))
+                ef => ef.UsePostgreSql(elsaConfigurationSection.GetValue<string>(nameof(ElsaConfiguration.ConnectionString))))
             .AddConsoleActivities()
             .AddUserTaskActivities()
             .AddHttpActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Server)).Bind)
             .AddEmailActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Smtp)).Bind)
             .AddQuartzTemporalActivities()
             .AddJavaScriptActivities()
-            .AddActivitiesFrom<CustomEmail>()
+            .AddActivitiesFrom<W2ApplicationModule>()
             .AddWorkflowsFrom<ElsaConfiguration>());
 
         context.Services

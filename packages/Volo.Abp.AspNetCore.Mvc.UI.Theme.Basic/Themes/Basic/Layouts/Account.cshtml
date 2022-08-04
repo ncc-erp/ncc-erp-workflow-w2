@@ -1,4 +1,5 @@
-﻿@using Microsoft.Extensions.Localization
+﻿@using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Localization
 @using Microsoft.Extensions.Options
 @using Volo.Abp.AspNetCore.MultiTenancy
 @using Volo.Abp.AspNetCore.Mvc.UI.Components.LayoutHook
@@ -17,6 +18,7 @@
 @inject ICurrentTenant CurrentTenant
 @inject IStringLocalizer<AbpUiMultiTenancyResource> MultiTenancyStringLocalizer
 @inject ITenantResolveResultAccessor TenantResolveResultAccessor
+@inject IConfiguration Configuration
 
 @{
     Layout = null;
@@ -47,6 +49,8 @@
     @await Component.InvokeAsync(typeof(WidgetStylesViewComponent))
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.Last, StandardLayouts.Account)
+
+    <link rel="icon" href="/logo.png" />
 </head>
 <body class="abp-account-layout @rtl">
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Account)
@@ -58,7 +62,8 @@
             <abp-column class="col mx-auto" style="max-width: 440px">
                 @if (MultiTenancyOptions.Value.IsEnabled &&
                   (TenantResolveResultAccessor.Result?.AppliedResolvers?.Contains(CookieTenantResolveContributor.ContributorName) == true ||
-                   TenantResolveResultAccessor.Result?.AppliedResolvers?.Contains(QueryStringTenantResolveContributor.ContributorName) == true))
+                   TenantResolveResultAccessor.Result?.AppliedResolvers?.Contains(QueryStringTenantResolveContributor.ContributorName) == true) && 
+                    Convert.ToBoolean(Configuration["TenantConfiguration:EnableTenantSwitch"]))
                 {
                     <div class="card shadow-sm rounded mb-3">
                         <div class="card-body px-5">

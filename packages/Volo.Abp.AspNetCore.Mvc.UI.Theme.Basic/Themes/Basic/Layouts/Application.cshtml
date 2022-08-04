@@ -48,6 +48,8 @@
     @await RenderSectionAsync("styles", false)
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.Last, StandardLayouts.Application)
+
+    <link rel="icon" href="/logo.png" />
 </head>
 <body class="abp-application-layout @rtl">
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.First, StandardLayouts.Application)

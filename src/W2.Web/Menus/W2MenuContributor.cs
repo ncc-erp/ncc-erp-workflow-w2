@@ -29,30 +29,22 @@ public class W2MenuContributor : IMenuContributor
             ? l["WorkflowInstance:AllInstances"]
             : l["WorkflowInstance:MyInstances"];
 
-        context.Menu.AddItem(
-            new ApplicationMenuItem(W2Menus.WorkflowManagement, l["Menu:WorkflowManagement"])
-                .AddItem(new ApplicationMenuItem(
-                    name: W2Menus.WorkflowDefinitions,
-                    displayName: l["Menu:WorkflowManagement:WorkflowDefinitions"],
-                    requiredPermissionName: W2Permissions.WorkflowManagementWorkflowDefinitions,
-                    url: "/"
-                ))
-                .AddItem(new ApplicationMenuItem(
-                    name: W2Menus.WorkflowInstances,
-                    displayName: workflowInstanceMenuText,
-                    requiredPermissionName: W2Permissions.WorkflowManagementWorkflowInstances,
-                    url: "/WorkflowInstances/"
-                ))
-        );
+        context.Menu.AddItem(new ApplicationMenuItem(
+            name: W2Menus.WorkflowDefinitions,
+            displayName: l["Menu:WorkflowManagement:WorkflowDefinitions"],
+            requiredPermissionName: W2Permissions.WorkflowManagementWorkflowDefinitions,
+            url: "/"
+        )).AddItem(new ApplicationMenuItem(
+            name: W2Menus.WorkflowInstances,
+            displayName: workflowInstanceMenuText,
+            requiredPermissionName: W2Permissions.WorkflowManagementWorkflowInstances,
+            url: "/WorkflowInstances/"
+        ));
 
         if (MultiTenancyConsts.IsEnabled)
-        {
             administration.SetSubItemOrder(TenantManagementMenuNames.GroupName, 1);
-        }
         else
-        {
             administration.TryRemoveMenuItem(TenantManagementMenuNames.GroupName);
-        }
 
         administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
         administration.SetSubItemOrder(SettingManagementMenuNames.GroupName, 3);
