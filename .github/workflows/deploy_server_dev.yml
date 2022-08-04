@@ -86,7 +86,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: w2-migrator
-        path: /var/www/app/w2/dev-dotnet-migrator-w2/
+        path: /var/www/migrator/w2/dev-dotnet-migrator-w2/
     
     - name: Download Artifact Host
       uses: actions/download-artifact@v3
