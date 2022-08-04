@@ -16,22 +16,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     
-    - name: Update Appsettings
-      run: |
-        bash parse_env.sh
-      env:
-        API_URL: ${{ secrets.API_URL_DEV }}
-        DB_HOST: ${{ secrets.DB_HOST_DEV }}
-        DB_NAME: ${{ secrets.DB_NAME_DEV }}
-        DB_PASS: ${{ secrets.DB_PASS_DEV }}
-        PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
-        SES_HOST: ${{ secrets.SES_HOST_DEV }}
-        SES_USER: ${{ secrets.SES_USER_DEV }}
-        SES_PASS: ${{ secrets.SES_PASS_DEV }}
-        GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
-        GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
-        TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
-    
     - name: Build Migrator
       run: |
         export PATH=$PATH:/opt/dotnet6/
@@ -40,7 +24,6 @@ jobs:
     
     - name: Composer Migrator
       run: |
-        cp appsettings.json src/W2.DbMigrator/bin/Release/net6.0/publish/appsettings.json
         cd src/W2.DbMigrator/bin/Release/net6.0/publish/
         zip -r migrator.zip *
     - name: Publish Migrator
@@ -59,11 +42,9 @@ jobs:
         cd src/W2.Web/
         abp install-libs
         dotnet6 publish -c Release
-        sudo service erp-w2 stop
     
     - name: Composer Host
       run: |
-        cp appsettings.json src/W2.Web/bin/Release/net6.0/publish/appsettings.json
         cd src/W2.Web/bin/Release/net6.0/publish/
         zip -r host.zip *
         
@@ -72,3 +53,41 @@ jobs:
       with:
         path: src/W2.Web/bin/Release/net6.0/publish/host.zip
         name: w2-host
+        
+  deploy:
+    runs-on:  [self-hosted, w2, dev]
+    name: Deploy Workflow W2 Dev
+    environment: dev
+    needs:
+      - build
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Update Appsettings
+      run: |
+        bash parse_env.sh
+      env:
+        API_URL: ${{ secrets.API_URL_DEV }}
+        DB_HOST: ${{ secrets.DB_HOST_DEV }}
+        DB_NAME: ${{ secrets.DB_NAME_DEV }}
+        DB_PASS: ${{ secrets.DB_PASS_DEV }}
+        PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
+        SES_HOST: ${{ secrets.SES_HOST_DEV }}
+        SES_USER: ${{ secrets.SES_USER_DEV }}
+        SES_PASS: ${{ secrets.SES_PASS_DEV }}
+        GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
+        GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
+        TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
+        
+    - name: Download Artifact Migrator
+      uses: actions/download-artifact@v3
+      with:
+        name: w2-migrator
+        path: var/www/app/w2/
+    
+    - name: Download Artifact Host
+      uses: actions/download-artifact@v3
+      with:
+        name: w2-host
+        path: var/www/app/w2/
