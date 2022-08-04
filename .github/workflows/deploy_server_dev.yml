@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     runs-on:  [self-hosted, w2, dev ]
-    name: Build Workflow W2
+    name: Build Workflow W2 Dev
     environment: dev
     steps:
     - name: Checkout
@@ -25,6 +25,7 @@ jobs:
     - name: Composer Migrator
       run: |
         cd src/W2.DbMigrator/bin/Release/net6.0/publish/
+        rm -rf appsettings.json
         zip -r migrator.zip *
     - name: Publish Migrator
       uses: actions/upload-artifact@v3
@@ -46,6 +47,7 @@ jobs:
     - name: Composer Host
       run: |
         cd src/W2.Web/bin/Release/net6.0/publish/
+        rm -rf appsettings.json
         zip -r host.zip *
         
     - name: Publish Host
@@ -84,10 +86,32 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: w2-migrator
-        path: var/www/app/w2/
+        path: /var/www/app/w2/dev-dotnet-migrator-w2/
     
     - name: Download Artifact Host
       uses: actions/download-artifact@v3
       with:
         name: w2-host
-        path: var/www/app/w2/
+        path: /var/www/app/w2/dev-dotnet-host-w2/
+    
+    - name: Migrate Database
+      run: |
+        export PATH=$PATH:/opt/dotnet6/
+        cp appsettings.json /var/www/migrator/w2/dev-dotnet-migrator-w2/
+        cd /var/www/migrator/w2/dev-dotnet-migrator-w2/
+        unzip migrator.zip && rm -rf migrator.zip
+        dotnet6 W2.DbMigrator.dll -q
+    
+    - name: Restart Server
+      run: |
+        sudo service erp-w2 stop
+        cp appsettings.json /var/www/app/w2/dev-dotnet-host-w2/
+        cd /var/www/app/w2/dev-dotnet-host-w2/
+        unzip host.zip && rm -rf host.zip
+        mkdir -p /var/www/app/w2/dev-dotnet-host-w2/Logs/
+        touch /var/www/app/w2/dev-dotnet-host-w2/Logs/logs.txt
+        chmod 777 -R Logs/
+        chmod 777 -R wwwroot/
+        cp appsettings.json appsettings.Development.json
+        sudo service erp-w2 start
+        sudo service erp-w2 status
