@@ -1,19 +1,36 @@
-name: Deploy Workflow W2
+name: Deploy Workflow W2 Dev
 on:
   push:
     branches:
       - cicd
+      - dev
     tags:
       - '*'
 
 jobs:
   build:
-    runs-on:  [self-hosted, w2, $GITHUB_REF ]
+    runs-on:  [self-hosted, w2, dev ]
     name: Build Workflow W2
-    environment: ${{ github.ref_name }}
+    environment: dev
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+    
+    - name: Update Appsettings
+      run: |
+        bash parse_env.sh
+      env:
+        API_URL: ${{ secret.API_URL_DEV }}
+        DB_HOST: ${{ secret.DB_HOST_DEV }}
+        DB_NAME: ${{ secret.DB_NAME_DEV }}
+        DB_PASS: ${{ secret.DB_PASS_DEV }}
+        PASSPHRASE: ${{ secret.PASSPHRASE_DEV }}
+        SES_HOST: ${{ secret.SES_HOST_DEV }}
+        SES_USER: ${{ secret.SES_USER_DEV }}
+        SES_PASS: ${{ secret.SES_PASS_DEV }}
+        GG_CLIENT: ${{ secret.GG_CLIENT_DEV }}
+        GG_SECRET: ${{ secret.GG_SECRET_DEV }}
+        TALENT_DF: ${{ secret.TALENT_DF_DEV }}
     
     - name: Build Migrator
       run: |
@@ -21,10 +38,16 @@ jobs:
         cd src/W2.DbMigrator
         dotnet6 publish -c Release
     
-    - name: Publish migrator
+    - name: Composer Migrator
       run: |
-        rm -rf src/W2.DbMigrator/bin/Release/net6.0/publish/appsettings.json
-        cp -r src/W2.DbMigrator/bin/Release/net6.0/publish/* /var/www/migrator/w2/dev-dotnet-migrator-w2/
+        cp appsettings.json src/W2.DbMigrator/bin/Release/net6.0/publish/appsettings.json
+        cd src/W2.DbMigrator/bin/Release/net6.0/publish/
+        zip -r migrator.zip *
+    - name: Publish Migrator
+      uses: actions/upload-artifact@v3
+      with:
+        path: src/W2.DbMigrator/bin/Release/net6.0/publish/migrator.zip
+        name: w2-migrator
     
     - name: Build Host
       run: |
@@ -38,30 +61,14 @@ jobs:
         dotnet6 publish -c Release
         sudo service erp-w2 stop
     
+    - name: Composer Host
+      run: |
+        cp appsettings.json src/W2.Web/bin/Release/net6.0/publish/appsettings.json
+        cd src/W2.Web/bin/Release/net6.0/publish/
+        zip -r host.zip *
+        
     - name: Publish Host
-      run: |
-        rm -rf src/W2.Web/bin/Release/net6.0/publish/appsettings.json
-        cp -r src/W2.Web/bin/Release/net6.0/publish/* /var/www/app/w2/dev-dotnet-host-w2/
-  deploy:
-    runs-on:  [self-hosted, w2, github.ref_name ]
-    name: Deploy Workflow W2
-    environment: ${{ github.ref_name }}
-    needs:
-      - build
-    steps:
-    - name: Migrate Database
-      run: |
-        export PATH=$PATH:/opt/dotnet6/
-        cd /var/www/migrator/w2/dev-dotnet-migrator-w2/
-        dotnet6 W2.DbMigrator.dll -q
-    
-    - name: Restart Server
-      run: |
-        cd /var/www/app/w2/dev-dotnet-host-w2/
-        mkdir -p /var/www/app/w2/dev-dotnet-host-w2/Logs/
-        touch /var/www/app/w2/dev-dotnet-host-w2/Logs/logs.txt
-        chmod 777 -R Logs/
-        chmod 777 -R wwwroot/
-        cp appsettings.json appsettings.Development.json
-        sudo service erp-w2 start
-        sudo service erp-w2 status
+      uses: actions/upload-artifact@v3
+      with:
+        path: src/W2.Web/bin/Release/net6.0/publish/host.zip
+        name: w2-host
