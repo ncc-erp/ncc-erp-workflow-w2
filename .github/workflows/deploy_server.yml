@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on:  [self-hosted, w2, ${{ github.ref }} ]
+    runs-on:  [self-hosted, w2, $GITHUB_REF ]
     name: Build Workflow W2
     environment: ${{ github.ref_name }}
     steps:
