@@ -58,7 +58,7 @@ jobs:
   deploy:
     runs-on:  [self-hosted, w2, prod]
     name: Deploy Workflow W2 Production
-    environment: prod
+    environment: production
     needs:
       - build
     steps:
