@@ -20,17 +20,17 @@ jobs:
       run: |
         bash parse_env.sh
       env:
-        API_URL: ${{ secret.API_URL_DEV }}
-        DB_HOST: ${{ secret.DB_HOST_DEV }}
-        DB_NAME: ${{ secret.DB_NAME_DEV }}
-        DB_PASS: ${{ secret.DB_PASS_DEV }}
-        PASSPHRASE: ${{ secret.PASSPHRASE_DEV }}
-        SES_HOST: ${{ secret.SES_HOST_DEV }}
-        SES_USER: ${{ secret.SES_USER_DEV }}
-        SES_PASS: ${{ secret.SES_PASS_DEV }}
-        GG_CLIENT: ${{ secret.GG_CLIENT_DEV }}
-        GG_SECRET: ${{ secret.GG_SECRET_DEV }}
-        TALENT_DF: ${{ secret.TALENT_DF_DEV }}
+        API_URL: ${{ secrets.API_URL_DEV }}
+        DB_HOST: ${{ secrets.DB_HOST_DEV }}
+        DB_NAME: ${{ secrets.DB_NAME_DEV }}
+        DB_PASS: ${{ secrets.DB_PASS_DEV }}
+        PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
+        SES_HOST: ${{ secrets.SES_HOST_DEV }}
+        SES_USER: ${{ secrets.SES_USER_DEV }}
+        SES_PASS: ${{ secrets.SES_PASS_DEV }}
+        GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
+        GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
+        TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
     
     - name: Build Migrator
       run: |
