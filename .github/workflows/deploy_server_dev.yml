@@ -21,16 +21,12 @@ jobs:
         cd src/W2.DbMigrator
         dotnet6 publish -c Release
     
-    - name: Composer Migrator
+    - name: Copy New Migrator
       run: |
         cd src/W2.DbMigrator/bin/Release/net6.0/publish/
         rm -rf appsettings.json
-        zip -r migrator.zip *
-    - name: Publish Migrator
-      uses: actions/upload-artifact@v3
-      with:
-        path: src/W2.DbMigrator/bin/Release/net6.0/publish/migrator.zip
-        name: w2-migrator
+        cp -r * /var/www/migrator/w2/dev-dotnet-migrator-w2/
+
     
     - name: Build Host
       run: |
@@ -43,17 +39,11 @@ jobs:
         abp install-libs
         dotnet6 publish -c Release
     
-    - name: Composer Host
+    - name: Copy New Host
       run: |
         cd src/W2.Web/bin/Release/net6.0/publish/
         rm -rf appsettings.json
-        zip -r host.zip *
-        
-    - name: Publish Host
-      uses: actions/upload-artifact@v3
-      with:
-        path: src/W2.Web/bin/Release/net6.0/publish/host.zip
-        name: w2-host
+        cp -r * /var/www/app/w2/dev-dotnet-host-w2/
         
   deploy:
     runs-on:  [self-hosted, w2, dev]
@@ -82,25 +72,12 @@ jobs:
         GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
         GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
         TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
-        
-    - name: Download Artifact Migrator
-      uses: actions/download-artifact@v3
-      with:
-        name: w2-migrator
-        path: /var/www/migrator/w2/dev-dotnet-migrator-w2/
-    
-    - name: Download Artifact Host
-      uses: actions/download-artifact@v3
-      with:
-        name: w2-host
-        path: /var/www/app/w2/dev-dotnet-host-w2/
-    
+
     - name: Migrate Database
       run: |
         export PATH=$PATH:/opt/dotnet6/
         cp appsettings.json /var/www/migrator/w2/dev-dotnet-migrator-w2/
         cd /var/www/migrator/w2/dev-dotnet-migrator-w2/
-        unzip -qo migrator.zip && rm -rf migrator.zip
         dotnet6 W2.DbMigrator.dll -q
     
     - name: Restart Server
@@ -108,7 +85,6 @@ jobs:
         sudo service erp-w2 stop
         cp appsettings.json /var/www/app/w2/dev-dotnet-host-w2/
         cd /var/www/app/w2/dev-dotnet-host-w2/
-        unzip -qo host.zip && rm -rf host.zip
         mkdir -p /var/www/app/w2/dev-dotnet-host-w2/Logs/
         touch /var/www/app/w2/dev-dotnet-host-w2/Logs/logs.txt
         chmod 777 -R Logs/
