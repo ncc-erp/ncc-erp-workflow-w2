@@ -12,7 +12,7 @@ jobs:
     name: Build Workflow W2 Production
     environment: production
     outputs:
-      date_time: ${{ step.pushtos3.outputs.date_time }}
+      date_time: ${{ steps.pushtos3.outputs.date_time }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
