@@ -20,5 +20,10 @@ namespace W2.Scripting
         public string HoORejected { get; set; } = nameof(HoORejected);
         public string Approved { get; set; } = nameof(Approved);
         public string Rejected { get; set; } = nameof(Rejected);
+        public string CustomerApproved { get; set; } = nameof(CustomerApproved);
+        public string CustomerRejected { get; set; } = nameof(CustomerRejected);
+        public string ProceedInternal { get; set; } = nameof(ProceedInternal);
+        public string SentToCustomer { get; set; } = nameof(SentToCustomer);
+
     }
 }
