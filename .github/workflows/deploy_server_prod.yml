@@ -84,19 +84,7 @@ jobs:
         GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
         GG_SECRET: ${{ secrets.GG_SECRET_prod }}
         TALENT_DF: ${{ secrets.TALENT_DF_prod }}
-        
-    - name: Download Artifact Migrator
-      uses: actions/download-artifact@v3
-      with:
-        name: w2-migrator
-        path: /var/www/migrator/w2/prod-dotnet-migrator-w2/
-    
-    - name: Download Artifact Host
-      uses: actions/download-artifact@v3
-      with:
-        name: w2-host
-        path: /var/www/app/w2/prod-dotnet-host-w2/
-    
+            
     - name: Download Migrator & Host from S3
       run: |
         export MIGRATOR="migrator-${DATE_TIME}.zip"
