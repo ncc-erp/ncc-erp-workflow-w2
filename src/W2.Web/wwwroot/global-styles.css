@@ -24,3 +24,7 @@
 .select2-container .select2-selection--single {
     height: unset;
 }
+
+abp-validation-summary {
+    color: #dc3545;
+}
