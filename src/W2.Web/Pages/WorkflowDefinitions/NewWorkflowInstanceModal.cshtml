@@ -10,7 +10,8 @@
 }
 
 <form method="post" asp-page="/WorkflowDefinitions/NewWorkflowInstanceModal"
-    data-check-form-on-close="false">
+    data-check-form-on-close="true"
+    onsubmit="return validate()">
     <abp-modal size="Large">
         <abp-modal-header title="New Request"></abp-modal-header>
         <abp-modal-body>
@@ -97,7 +98,22 @@
                     </div>
                 </div>
             }
+            <abp-validation-summary></abp-validation-summary>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+
+<script type="text/javascript">
+function validate() {
+    validated = true;
+    $("abp-validation-summary").text("");
+    $("[id^=input_]").each(function(index, self ) {
+        if (!$(self).val()) {
+            validated = false;
+            $("abp-validation-summary").text("Please fill in all fields");
+        }
+    })
+    return validated;
+}
+</script>

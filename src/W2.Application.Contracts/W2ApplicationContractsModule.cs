@@ -34,7 +34,10 @@ public class W2ApplicationContractsModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
         context.Services
-            .AddRefitClient<IHrmClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]));
+            .AddRefitClient<IProjectClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Project"]));
+        context.Services
+            .AddRefitClient<ITimesheetClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Timesheet"]));
     }
 }

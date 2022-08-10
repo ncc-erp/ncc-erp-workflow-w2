@@ -5,7 +5,7 @@ using Volo.Abp.Application.Services;
 
 namespace W2.ExternalResources
 {
-    public interface IHrmClientApi: IApplicationService
+    public interface IProjectClientApi: IApplicationService
     {
         [Get("/api/services/app/Public/GetAllUser")]
         Task<AbpResponse<UserInfoCacheItem>> GetUsersAsync();
