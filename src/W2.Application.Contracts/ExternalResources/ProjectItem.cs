@@ -9,5 +9,14 @@ namespace W2.ExternalResources
 
         [JsonProperty("projectName")]
         public string Name { get; set; }
+        
+        [JsonProperty("pm")]
+        public ProjectManager PM { get; set; }
+    }
+
+    public class ProjectManager
+    {
+        [JsonProperty("emailAddress")]
+        public string EmailAddress { get; set; }
     }
 }

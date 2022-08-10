@@ -15,6 +15,8 @@ namespace W2.WorkflowDefinitions
         [Display(Name = "User List")]
         UserList,     
         [Display(Name = "My Project")]
-        MyProject
+        MyProject,
+        [Display(Name = "My PM Project")]
+        MyPMProject
     }
 }
