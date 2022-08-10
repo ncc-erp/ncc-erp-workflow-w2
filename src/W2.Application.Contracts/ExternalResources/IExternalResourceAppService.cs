@@ -10,5 +10,6 @@ namespace W2.ExternalResources
         Task<List<UserInfoCacheItem>> GetAllUsersInfoAsync();
         Task<List<ProjectItem>> GetCurrentUserProjectsAsync();
         Task RefreshAllUsersInfoAsync();
+        Task<List<ProjectItem>> GetUserProjectsWithRolePMFromApiAsync();
     }
 }
