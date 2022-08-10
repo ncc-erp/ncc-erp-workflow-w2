@@ -68,6 +68,18 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     })
                     .ToList();
             }
+
+            if (PropertyDefinitionViewModels.Any(x => x.Type == WorkflowInputDefinitionProperyType.MyPMProject))
+            {
+                var projects = await _externalResourceAppService.GetUserProjectsWithRolePMFromApiAsync();
+                ProjectSelectListItems = projects
+                    .Select(x => new SelectListItem
+                    {
+                        Text = x.Name,
+                        Value = x.Code
+                    })
+                    .ToList();
+            }
         }
 
         public async Task<IActionResult> OnPostAsync()

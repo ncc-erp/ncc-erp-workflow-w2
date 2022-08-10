@@ -138,7 +138,7 @@ namespace W2.WorkflowInstances
             {
                 specification = specification.WithWorkflowDefinition(input.WorkflowDefinitionId);
             }
-            var orderBySpecification = OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.FinishedAt!);
+            var orderBySpecification = OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt!);
 
             var instances = (await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification)).ToList();
             var instanceDtos = ObjectMapper.Map<List<WorkflowInstance>, List<WorkflowInstanceDto>>(instances);

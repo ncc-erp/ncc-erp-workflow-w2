@@ -37,6 +37,17 @@ namespace W2.ExternalResources
             await _userInfoCache.RefreshAsync(AllUserInfoCacheItem.CacheKey);
         }
 
+        public async Task<List<ProjectItem>> GetUserProjectsWithRolePMFromApiAsync()
+        {
+            var response = await _hrmClient.GetUserProjectAsync(CurrentUser.Email);
+            var projects = response.Result != null ? response.Result
+                .Where(x => x.PM.EmailAddress == CurrentUser.Email)
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Code)
+                .ToList() : new List<ProjectItem>();
+            return projects;
+        }
+
         private async Task<AllUserInfoCacheItem> GetAllUsersInfoFromApiAsync()
         {
             var response = await _hrmClient.GetUsersAsync();
