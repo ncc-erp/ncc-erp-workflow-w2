@@ -8,13 +8,17 @@ namespace W2.ExternalResources
     public class ExternalResourceAppService : W2AppService, IExternalResourceAppService
     {
         private readonly IDistributedCache<AllUserInfoCacheItem> _userInfoCache;
-        private readonly IHrmClientApi _hrmClient;
+        private readonly IProjectClientApi _projectClient;
+        private readonly ITimesheetClientApi _timesheetClient;
 
-        public ExternalResourceAppService(IDistributedCache<AllUserInfoCacheItem> userInfoCache,
-            IHrmClientApi hrmClient)
+        public ExternalResourceAppService(
+            IDistributedCache<AllUserInfoCacheItem> userInfoCache,
+            IProjectClientApi projectClient,
+            ITimesheetClientApi timesheetClient)
         {
             _userInfoCache = userInfoCache;
-            _hrmClient = hrmClient;
+            _projectClient = projectClient;
+            _timesheetClient = timesheetClient;
         }
 
 
@@ -39,9 +43,9 @@ namespace W2.ExternalResources
 
         public async Task<List<ProjectItem>> GetUserProjectsWithRolePMFromApiAsync()
         {
-            var response = await _hrmClient.GetUserProjectAsync(CurrentUser.Email);
+            var response = await _timesheetClient.GetUserProjectAsync(CurrentUser.Email);
             var projects = response.Result != null ? response.Result
-                .Where(x => x.PM.EmailAddress == CurrentUser.Email)
+                .Where(x => x.PM.Any(p => p.EmailAddress == CurrentUser.Email))
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Code)
                 .ToList() : new List<ProjectItem>();
@@ -50,7 +54,7 @@ namespace W2.ExternalResources
 
         private async Task<AllUserInfoCacheItem> GetAllUsersInfoFromApiAsync()
         {
-            var response = await _hrmClient.GetUsersAsync();
+            var response = await _projectClient.GetUsersAsync();
             var users = response.Result != null ? response.Result
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Email)
@@ -61,7 +65,7 @@ namespace W2.ExternalResources
 
         private async Task<List<ProjectItem>> GetUserProjectsFromApiAsync(string email)
         {
-            var response = await _hrmClient.GetUserProjectAsync(email);
+            var response = await _timesheetClient.GetUserProjectAsync(email);
             var projects = response.Result != null ? response.Result
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Code)

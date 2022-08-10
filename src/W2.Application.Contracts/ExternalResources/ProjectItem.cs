@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace W2.ExternalResources
 {
@@ -10,8 +11,8 @@ namespace W2.ExternalResources
         [JsonProperty("projectName")]
         public string Name { get; set; }
         
-        [JsonProperty("pm")]
-        public ProjectManager PM { get; set; }
+        [JsonProperty("pMs")]
+        public IEnumerable<ProjectManager> PM { get; set; }
     }
 
     public class ProjectManager
