@@ -6,12 +6,12 @@ using System.Linq.Expressions;
 
 namespace W2.Specifications
 {
-    public class ManyWorkflowDefinitionsLatestVersionSpecification : Specification<WorkflowDefinition>
+    public class ListAllWorkflowDefinitionsSpecification : PublishedWorkflowDefinitionsSpecification
     {
         public string TenantId { get; private set; }
         public string[] Ids { get; set; }
 
-        public ManyWorkflowDefinitionsLatestVersionSpecification(string tenantId, string[] ids)
+        public ListAllWorkflowDefinitionsSpecification(string tenantId, string[] ids)
         {
             TenantId = tenantId;
             Ids = ids;
@@ -19,7 +19,9 @@ namespace W2.Specifications
 
         public override Expression<Func<WorkflowDefinition, bool>> ToExpression()
         {
-            Expression<Func<WorkflowDefinition,bool>> predicate = x => x.IsLatest;
+            var predicate = base.ToExpression();
+            
+            predicate = predicate.And(x => x.IsLatest);
 
             if (Ids != null && Ids.Any())
             {

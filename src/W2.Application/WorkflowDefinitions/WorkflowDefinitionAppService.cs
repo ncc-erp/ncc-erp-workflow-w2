@@ -34,7 +34,7 @@ namespace W2.WorkflowDefinitions
 
         public async Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync()
         {
-            var specification = new ManyWorkflowDefinitionsLatestVersionSpecification(CurrentTenantStrId, null);
+            var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, null);
             var workflowDefinitions = (await _workflowDefinitionStore
                 .FindManyAsync(
                     specification,
@@ -61,7 +61,7 @@ namespace W2.WorkflowDefinitions
 
         public async Task<WorkflowDefinitionSummaryDto> GetByDefinitionIdAsync(string definitionId)
         {
-            var specification = new ManyWorkflowDefinitionsLatestVersionSpecification(CurrentTenantStrId, new string[] { definitionId });
+            var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { definitionId });
             var workflowDefinition = await _workflowDefinitionStore.FindAsync(specification);
             if (workflowDefinition == null)
             {
