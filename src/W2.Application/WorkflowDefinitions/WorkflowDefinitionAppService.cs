@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Users;
+using W2.Identity;
 using W2.Permissions;
 using W2.Specifications;
 
@@ -34,7 +36,14 @@ namespace W2.WorkflowDefinitions
 
         public async Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync()
         {
-            var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, null);
+            var specification = Specification<WorkflowDefinition>.Identity;
+            specification = specification.And(new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, null));
+
+            if (!CurrentUser.IsInRole("admin") && !CurrentUser.IsInRole(RoleNames.Designer))
+            {
+                specification = specification.And(new PublishedWorkflowDefinitionsSpecification());
+            }
+
             var workflowDefinitions = (await _workflowDefinitionStore
                 .FindManyAsync(
                     specification,

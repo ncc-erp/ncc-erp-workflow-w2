@@ -7,11 +7,6 @@ namespace W2.Specifications
 {
     public class PublishedWorkflowDefinitionsSpecification : Specification<WorkflowDefinition>
     {
-        public override Expression<Func<WorkflowDefinition, bool>> ToExpression()
-        {
-            Expression<Func<WorkflowDefinition, bool>> predicate = x => x.IsPublished;
-
-            return predicate;
-        }
+        public override Expression<Func<WorkflowDefinition, bool>> ToExpression() => x => x.IsPublished;
     }
 }

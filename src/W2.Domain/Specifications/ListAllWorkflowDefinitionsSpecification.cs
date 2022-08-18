@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace W2.Specifications
 {
-    public class ListAllWorkflowDefinitionsSpecification : PublishedWorkflowDefinitionsSpecification
+    public class ListAllWorkflowDefinitionsSpecification : Specification<WorkflowDefinition>
     {
         public string TenantId { get; private set; }
         public string[] Ids { get; set; }
@@ -19,9 +19,7 @@ namespace W2.Specifications
 
         public override Expression<Func<WorkflowDefinition, bool>> ToExpression()
         {
-            var predicate = base.ToExpression();
-            
-            predicate = predicate.And(x => x.IsLatest);
+            Expression<Func<WorkflowDefinition, bool>> predicate = x => x.IsLatest;
 
             if (Ids != null && Ids.Any())
             {
