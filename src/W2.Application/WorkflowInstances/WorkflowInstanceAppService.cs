@@ -143,7 +143,7 @@ namespace W2.WorkflowInstances
             var instances = (await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification)).ToList();
             var instanceDtos = ObjectMapper.Map<List<WorkflowInstance>, List<WorkflowInstanceDto>>(instances);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
-                new ManyWorkflowDefinitionsLatestVersionSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
             )).ToList();
 
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
