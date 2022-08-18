@@ -8,6 +8,6 @@ namespace W2.ExternalResources
     public interface ITimesheetClientApi : IApplicationService
     {
         [Get("/api/services/app/Public/GetPMsOfUser")]
-        Task<AbpResponse<ProjectItem>> GetUserProjectAsync([AliasAs("email")] string email);
+        Task<AbpResponse<TimesheetProjectItem>> GetUserProjectAsync([AliasAs("email")] string email);
     }
 }

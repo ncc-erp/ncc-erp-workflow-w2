@@ -30,7 +30,7 @@ namespace W2.ExternalResources
             );
         }
 
-        public async Task<List<ProjectItem>> GetCurrentUserProjectsAsync()
+        public async Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync()
         {
             var email = CurrentUser.Email;
             return await GetUserProjectsFromApiAsync(email);
@@ -41,14 +41,14 @@ namespace W2.ExternalResources
             await _userInfoCache.RefreshAsync(AllUserInfoCacheItem.CacheKey);
         }
 
-        public async Task<List<ProjectItem>> GetUserProjectsWithRolePMFromApiAsync()
+        public async Task<List<TimesheetProjectItem>> GetUserProjectsWithRolePMFromApiAsync()
         {
             var response = await _timesheetClient.GetUserProjectAsync(CurrentUser.Email);
             var projects = response.Result != null ? response.Result
                 .Where(x => x.PM.Any(p => p.EmailAddress == CurrentUser.Email))
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Code)
-                .ToList() : new List<ProjectItem>();
+                .ToList() : new List<TimesheetProjectItem>();
             return projects;
         }
 
@@ -63,13 +63,13 @@ namespace W2.ExternalResources
             return new AllUserInfoCacheItem(users);
         }
 
-        private async Task<List<ProjectItem>> GetUserProjectsFromApiAsync(string email)
+        private async Task<List<TimesheetProjectItem>> GetUserProjectsFromApiAsync(string email)
         {
             var response = await _timesheetClient.GetUserProjectAsync(email);
             var projects = response.Result != null ? response.Result
                 .OrderBy(x => x.Name)
                 .ThenBy(x => x.Code)
-                .ToList() : new List<ProjectItem>();
+                .ToList() : new List<TimesheetProjectItem>();
 
             return projects;
         }

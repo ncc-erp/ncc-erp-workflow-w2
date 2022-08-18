@@ -32,8 +32,6 @@ namespace W2.Activities
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             IContentSerializer contentSerializer,
-            IRepository<WorkflowInstanceStarter, Guid> workflowInstanceStarterRepository,
-            IStringLocalizer<W2Resource> localizer,
             ICurrentUser currentUser)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
