@@ -8,8 +8,8 @@ namespace W2.ExternalResources
     public interface IExternalResourceAppService
     {
         Task<List<UserInfoCacheItem>> GetAllUsersInfoAsync();
-        Task<List<ProjectItem>> GetCurrentUserProjectsAsync();
+        Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync();
         Task RefreshAllUsersInfoAsync();
-        Task<List<ProjectItem>> GetUserProjectsWithRolePMFromApiAsync();
+        Task<List<TimesheetProjectItem>> GetUserProjectsWithRolePMFromApiAsync();
     }
 }
