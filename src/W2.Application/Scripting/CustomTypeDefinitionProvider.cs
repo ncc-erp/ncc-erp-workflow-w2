@@ -1,6 +1,8 @@
 ﻿using Elsa.Scripting.JavaScript.Services;
 using System;
 using System.Collections.Generic;
+using Volo.Abp.Users;
+using W2.ExternalResources;
 
 namespace W2.Scripting
 {
@@ -8,7 +10,12 @@ namespace W2.Scripting
     {
         public override IEnumerable<Type> CollectTypes(TypeDefinitionContext context)
         {
-            return new[] { typeof(WorkflowSignals) };
+            return new[] 
+            { 
+                typeof(WorkflowSignals),
+                typeof(ICurrentUser),
+                typeof(OfficeInfo)
+            };
         }
     }
 

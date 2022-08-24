@@ -52,6 +52,57 @@ namespace W2.ExternalResources
             return projects;
         }
 
+        public async Task<List<OfficeInfo>> GetListOfOfficeAsync()
+        {
+            var listOfOffices = new List<OfficeInfo>
+            {
+                new OfficeInfo
+                {
+                    Code = "HN1",
+                    DisplayName = "Hà Nội 1",
+                    HeadOfOfficeEmail = "tung.nguyen@ncc.asia"
+                },
+                new OfficeInfo
+                {
+                    Code = "HN2",
+                    DisplayName = "Hà Nội 2",
+                    HeadOfOfficeEmail = "hieu.dohoang@ncc.asia"
+                },
+                new OfficeInfo
+                {
+                    Code = "ĐN",
+                    DisplayName = "Đà Nẵng",
+                    HeadOfOfficeEmail = "thien.dang@ncc.asia"
+                },
+                new OfficeInfo
+                {
+                    Code = "V",
+                    DisplayName = "Vinh",
+                    HeadOfOfficeEmail = "dai.trinhduc@ncc.asia"
+                },
+                new OfficeInfo
+                {
+                    Code = "SG1",
+                    DisplayName = "Sài Gòn 1",
+                    HeadOfOfficeEmail = "duong.nguyen@ncc.asia"
+                },
+                new OfficeInfo
+                {
+                    Code = "SG2",
+                    DisplayName = "Sài Gòn 2",
+                    HeadOfOfficeEmail = "linh.nguyen@ncc.asia"
+                },
+                new OfficeInfo
+                {
+                    Code = "QN",
+                    DisplayName = "Quy Nhơn",
+                    HeadOfOfficeEmail = "phi.lekim@ncc.asia"
+                }
+            };
+
+            return await Task.FromResult(listOfOffices);
+        }
+
         private async Task<AllUserInfoCacheItem> GetAllUsersInfoFromApiAsync()
         {
             var response = await _projectClient.GetUsersAsync();

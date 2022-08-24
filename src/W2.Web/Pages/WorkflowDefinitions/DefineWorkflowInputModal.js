@@ -54,6 +54,9 @@
                             <option value="DateTime">Date Time</option>
                             <option value="RichText">Rich Text</option>
                             <option value="UserList">User List</option>
+                            <option value="MyProject">My Project</option>
+                            <option value="MyPMProject">My PM Project</option>
+                            <option value="OfficeList">Office List</option>
                         </select>
                         <span class="text-danger field-validation-valid"
                             data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].Type" data-valmsg-replace="true"></span>
