@@ -93,6 +93,21 @@
                                     }
                                     </script>
                                     break;
+                                case WorkflowInputDefinitionProperyType.OfficeList:
+                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                        @foreach(var item in Model.OfficeSelectListItems)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
+                                    <script type="text/javascript">
+                                    {
+                                        $('#@inputId').select2({
+                                            dropdownParent: $('#@inputId').parent()
+                                        });
+                                    }
+                                    </script>
+                                    break;
                             }
                         </div>
                     </div>

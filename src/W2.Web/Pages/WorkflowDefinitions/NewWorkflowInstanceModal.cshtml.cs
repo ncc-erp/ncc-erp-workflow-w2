@@ -36,6 +36,7 @@ namespace W2.Web.Pages.WorkflowDefinitions
         public Dictionary<string, string> WorkflowInput { get; set; } = new Dictionary<string, string>();
         public List<SelectListItem> UserSelectListItems { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ProjectSelectListItems { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> OfficeSelectListItems { get; set; } = new List<SelectListItem>();
 
         public async Task OnGetAsync()
         {
@@ -76,6 +77,18 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     .Select(x => new SelectListItem
                     {
                         Text = x.Name,
+                        Value = x.Code
+                    })
+                    .ToList();
+            }
+
+            if (PropertyDefinitionViewModels.Any(x => x.Type == WorkflowInputDefinitionProperyType.OfficeList))
+            {
+                var offices = await _externalResourceAppService.GetListOfOfficeAsync();
+                OfficeSelectListItems = offices
+                    .Select(x => new SelectListItem
+                    {
+                        Text = x.DisplayName,
                         Value = x.Code
                     })
                     .ToList();
