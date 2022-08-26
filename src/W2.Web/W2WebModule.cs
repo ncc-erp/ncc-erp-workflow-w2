@@ -50,6 +50,7 @@ using W2.Activities;
 using W2.Scripting;
 using Elsa.Persistence.EntityFramework.PostgreSql;
 using Volo.Abp.Timing;
+using Volo.Abp.IdentityServer;
 
 namespace W2.Web;
 
@@ -128,6 +129,11 @@ public class W2WebModule : AbpModule
         Configure<AbpClockOptions>(options =>
         {
             options.Kind = DateTimeKind.Utc;
+        });
+
+        Configure<AbpClaimsServiceOptions>(options =>
+        {
+            options.RequestedClaims.Add(CustomClaim.ProjectName);
         });
     }
 
