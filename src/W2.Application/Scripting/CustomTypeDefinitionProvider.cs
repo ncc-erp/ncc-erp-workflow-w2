@@ -31,6 +31,7 @@ namespace W2.Scripting
         public string CustomerRejected { get; set; } = nameof(CustomerRejected);
         public string ProceedInternal { get; set; } = nameof(ProceedInternal);
         public string SentToCustomer { get; set; } = nameof(SentToCustomer);
-
+        public string CEOApproved { get; set; } = nameof(CEOApproved);
+        public string CEORejected { get; set; } = nameof(CEORejected);
     }
 }
