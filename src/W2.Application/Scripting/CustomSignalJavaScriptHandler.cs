@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Users;
 using W2.ExternalResources;
+using W2.Permissions;
 
 namespace W2.Scripting
 {
@@ -46,8 +47,9 @@ namespace W2.Scripting
             };
             engine.SetValue("getOfficeInfo", getOfficeInfo);
 
-            Func<ICurrentUser> getCurrentUser = () => _currentUser;
-            engine.SetValue("getCurrentUser", getCurrentUser);
+            engine.SetValue("currentUser", _currentUser);
+
+            engine.SetValue("currentUserProject", _currentUser.FindClaimValue(CustomClaim.ProjectName));
         }
 
         public Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
@@ -57,7 +59,8 @@ namespace W2.Scripting
             output.AppendLine("declare function getCustomSignalUrl(signal: string): string");
             output.AppendLine("declare const workflowSignals: WorkflowSignals");
             output.AppendLine("declare function getOfficeInfo(officeCode: string): OfficeInfo");
-            output.AppendLine("declare function getCurrentUser(): ICurrentUser");
+            output.AppendLine("declare const currentUser: ICurrentUser");
+            output.AppendLine("declare const currentUserProject: string");
 
             return Task.CompletedTask;
         }
