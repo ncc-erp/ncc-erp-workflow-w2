@@ -10,7 +10,7 @@
 }
 
 <form method="post" asp-page="/WorkflowDefinitions/NewWorkflowInstanceModal"
-    data-check-form-on-close="true"
+    data-check-form-on-close="false"
     onsubmit="return validate()">
     <abp-modal size="Large">
         <abp-modal-header title="New Request"></abp-modal-header>
@@ -37,7 +37,15 @@
                                     break;
                                 case WorkflowInputDefinitionProperyType.DateTime: 
                                     <input id="@inputId" name="@inputName" 
-                                        type="date" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
+                                        type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]"
+                                        readonly style="cursor: pointer"/>
+                                    <script>
+                                        {
+                                            $('#@inputId').datepicker({
+                                                format: 'dd/mm/yyyy'
+                                            });
+                                        }
+                                    </script>
                                     break;
                                 case WorkflowInputDefinitionProperyType.RichText:
                                     <textarea id="@inputId" name="@inputName" hidden="hidden"></textarea>
