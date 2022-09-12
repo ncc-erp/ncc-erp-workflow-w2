@@ -1,0 +1,42 @@
+﻿@page
+@using W2.Scripting
+@model W2.Web.Pages.Signals.FormModel
+@{
+}
+
+<abp-card style="width:40rem;margin:auto;">
+    <abp-card-body>
+        <form method="post">
+            <abp-input type="hidden" asp-for="@Model.SignalModel.Name"></abp-input>
+            <abp-input type="hidden" asp-for="@Model.SignalModel.WorkflowInstanceId"></abp-input>
+            @foreach (var requiredInput in Model.SignalModel.RequiredInputs)
+            {
+                var inputName = $"SignalInputs[{requiredInput}]";
+                switch (requiredInput)
+                {
+                    case SignalInputType.Reason:
+                        <div class="row">
+                            <div class="col">
+                                <div class="mb-3">
+                                    <label class="form-label" for="@inputName">@requiredInput</label>
+                                    <input name="@inputName" type="text" class="form-control" value="@Model.SignalInputs[requiredInput]" required />
+                                </div>
+                            </div>
+                        </div>
+                        break;
+                    case SignalInputType.TriggeredBy:
+                        <input name="@inputName" type="hidden" value="@Model.SignalInputs[requiredInput]" />
+                        break;
+                }
+            }
+            <div class="row">
+                <div class="col">
+                    <div class="mb-3 float-end">
+                        <button type="submit" class="btn btn-sm btn-primary abp-action-button">Save</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </abp-card-body>
+</abp-card>
+
