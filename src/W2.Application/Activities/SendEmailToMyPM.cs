@@ -48,7 +48,7 @@ namespace W2.Activities
             }
 
             var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(_currentUser.Email);
-            if (userProjectsResult != null)
+            if (userProjectsResult?.Result != null)
             {
                 userProjectsResult.Result
                     .Select(i => i.PM?.EmailAddress)

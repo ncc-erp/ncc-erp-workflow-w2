@@ -6,5 +6,7 @@ namespace W2.Signals
     public interface ISignalAppService : IApplicationService
     {
         Task TriggerAsync(string token);
+        Task<SignalModelDto> GetSignalModelFromTokenAsync(string token);
+        Task TriggerAsync(TriggerSignalWithInputDto triggerSignalInput);
     }
 }

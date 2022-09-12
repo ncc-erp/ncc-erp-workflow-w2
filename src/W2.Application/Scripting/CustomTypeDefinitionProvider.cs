@@ -14,7 +14,8 @@ namespace W2.Scripting
             { 
                 typeof(WorkflowSignals),
                 typeof(ICurrentUser),
-                typeof(OfficeInfo)
+                typeof(OfficeInfo),
+                typeof(SignalInputTypes)
             };
         }
     }
@@ -33,5 +34,17 @@ namespace W2.Scripting
         public string SentToCustomer { get; set; } = nameof(SentToCustomer);
         public string CEOApproved { get; set; } = nameof(CEOApproved);
         public string CEORejected { get; set; } = nameof(CEORejected);
+    }
+
+    public class SignalInputTypes
+    {
+        public string Reason { get; } = SignalInputType.Reason;
+        public string TriggeredBy { get; } = SignalInputType.TriggeredBy;
+    }
+
+    public static class SignalInputType
+    {
+        public const string Reason = nameof(Reason);
+        public const string TriggeredBy = nameof(TriggeredBy);
     }
 }
