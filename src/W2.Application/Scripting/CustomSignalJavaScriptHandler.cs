@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
+using W2.Signals;
 
 namespace W2.Scripting
 {
@@ -40,6 +41,13 @@ namespace W2.Scripting
             };
             engine.SetValue("getCustomSignalUrl", getCustomSignalUrl);
 
+            Func<string, string[], string> getCustomSignalUrlWithForm = (signal, requiredInputs) =>
+            {
+                var url = $"/Signals/Form?token={notification.ActivityExecutionContext.GenerateSignalTokenWithForm(signal, requiredInputs)}";
+                return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
+            };
+            engine.SetValue("getCustomSignalUrlWithForm", getCustomSignalUrlWithForm);
+
             var listOfOffices = await _externalResourceAppService.GetListOfOfficeAsync();
             Func<string, OfficeInfo> getOfficeInfo = officeCode =>
             {
@@ -50,6 +58,8 @@ namespace W2.Scripting
             engine.SetValue("currentUser", _currentUser);
 
             engine.SetValue("currentUserProject", _currentUser.FindClaimValue(CustomClaim.ProjectName));
+
+            engine.SetValue("signalInputTypes", new SignalInputTypes());
         }
 
         public Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
@@ -61,6 +71,8 @@ namespace W2.Scripting
             output.AppendLine("declare function getOfficeInfo(officeCode: string): OfficeInfo");
             output.AppendLine("declare const currentUser: ICurrentUser");
             output.AppendLine("declare const currentUserProject: string");
+            output.AppendLine("declare function getCustomSignalUrlWithForm(signal: string, requiredInputs: string[]): string");
+            output.AppendLine("declare const signalInputTypes: SignalInputTypes");
 
             return Task.CompletedTask;
         }
