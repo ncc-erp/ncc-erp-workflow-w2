@@ -70,6 +70,12 @@ namespace W2.ExternalResources
                 },
                 new OfficeInfo
                 {
+                    Code = "HN3",
+                    DisplayName = "Hà Nội 3",
+                    HeadOfOfficeEmail = "quan.nguyenminh@ncc.asia"
+                },
+                new OfficeInfo
+                {
                     Code = "ĐN",
                     DisplayName = "Đà Nẵng",
                     HeadOfOfficeEmail = "thien.dang@ncc.asia"
