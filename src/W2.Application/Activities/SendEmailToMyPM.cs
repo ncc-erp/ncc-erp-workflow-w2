@@ -11,8 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Volo.Abp.Users;
 using W2.ExternalResources;
+using W2.Signals;
 
 namespace W2.Activities
 {
@@ -24,17 +24,14 @@ namespace W2.Activities
     public class SendEmailToMyPM : CustomEmail
     {
         private readonly IProjectClientApi _projectClientApi;
-        private readonly ICurrentUser _currentUser;
 
         public SendEmailToMyPM(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             IContentSerializer contentSerializer,
-            IProjectClientApi projectClientApi,
-            ICurrentUser currentUser) : base(smtpService, options, httpClientFactory, contentSerializer)
+            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _projectClientApi = projectClientApi;
-            _currentUser = currentUser;
         }
 
         public new ICollection<string> Cc { get; set; }
@@ -47,7 +44,8 @@ namespace W2.Activities
                 To = new List<string>();
             }
 
-            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(_currentUser.Email);
+            var currentUser = context.GetRequestUserVariable();
+            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(currentUser?.Email);
             if (userProjectsResult?.Result != null)
             {
                 userProjectsResult.Result

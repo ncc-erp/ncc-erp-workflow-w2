@@ -15,7 +15,9 @@ namespace W2.Scripting
                 typeof(WorkflowSignals),
                 typeof(ICurrentUser),
                 typeof(OfficeInfo),
-                typeof(SignalInputTypes)
+                typeof(SignalInputTypes),
+                typeof(RequestUser),
+                typeof(WorkflowInstanceVariableNames)
             };
         }
     }
@@ -46,5 +48,11 @@ namespace W2.Scripting
     {
         public const string Reason = nameof(Reason);
         public const string TriggeredBy = nameof(TriggeredBy);
+    }
+
+    public class WorkflowInstanceVariableNames
+    {
+        public string Request { get; set; } = nameof(Request);
+        public string RequestUser { get; set; } = nameof(RequestUser);
     }
 }

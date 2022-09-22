@@ -1,7 +1,7 @@
 ﻿using Elsa.Services;
 using Elsa.Services.Models;
-using System.Collections.Generic;
 using System.Linq;
+using W2.Scripting;
 
 namespace W2.Signals
 {
@@ -18,6 +18,11 @@ namespace W2.Signals
             };
             ITokenService service = context.GetService<ITokenService>();
             return service.CreateToken(payload);
+        }
+
+        public static RequestUser GetRequestUserVariable(this ActivityExecutionContext context)
+        {
+            return context.GetVariable<RequestUser>(nameof(RequestUser));
         }
     }
 }
