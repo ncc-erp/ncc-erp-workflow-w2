@@ -15,6 +15,7 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 using W2.Localization;
+using W2.Signals;
 using W2.WorkflowInstances;
 
 namespace W2.Activities
@@ -26,16 +27,12 @@ namespace W2.Activities
         Outcomes = new[] { OutcomeNames.Done, "Unexpected Error" })]
     public class SendEmailToInstanceCreatorAndOther : CustomEmail
     {
-        private readonly ICurrentUser _currentUser;
-
         public SendEmailToInstanceCreatorAndOther(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
-            IContentSerializer contentSerializer,
-            ICurrentUser currentUser)
+            IContentSerializer contentSerializer)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
-            _currentUser = currentUser;
         }
 
         public new ICollection<string> Cc { get; set; }
@@ -47,11 +44,17 @@ namespace W2.Activities
 
             try
             {
-                if (base.To == null)
-                    base.To = new List<string>();
+                var requestUser = context.GetRequestUserVariable();
 
-                if (!To.Contains(_currentUser.Email))
-                    base.To.Add(_currentUser.Email);
+                if (base.To == null)
+                {
+                    base.To = new List<string>();
+                }
+
+                if (requestUser != null && !To.Contains(requestUser.Email))
+                {
+                    base.To.Add(requestUser.Email);
+                }
 
                 return await base.OnExecuteAsync(context);
             }

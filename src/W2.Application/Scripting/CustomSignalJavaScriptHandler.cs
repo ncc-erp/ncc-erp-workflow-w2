@@ -60,6 +60,11 @@ namespace W2.Scripting
             engine.SetValue("currentUserProject", _currentUser.FindClaimValue(CustomClaim.ProjectName));
 
             engine.SetValue("signalInputTypes", new SignalInputTypes());
+
+            Func<RequestUser> getRequestUser = () => notification.ActivityExecutionContext.GetRequestUserVariable();
+            engine.SetValue("getRequestUser", getRequestUser);
+
+            engine.SetValue("workflowInstanceVariableNames", new WorkflowInstanceVariableNames());
         }
 
         public Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
@@ -73,6 +78,8 @@ namespace W2.Scripting
             output.AppendLine("declare const currentUserProject: string");
             output.AppendLine("declare function getCustomSignalUrlWithForm(signal: string, requiredInputs: string[]): string");
             output.AppendLine("declare const signalInputTypes: SignalInputTypes");
+            output.AppendLine("declare function getRequestUser: RequestUser");
+            output.AppendLine("declare const workflowInstanceVariableNames: WorkflowInstanceVariableNames");
 
             return Task.CompletedTask;
         }
