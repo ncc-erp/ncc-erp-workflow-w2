@@ -91,11 +91,6 @@ namespace W2.WorkflowInstances
 
             await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
 
-            if (!executionResult.Executed)
-            {
-                throw new UserFriendlyException(L["Exception:WorkflowInstanceExecutionFailed"]);
-            }
-
             return instance.Id;
         }
 
