@@ -10,51 +10,8 @@ namespace W2.ExternalResources
         private readonly IDistributedCache<AllUserInfoCacheItem> _userInfoCache;
         private readonly IProjectClientApi _projectClient;
         private readonly ITimesheetClientApi _timesheetClient;
-
-        public ExternalResourceAppService(
-            IDistributedCache<AllUserInfoCacheItem> userInfoCache,
-            IProjectClientApi projectClient,
-            ITimesheetClientApi timesheetClient)
-        {
-            _userInfoCache = userInfoCache;
-            _projectClient = projectClient;
-            _timesheetClient = timesheetClient;
-        }
-
-
-        public async Task<List<UserInfoCacheItem>> GetAllUsersInfoAsync()
-        {
-            return await _userInfoCache.GetOrAddAsync(
-                AllUserInfoCacheItem.CacheKey,
-                async () => await GetAllUsersInfoFromApiAsync()
-            );
-        }
-
-        public async Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync()
-        {
-            var email = CurrentUser.Email;
-            return await GetUserProjectsFromApiAsync(email);
-        }
-
-        public async Task RefreshAllUsersInfoAsync()
-        {
-            await _userInfoCache.RefreshAsync(AllUserInfoCacheItem.CacheKey);
-        }
-
-        public async Task<List<TimesheetProjectItem>> GetUserProjectsWithRolePMFromApiAsync()
-        {
-            var response = await _timesheetClient.GetUserProjectAsync(CurrentUser.Email);
-            var projects = response.Result != null ? response.Result
-                .Where(x => x.PM.Any(p => p.EmailAddress == CurrentUser.Email))
-                .OrderBy(x => x.Name)
-                .ThenBy(x => x.Code)
-                .ToList() : new List<TimesheetProjectItem>();
-            return projects;
-        }
-
-        public async Task<List<OfficeInfo>> GetListOfOfficeAsync()
-        {
-            var listOfOffices = new List<OfficeInfo>
+        private readonly IHrmClientApi _hrmClient;
+        private readonly List<OfficeInfo> listOfOffices = new List<OfficeInfo>
             {
                 new OfficeInfo
                 {
@@ -106,7 +63,52 @@ namespace W2.ExternalResources
                 }
             };
 
-            return await Task.FromResult(listOfOffices);
+        public ExternalResourceAppService(
+            IDistributedCache<AllUserInfoCacheItem> userInfoCache,
+            IHrmClientApi hrmClient,
+            IProjectClientApi projectClient,
+            ITimesheetClientApi timesheetClient)
+        {
+            _userInfoCache = userInfoCache;
+            _projectClient = projectClient;
+            _timesheetClient = timesheetClient;
+            _hrmClient = hrmClient;
+        }
+
+
+        public async Task<List<UserInfoCacheItem>> GetAllUsersInfoAsync()
+        {
+            return await _userInfoCache.GetOrAddAsync(
+                AllUserInfoCacheItem.CacheKey,
+                async () => await GetAllUsersInfoFromApiAsync()
+            );
+        }
+
+        public async Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync()
+        {
+            var email = CurrentUser.Email;
+            return await GetUserProjectsFromApiAsync(email);
+        }
+
+        public async Task RefreshAllUsersInfoAsync()
+        {
+            await _userInfoCache.RefreshAsync(AllUserInfoCacheItem.CacheKey);
+        }
+
+        public async Task<List<TimesheetProjectItem>> GetUserProjectsWithRolePMFromApiAsync()
+        {
+            var response = await _timesheetClient.GetUserProjectAsync(CurrentUser.Email);
+            var projects = response.Result != null ? response.Result
+                .Where(x => x.PM.Any(p => p.EmailAddress == CurrentUser.Email))
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Code)
+                .ToList() : new List<TimesheetProjectItem>();
+            return projects;
+        }
+
+        public async Task<List<OfficeInfo>> GetListOfOfficeAsync()
+        {
+            return await Task.FromResult(this.listOfOffices);
         }
 
         private async Task<AllUserInfoCacheItem> GetAllUsersInfoFromApiAsync()
@@ -129,6 +131,14 @@ namespace W2.ExternalResources
                 .ToList() : new List<TimesheetProjectItem>();
 
             return projects;
+        }
+
+        public async Task<OfficeInfo> GetUserBranchInfoAsync(string email)
+        {
+            var response = await _hrmClient.GetUserBranchInfoAsync(email);
+            var office = this.listOfOffices.FirstOrDefault(l => l.Code == response.Result.FirstOrDefault()?.BranchCode);
+
+            return office;
         }
     }
 }
