@@ -51,18 +51,6 @@ namespace W2.ExternalResources
         [JsonProperty("bankAccountNumber")]
         public string BankAccountNumber { get; set; }
 
-        [JsonProperty("remainLeaveDay")]
-        public int RemainLeaveDay { get; set; }
-
-        [JsonProperty("taxCode")]
-        public string TaxCode { get; set; }
-
-        [JsonProperty("insuranceStatus")]
-        public int InsuranceStatus { get; set; }
-
-        [JsonProperty("insuranceStatusName")]
-        public string InsuranceStatusName { get; set; }
-
         [JsonProperty("branch")]
         public string Branch { get; set; }
 
@@ -74,8 +62,5 @@ namespace W2.ExternalResources
 
         [JsonProperty("bank")]
         public string Bank { get; set; }
-
-        [JsonProperty("bankId")]
-        public int BankId { get; set; }
     }
 }

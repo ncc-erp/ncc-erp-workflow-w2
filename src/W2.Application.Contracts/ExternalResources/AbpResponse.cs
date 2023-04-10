@@ -8,4 +8,10 @@ namespace W2.ExternalResources
         [JsonProperty("result")]
         public List<T> Result { get; set; }
     }
+
+    public class AbpResponseSingle<T>
+    {
+        [JsonProperty("result")]
+        public T Result { get; set; }
+    }
 }

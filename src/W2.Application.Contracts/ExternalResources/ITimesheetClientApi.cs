@@ -11,6 +11,6 @@ namespace W2.ExternalResources
         Task<AbpResponse<TimesheetProjectItem>> GetUserProjectAsync([AliasAs("email")] string email);
 
         [Get("/api/services/app/HRMv2/GetUserInfoByEmail")]
-        Task<AbpResponse<TimesheetUserInfo>> GetUserInfoByEmailAsync([AliasAs("email")] string email);
+        Task<AbpResponseSingle<TimesheetUserInfo>> GetUserInfoByEmailAsync([AliasAs("email")] string email);
     }
 }
