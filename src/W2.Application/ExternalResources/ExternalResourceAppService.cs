@@ -135,8 +135,8 @@ namespace W2.ExternalResources
 
         public async Task<OfficeInfo> GetUserBranchInfoAsync(string email)
         {
-            var response = await _hrmClient.GetUserBranchInfoAsync(email);
-            var office = this.listOfOffices.FirstOrDefault(l => l.Code == response.Result.FirstOrDefault()?.BranchCode);
+            var response = await _timesheetClient.GetUserInfoByEmailAsync(email);
+            var office = this.listOfOffices.FirstOrDefault(l => l.Code == response.Result.FirstOrDefault()?.Branch);
 
             return office;
         }
