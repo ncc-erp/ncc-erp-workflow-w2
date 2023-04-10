@@ -10,7 +10,7 @@ namespace W2.ExternalResources
         private readonly IDistributedCache<AllUserInfoCacheItem> _userInfoCache;
         private readonly IProjectClientApi _projectClient;
         private readonly ITimesheetClientApi _timesheetClient;
-        private readonly IHrmClientApi _hrmClient;
+        //private readonly IHrmClientApi _hrmClient;
         private readonly List<OfficeInfo> listOfOffices = new List<OfficeInfo>
             {
                 new OfficeInfo
@@ -65,14 +65,14 @@ namespace W2.ExternalResources
 
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
-            IHrmClientApi hrmClient,
+            //IHrmClientApi hrmClient,
             IProjectClientApi projectClient,
             ITimesheetClientApi timesheetClient)
         {
             _userInfoCache = userInfoCache;
             _projectClient = projectClient;
             _timesheetClient = timesheetClient;
-            _hrmClient = hrmClient;
+            //_hrmClient = hrmClient;
         }
 
 
