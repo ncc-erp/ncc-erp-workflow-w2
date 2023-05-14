@@ -67,6 +67,17 @@
                                             editor.on('text-change', function() {
                                                 $('#@inputId').val(editor.root.innerHTML);
                                             });
+                                            if (@propertyDefinition.Name == "Device Notes")
+                                            {
+                                                editor.setContents([
+                                                    { insert: 'Văn phòng đang làm việc', attributes: { bold: true } },
+                                                    { insert: ': \n' },
+                                                    { insert: 'Thiết bị cần request', attributes: { bold: true } },
+                                                    { insert: ': \n' },
+                                                    { insert: 'Lý do', attributes: { bold: true } },
+                                                    { insert: ': \n' },
+                                                ])
+                                            }
                                         }
                                     </script>
                                     break;
