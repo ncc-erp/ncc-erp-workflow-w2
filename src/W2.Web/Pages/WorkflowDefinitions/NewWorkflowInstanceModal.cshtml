@@ -67,8 +67,7 @@
                                             editor.on('text-change', function() {
                                                 $('#@inputId').val(editor.root.innerHTML);
                                             });
-                                            if (@propertyDefinition.Name == "Device Notes")
-                                            {
+                                            if ("@propertyDefinition.Name" == "DeviceNotes") {
                                                 editor.setContents([
                                                     { insert: 'Văn phòng đang làm việc', attributes: { bold: true } },
                                                     { insert: ': \n' },
