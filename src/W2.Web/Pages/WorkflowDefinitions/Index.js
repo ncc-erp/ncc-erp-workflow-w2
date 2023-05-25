@@ -467,6 +467,7 @@ $(function () {
         if (arguments?.length > 1) {
             arguments[1].xhr.then(res => {
                 window.open(abp.appPath + 'WorkflowInstances/Designer?id=' + res);
+                console.log("Opened new window to designer page");
             });
         }
     });
