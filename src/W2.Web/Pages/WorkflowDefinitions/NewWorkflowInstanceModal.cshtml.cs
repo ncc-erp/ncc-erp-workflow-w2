@@ -113,7 +113,7 @@ namespace W2.Web.Pages.WorkflowDefinitions
                 Input = WorkflowInput
             });
 
-            _logger.LogDebug($"Return Id {workflowInstanceId} to client");
+            _logger.LogInformation($"Return Id {workflowInstanceId} to client");
             return Content(workflowInstanceId);
         }
     }
