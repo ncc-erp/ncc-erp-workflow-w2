@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using W2.ExternalResources;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
 
 namespace W2.Web.Pages.WorkflowDefinitions
 {
@@ -18,12 +19,16 @@ namespace W2.Web.Pages.WorkflowDefinitions
     {
         private readonly IWorkflowInstanceAppService _workflowInstanceAppService;
         private readonly IExternalResourceAppService _externalResourceAppService;
+        private readonly ILogger<NewWorkflowInstanceModalModel> _logger;
 
-        public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService, 
-            IExternalResourceAppService externalResourceAppService)
+        public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService,
+            IExternalResourceAppService externalResourceAppService,
+            ILogger<NewWorkflowInstanceModalModel> logger
+            )
         {
             _workflowInstanceAppService = workflowInstanceAppService;
             _externalResourceAppService = externalResourceAppService;
+            _logger = logger;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -108,6 +113,7 @@ namespace W2.Web.Pages.WorkflowDefinitions
                 Input = WorkflowInput
             });
 
+            _logger.LogDebug($"Return Id {workflowInstanceId} to client");
             return Content(workflowInstanceId);
         }
     }

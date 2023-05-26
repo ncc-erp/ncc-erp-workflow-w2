@@ -5,6 +5,7 @@ using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
@@ -35,6 +36,7 @@ namespace W2.WorkflowInstances
         private readonly IWorkflowInstanceDeleter _workflowInstanceDeleter;
         private readonly IEmailSender _emailSender;
         private readonly ITemplateRenderer _templateRenderer;
+        private readonly ILogger<WorkflowInstanceAppService> _logger;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -43,7 +45,8 @@ namespace W2.WorkflowInstances
             IWorkflowInstanceCanceller canceller,
             IWorkflowInstanceDeleter workflowInstanceDeleter,
             IEmailSender emailSender,
-            ITemplateRenderer templateRenderer)
+            ITemplateRenderer templateRenderer,
+            ILogger<WorkflowInstanceAppService> logger)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -53,6 +56,7 @@ namespace W2.WorkflowInstances
             _workflowInstanceDeleter = workflowInstanceDeleter;
             _emailSender = emailSender;
             _templateRenderer = templateRenderer;
+            _logger = logger;
         }
 
         public async Task CancelAsync(string id)
@@ -91,6 +95,12 @@ namespace W2.WorkflowInstances
 
             await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
 
+            CurrentUnitOfWork.OnCompleted(() =>
+            {
+                _logger.LogDebug("UOW CreateNewInstanceAsync completed.");
+                return Task.CompletedTask;
+            });
+
             return instance.Id;
         }
 
@@ -113,10 +123,15 @@ namespace W2.WorkflowInstances
             }
 
             var instanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
+            _logger.LogDebug("Fetch WorkflowInstanceDto begin");
             var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id);
             if (workflowInstanceStarter != null)
             {
                 instanceDto.CreatorId = workflowInstanceStarter.CreatorId;
+            }
+            else
+            {
+                _logger.LogError("Workflow not found");
             }
 
             return instanceDto;
