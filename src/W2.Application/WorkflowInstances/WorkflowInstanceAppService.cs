@@ -95,11 +95,8 @@ namespace W2.WorkflowInstances
 
             await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
 
-            CurrentUnitOfWork.OnCompleted(() =>
-            {
-                _logger.LogDebug("UOW CreateNewInstanceAsync completed.");
-                return Task.CompletedTask;
-            });
+            await CurrentUnitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Save changes to database.");
 
             return instance.Id;
         }
@@ -123,7 +120,7 @@ namespace W2.WorkflowInstances
             }
 
             var instanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
-            _logger.LogDebug("Fetch WorkflowInstanceDto begin");
+            _logger.LogInformation("Fetch WorkflowInstanceDto begin");
             var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id);
             if (workflowInstanceStarter != null)
             {
@@ -131,7 +128,7 @@ namespace W2.WorkflowInstances
             }
             else
             {
-                _logger.LogError("Workflow not found");
+                _logger.LogInformation("Workflow not found");
             }
 
             return instanceDto;

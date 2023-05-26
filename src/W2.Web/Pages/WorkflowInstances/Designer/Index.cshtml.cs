@@ -25,10 +25,10 @@ namespace W2.Web.Pages.WorkflowInstances.Designer
         public async Task<IActionResult> OnGetAsync()
         {
             var instance = await _workflowInstanceAppService.GetByIdAsync(WorkflowInstanceId);
-            _logger.LogDebug($"Instance Id: {instance.Id}");
-            _logger.LogDebug($"Instance Creator Id: {instance.CreatorId}");
-            _logger.LogDebug($"Current User Id: {CurrentUser.Id}");
-            _logger.LogDebug($"Is Granted: {await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll)}");
+            _logger.LogInformation($"Instance Id: {instance.Id}");
+            _logger.LogInformation($"Instance Creator Id: {instance.CreatorId}");
+            _logger.LogInformation($"Current User Id: {CurrentUser.Id}");
+            _logger.LogInformation($"Is Granted: {await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll)}");
             if (instance.CreatorId != CurrentUser.Id && !await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
                 _logger.LogError("Error when fetch workflow instance");
