@@ -93,9 +93,9 @@ namespace W2.WorkflowInstances
                 Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
             };
 
-            await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+            await _instanceStarterRepository.InsertAsync(workflowInstanceStarter, autoSave: true);
 
-            await CurrentUnitOfWork.SaveChangesAsync();
+            await CurrentUnitOfWork.CompleteAsync();
             _logger.LogInformation("Save changes to database.");
 
             return instance.Id;
