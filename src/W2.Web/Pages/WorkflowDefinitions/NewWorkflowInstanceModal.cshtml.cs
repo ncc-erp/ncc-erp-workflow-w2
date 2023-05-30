@@ -19,13 +19,15 @@ namespace W2.Web.Pages.WorkflowDefinitions
     {
         private readonly IWorkflowInstanceAppService _workflowInstanceAppService;
         private readonly IExternalResourceAppService _externalResourceAppService;
+        private readonly IWorkflowDefinitionAppService _workflowDefinitionAppService;
         private readonly ILogger<NewWorkflowInstanceModalModel> _logger;
 
-        public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService,
+        public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService, 
             IExternalResourceAppService externalResourceAppService,
-            ILogger<NewWorkflowInstanceModalModel> logger
-            )
+            IWorkflowDefinitionAppService workflowDefinitionAppService,
+            ILogger<NewWorkflowInstanceModalModel> logger)
         {
+            _workflowDefinitionAppService = workflowDefinitionAppService;
             _workflowInstanceAppService = workflowInstanceAppService;
             _externalResourceAppService = externalResourceAppService;
             _logger = logger;
@@ -42,9 +44,16 @@ namespace W2.Web.Pages.WorkflowDefinitions
         public List<SelectListItem> UserSelectListItems { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ProjectSelectListItems { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> OfficeSelectListItems { get; set; } = new List<SelectListItem>();
-
+        public OfficeInfo CurrentOffice { get; set; }
+        public ProjectProjectItem CurrentProject { get; set; }
+        public WorkflowDefinitionSummaryDto WorkflowDefinition { get; set; }
         public async Task OnGetAsync()
         {
+            WorkflowDefinition = await _workflowDefinitionAppService.GetByDefinitionIdAsync(WorkflowDefinitionId);
+
+            CurrentOffice = await _externalResourceAppService.GetUserBranchInfoAsync(CurrentUser.Email);
+            CurrentProject = await _externalResourceAppService.GetCurrentUserWorkingProjectAsync();
+
             PropertyDefinitionViewModels = JsonConvert.DeserializeObject<List<WorkflowCustomInputPropertyDefinitionViewModel>>(PropertiesDefinitionJson);
             foreach (var propertyDefinition in PropertyDefinitionViewModels)
             {
@@ -70,7 +79,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     .Select(x => new SelectListItem
                     {
                         Text = x.Name,
-                        Value = x.Code
+                        Value = x.Code,
+                        Selected = x.Code == CurrentProject?.Code
                     })
                     .ToList();
             }
@@ -82,7 +92,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     .Select(x => new SelectListItem
                     {
                         Text = x.Name,
-                        Value = x.Code
+                        Value = x.Code,
+                        Selected = x.Code == CurrentProject?.Code
                     })
                     .ToList();
             }
@@ -94,7 +105,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     .Select(x => new SelectListItem
                     {
                         Text = x.DisplayName,
-                        Value = x.Code
+                        Value = x.Code,
+                        Selected = x.Code == CurrentOffice?.Code
                     })
                     .ToList();
             }

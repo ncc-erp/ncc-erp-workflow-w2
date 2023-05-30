@@ -51,6 +51,8 @@ using W2.Scripting;
 using Elsa.Persistence.EntityFramework.PostgreSql;
 using Volo.Abp.Timing;
 using Volo.Abp.IdentityServer;
+using Parlot.Fluent;
+using System.Linq;
 
 namespace W2.Web;
 
@@ -232,6 +234,10 @@ public class W2WebModule : AbpModule
 
     private void ConfigureSwaggerServices(IServiceCollection services)
     {
+        services.AddSwaggerGen(c =>
+        {
+            c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+        });
         services.AddAbpSwaggerGen(
             options =>
             {

@@ -140,5 +140,11 @@ namespace W2.ExternalResources
 
             return office;
         }
+
+        public async Task<ProjectProjectItem> GetCurrentUserWorkingProjectAsync()
+        {
+            var response = await _projectClient.GetUserProjectsAsync(CurrentUser.Email);
+            return response.Result?.FirstOrDefault();
+        }
     }
 }

@@ -13,5 +13,6 @@ namespace W2.ExternalResources
         Task<List<TimesheetProjectItem>> GetUserProjectsWithRolePMFromApiAsync();
         Task<List<OfficeInfo>> GetListOfOfficeAsync();
         Task<OfficeInfo> GetUserBranchInfoAsync(string userEmail);
+        Task<ProjectProjectItem> GetCurrentUserWorkingProjectAsync();
     }
 }
