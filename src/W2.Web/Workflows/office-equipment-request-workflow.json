@@ -1,7 +1,7 @@
 {
   "$id": "1",
-  "definitionId": "3a0b778b-d355-26e5-4e8a-9893df8d4687",
-  "versionId": "3a0b778c-fd97-0c7f-bce6-838ef5d8bdb4",
+  "definitionId": "3a0b7cb0-830a-8ec5-f5c5-8fd8cd480a62",
+  "versionId": "3a0b7d11-8e14-bd19-d575-6c2d85e3ae79",
   "name": "Office Equipment Request",
   "displayName": "Office Equipment Request",
   "version": 1,
@@ -18,69 +18,93 @@
   "deleteCompletedInstances": false,
   "isPublished": false,
   "isLatest": true,
-  "createdAt": "2023-05-29T02:39:39.928728Z",
+  "createdAt": "2023-05-30T04:22:33.74835Z",
   "activities": [
     {
       "$id": "4",
-      "activityId": "5723c83a-826d-41a0-a621-a50292d9a025",
-      "type": "HttpEndpoint",
-      "displayName": "Trigger Workflow",
+      "activityId": "486cea35-5fbf-4981-8409-c8202985b77a",
+      "type": "SendEmailToMyBranchManager",
+      "displayName": "Send email to my branch manager",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
       "properties": [
         {
           "$id": "5",
-          "name": "Path",
+          "name": "To",
           "expressions": {
             "$id": "6",
-            "Literal": "equipment-request"
+            "JavaScript": "",
+            "Json": ""
           }
         },
         {
           "$id": "7",
-          "name": "Methods",
+          "name": "Subject",
+          "syntax": "JavaScript",
           "expressions": {
             "$id": "8",
-            "Json": "[\"POST\"]"
+            "Literal": "",
+            "JavaScript": "const userInfo = getRequestUser();\r\n`[Office Equipment Request] [${userInfo.Project}] - ${userInfo.Name}`"
           }
         },
         {
           "$id": "9",
-          "name": "ReadContent",
+          "name": "Attachments",
           "expressions": {
-            "$id": "10",
-            "Literal": "true"
+            "$id": "10"
           }
         },
         {
           "$id": "11",
-          "name": "TargetType",
+          "name": "Body",
+          "syntax": "JavaScript",
           "expressions": {
-            "$id": "12"
+            "$id": "12",
+            "Literal": "",
+            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.HoORejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst emailTemplate = getVariable(\"EmailTemplate\");\r\nreturn `\r\n<p>Người gửi: ${currentUser.Name} (${currentUser.Email})</p>\r\n<p>Nội dung:</p>\r\n<div>\r\n${emailTemplate}\r\n</div>\r\n<div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.HoOApproved)}\" style=\"margin-right:10px;\">Duyệt</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px;\">Từ chối</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n</div>\r\n`;"
           }
-        },
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "13",
+      "activityId": "8a18ca7a-2219-4906-b51f-0c0b101fc990",
+      "type": "Fork",
+      "displayName": "Branch Manager makes decision",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
         {
-          "$id": "13",
-          "name": "Schema",
-          "syntax": "Literal",
+          "$id": "14",
+          "name": "Branches",
           "expressions": {
-            "$id": "14",
-            "Literal": ""
+            "$id": "15",
+            "Json": "[\"Approve\",\"Reject\"]"
           }
-        },
-        {
-          "$id": "15",
-          "name": "Authorize",
-          "expressions": {
-            "$id": "16"
-          }
-        },
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "16",
+      "activityId": "aa680588-fc5d-4497-b0a2-52aedec55bfe",
+      "type": "SignalReceived",
+      "displayName": "Rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
         {
           "$id": "17",
-          "name": "Policy",
+          "name": "Signal",
+          "syntax": "JavaScript",
           "expressions": {
-            "$id": "18"
+            "$id": "18",
+            "Literal": "",
+            "JavaScript": "workflowSignals.HoORejected"
           }
         }
       ],
@@ -88,7 +112,433 @@
     },
     {
       "$id": "19",
-      "activityId": "c3ce6d08-a7be-4d8f-b98b-219bfd508914",
+      "activityId": "dca91e19-fa3f-43b8-8614-994388629feb",
+      "type": "SendEmailToInstanceCreatorAndOther",
+      "displayName": "Send notification to staff: Request was rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "20",
+          "name": "To",
+          "expressions": {
+            "$id": "21"
+          }
+        },
+        {
+          "$id": "22",
+          "name": "Subject",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "23",
+            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Office Equipment Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`;"
+          }
+        },
+        {
+          "$id": "24",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "25"
+          }
+        },
+        {
+          "$id": "26",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "27",
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị cho văn phòng đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "28",
+      "activityId": "0784837d-0af6-4fb9-99bb-73e294c0979b",
+      "type": "Finish",
+      "displayName": "Request was rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "29",
+          "name": "ActivityOutput",
+          "expressions": {
+            "$id": "30",
+            "Literal": "Rejected"
+          }
+        },
+        {
+          "$id": "31",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "32"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "33",
+      "activityId": "2409b0d2-71c6-479d-bd5b-e4c0e8c7ca24",
+      "type": "SignalReceived",
+      "displayName": "Approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "34",
+          "name": "Signal",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "35",
+            "JavaScript": "workflowSignals.HoOApproved",
+            "Literal": ""
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "36",
+      "activityId": "9e026df5-a95a-4850-8d87-fdca59aaa063",
+      "type": "CustomEmail",
+      "displayName": "Send email to IT",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "37",
+          "name": "To",
+          "expressions": {
+            "$id": "38",
+            "Json": "[\"dekubaka2002@gmail.com\"]"
+          }
+        },
+        {
+          "$id": "39",
+          "name": "Subject",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "40",
+            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Office Equipment Request] [${userInfo.Project}] - ${userInfo.Name}`;",
+            "Literal": ""
+          }
+        },
+        {
+          "$id": "41",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "42"
+          }
+        },
+        {
+          "$id": "43",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "44",
+            "Literal": "",
+            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.Rejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst userInfo = getRequestUser();\r\nconst emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Người gửi: ${userInfo.Name} (${userInfo.Email})</p>\r\n<p>Nội dung:</p>\r\n<div>\r\n${emailTemplate}\r\n</div>\r\n<div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.Approved)}\" style=\"margin-right:10px;\">Duyệt</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px;\">Từ chối</a>\r\n</div>\r\n`;"
+          }
+        },
+        {
+          "$id": "45",
+          "name": "Cc",
+          "expressions": {
+            "$id": "46"
+          }
+        },
+        {
+          "$id": "47",
+          "name": "Bcc",
+          "expressions": {
+            "$id": "48"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "49",
+      "activityId": "1fc7a33d-437f-47ed-9a95-2bead5da51ff",
+      "type": "Fork",
+      "displayName": "IT reviews",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "50",
+          "name": "Branches",
+          "expressions": {
+            "$id": "51",
+            "Json": "[\"Approve\",\"Reject\"]"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "52",
+      "activityId": "e64a738c-f168-4332-a022-f7bb2ec1003a",
+      "type": "SendEmailToInstanceCreatorAndOther",
+      "displayName": "Send notification to staff: Request was approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "53",
+          "name": "To",
+          "expressions": {
+            "$id": "54"
+          }
+        },
+        {
+          "$id": "55",
+          "name": "Subject",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "56",
+            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Office Equiqment Request] Approved - [${userInfo.Project}] - ${userInfo.Name}`",
+            "Literal": ""
+          }
+        },
+        {
+          "$id": "57",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "58"
+          }
+        },
+        {
+          "$id": "59",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "60",
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị văn phòng đã được duyệt</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`",
+            "Literal": ""
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "61",
+      "activityId": "d8534a49-0976-4e87-be2d-8b50c2b179e9",
+      "type": "SignalReceived",
+      "displayName": "Approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "62",
+          "name": "Signal",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "63",
+            "JavaScript": "workflowSignals.Approved"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "64",
+      "activityId": "838ce456-e857-4050-ae5f-fa42553f5c97",
+      "type": "SignalReceived",
+      "displayName": "Rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "65",
+          "name": "Signal",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "66",
+            "JavaScript": "workflowSignals.Rejected"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "67",
+      "activityId": "ee12c48c-5484-4117-b1c3-56bf5fa1df40",
+      "type": "SendEmailToInstanceCreatorAndOther",
+      "displayName": "Send notification to staff: Request was rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "68",
+          "name": "To",
+          "expressions": {
+            "$id": "69"
+          }
+        },
+        {
+          "$id": "70",
+          "name": "Subject",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "71",
+            "JavaScript": "const userInfo = getRequestUser();\r\n`[Office Equipment Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`"
+          }
+        },
+        {
+          "$id": "72",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "73"
+          }
+        },
+        {
+          "$id": "74",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "75",
+            "Literal": "",
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị văn phòng đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "76",
+      "activityId": "3ca995eb-2fcb-4bac-b188-3c7e791c7ec1",
+      "type": "Finish",
+      "displayName": "Request was approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "77",
+          "name": "ActivityOutput",
+          "expressions": {
+            "$id": "78",
+            "Literal": "Approved"
+          }
+        },
+        {
+          "$id": "79",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "80"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "81",
+      "activityId": "3ab37c38-fc56-4d2c-a597-39cf6446ce12",
+      "type": "Finish",
+      "displayName": "Request was rejected",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "82",
+          "name": "ActivityOutput",
+          "expressions": {
+            "$id": "83",
+            "Literal": "Rejected"
+          }
+        },
+        {
+          "$id": "84",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "85"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "86",
+      "activityId": "98a78226-e450-4383-a5cb-5fafa6b4c354",
+      "type": "HttpEndpoint",
+      "displayName": "Trigger Workflow",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "87",
+          "name": "Path",
+          "expressions": {
+            "$id": "88",
+            "Literal": "equipment-request"
+          }
+        },
+        {
+          "$id": "89",
+          "name": "Methods",
+          "expressions": {
+            "$id": "90",
+            "Json": "[\"POST\"]"
+          }
+        },
+        {
+          "$id": "91",
+          "name": "ReadContent",
+          "expressions": {
+            "$id": "92"
+          }
+        },
+        {
+          "$id": "93",
+          "name": "TargetType",
+          "expressions": {
+            "$id": "94"
+          }
+        },
+        {
+          "$id": "95",
+          "name": "Schema",
+          "syntax": "Literal",
+          "expressions": {
+            "$id": "96",
+            "Literal": ""
+          }
+        },
+        {
+          "$id": "97",
+          "name": "Authorize",
+          "expressions": {
+            "$id": "98"
+          }
+        },
+        {
+          "$id": "99",
+          "name": "Policy",
+          "expressions": {
+            "$id": "100"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "101",
+      "activityId": "b9078a5b-8b54-4f22-bfc0-c75fc0f62dfa",
       "type": "SetVariable",
       "displayName": "Set Variable Request",
       "persistWorkflow": false,
@@ -96,19 +546,19 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "20",
+          "$id": "102",
           "name": "VariableName",
           "expressions": {
-            "$id": "21",
+            "$id": "103",
             "Literal": "Request"
           }
         },
         {
-          "$id": "22",
+          "$id": "104",
           "name": "Value",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "23",
+            "$id": "105",
             "Literal": "",
             "JavaScript": "input.Body"
           }
@@ -117,8 +567,8 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "24",
-      "activityId": "c9edeea6-521c-4051-a40a-a80abc5db0bc",
+      "$id": "106",
+      "activityId": "018d2656-1ef4-4f96-9236-2f4739c02506",
       "type": "SetRequestUserVariable",
       "displayName": "Set RequestUser Variable",
       "persistWorkflow": false,
@@ -128,451 +578,29 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "25",
-      "activityId": "486cea35-5fbf-4981-8409-c8202985b77a",
-      "type": "SendEmailToMyBranchManager",
-      "displayName": "Send email to my branch manager",
+      "$id": "107",
+      "activityId": "735f2071-f6ef-4351-9f48-844aac9b2e0d",
+      "type": "SetVariable",
+      "displayName": "Set Email Template Variable",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "26",
-          "name": "To",
+          "$id": "108",
+          "name": "VariableName",
           "expressions": {
-            "$id": "27",
-            "JavaScript": "",
-            "Json": ""
+            "$id": "109",
+            "Literal": "EmailTemplate"
           }
         },
         {
-          "$id": "28",
-          "name": "Subject",
+          "$id": "110",
+          "name": "Value",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "29",
-            "Literal": "",
-            "JavaScript": "const userInfo = getRequestUser();\r\n`[Office Equipment Request] [${userInfo.Project}] - ${userInfo.Name}`"
-          }
-        },
-        {
-          "$id": "30",
-          "name": "Attachments",
-          "expressions": {
-            "$id": "31"
-          }
-        },
-        {
-          "$id": "32",
-          "name": "Body",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "33",
-            "Literal": "",
-            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.HoORejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nreturn `\r\n<p>Người gửi: ${currentUser.Name} (${currentUser.Email})</p>\r\n<p>Nội dung:</p>\r\n<div>\r\n${getVariable(\"Request\").EquipmentNotes}\r\n</div>\r\n<div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.HoOApproved)}\" style=\"margin-right:10px;\">Duyệt</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px;\">Từ chối</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n</div>\r\n`;"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "34",
-      "activityId": "8a18ca7a-2219-4906-b51f-0c0b101fc990",
-      "type": "Fork",
-      "displayName": "Branch Manager makes decision",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "35",
-          "name": "Branches",
-          "expressions": {
-            "$id": "36",
-            "Json": "[\"Approve\",\"Reject\"]"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "37",
-      "activityId": "aa680588-fc5d-4497-b0a2-52aedec55bfe",
-      "type": "SignalReceived",
-      "displayName": "Rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "38",
-          "name": "Signal",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "39",
-            "Literal": "",
-            "JavaScript": "workflowSignals.HoORejected"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "40",
-      "activityId": "dca91e19-fa3f-43b8-8614-994388629feb",
-      "type": "SendEmailToInstanceCreatorAndOther",
-      "displayName": "Send notification to staff: Request was rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "41",
-          "name": "To",
-          "expressions": {
-            "$id": "42"
-          }
-        },
-        {
-          "$id": "43",
-          "name": "Subject",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "44",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Office Equipment Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`;"
-          }
-        },
-        {
-          "$id": "45",
-          "name": "Attachments",
-          "expressions": {
-            "$id": "46"
-          }
-        },
-        {
-          "$id": "47",
-          "name": "Body",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "48",
-            "JavaScript": "`\r\n<p>Yêu cầu cấp thiết bị cho văn phòng đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${getVariable(\"Request\").EquipmentNotes}\r\n</blockquote>\r\n`"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "49",
-      "activityId": "0784837d-0af6-4fb9-99bb-73e294c0979b",
-      "type": "Finish",
-      "displayName": "Request was rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "50",
-          "name": "ActivityOutput",
-          "expressions": {
-            "$id": "51",
-            "Literal": "Rejected"
-          }
-        },
-        {
-          "$id": "52",
-          "name": "OutcomeNames",
-          "expressions": {
-            "$id": "53"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "54",
-      "activityId": "2409b0d2-71c6-479d-bd5b-e4c0e8c7ca24",
-      "type": "SignalReceived",
-      "displayName": "Approved",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "55",
-          "name": "Signal",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "56",
-            "JavaScript": "workflowSignals.HoOApproved",
-            "Literal": ""
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "57",
-      "activityId": "9e026df5-a95a-4850-8d87-fdca59aaa063",
-      "type": "CustomEmail",
-      "displayName": "Send email to IT",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "58",
-          "name": "To",
-          "expressions": {
-            "$id": "59",
-            "Json": "[\"it@ncc.asia\"]"
-          }
-        },
-        {
-          "$id": "60",
-          "name": "Subject",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "61",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Office Equipment Request] [${userInfo.Project}] - ${userInfo.Name}`;",
-            "Literal": ""
-          }
-        },
-        {
-          "$id": "62",
-          "name": "Attachments",
-          "expressions": {
-            "$id": "63"
-          }
-        },
-        {
-          "$id": "64",
-          "name": "Body",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "65",
-            "Literal": "",
-            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.Rejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst userInfo = getRequestUser();\r\nreturn `\r\n<p>Người gửi: ${userInfo.Name} (${userInfo.Email})</p>\r\n<p>Nội dung:</p>\r\n<div>\r\n${getVariable(\"Request\").EquipmentNotes}\r\n</div>\r\n<div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.Approved)}\" style=\"margin-right:10px;\">Duyệt</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px;\">Từ chối</a>\r\n</div>\r\n`;"
-          }
-        },
-        {
-          "$id": "66",
-          "name": "Cc",
-          "expressions": {
-            "$id": "67"
-          }
-        },
-        {
-          "$id": "68",
-          "name": "Bcc",
-          "expressions": {
-            "$id": "69"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "70",
-      "activityId": "1fc7a33d-437f-47ed-9a95-2bead5da51ff",
-      "type": "Fork",
-      "displayName": "IT reviews",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "71",
-          "name": "Branches",
-          "expressions": {
-            "$id": "72",
-            "Json": "[\"Approve\",\"Reject\"]"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "73",
-      "activityId": "e64a738c-f168-4332-a022-f7bb2ec1003a",
-      "type": "SendEmailToInstanceCreatorAndOther",
-      "displayName": "Send notification to staff: Request was approved",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "74",
-          "name": "To",
-          "expressions": {
-            "$id": "75"
-          }
-        },
-        {
-          "$id": "76",
-          "name": "Subject",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "77",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Office Equiqment Request] Approved - [${userInfo.Project}] - ${userInfo.Name}`",
-            "Literal": ""
-          }
-        },
-        {
-          "$id": "78",
-          "name": "Attachments",
-          "expressions": {
-            "$id": "79"
-          }
-        },
-        {
-          "$id": "80",
-          "name": "Body",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "81",
-            "JavaScript": "`\r\n<p>Yêu cầu cấp thiết bị văn phòng đã được duyệt</p>\r\n<blockquote>\r\n${getVariable(\"Request\").EquipmentNotes}\r\n</blockquote>\r\n`",
-            "Literal": ""
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "82",
-      "activityId": "d8534a49-0976-4e87-be2d-8b50c2b179e9",
-      "type": "SignalReceived",
-      "displayName": "Approved",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "83",
-          "name": "Signal",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "84",
-            "JavaScript": "workflowSignals.Approved"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "85",
-      "activityId": "838ce456-e857-4050-ae5f-fa42553f5c97",
-      "type": "SignalReceived",
-      "displayName": "Rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "86",
-          "name": "Signal",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "87",
-            "JavaScript": "workflowSignals.Rejected"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "88",
-      "activityId": "ee12c48c-5484-4117-b1c3-56bf5fa1df40",
-      "type": "SendEmailToInstanceCreatorAndOther",
-      "displayName": "Send notification to staff: Request was rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "89",
-          "name": "To",
-          "expressions": {
-            "$id": "90"
-          }
-        },
-        {
-          "$id": "91",
-          "name": "Subject",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "92",
-            "JavaScript": "const userInfo = getRequestUser();\r\n`[Office Equipment Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`"
-          }
-        },
-        {
-          "$id": "93",
-          "name": "Attachments",
-          "expressions": {
-            "$id": "94"
-          }
-        },
-        {
-          "$id": "95",
-          "name": "Body",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "96",
-            "Literal": "",
-            "JavaScript": "`\r\n<p>Yêu cầu cấp thiết bị văn phòng đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${getVariable(\"Request\").EquipmentNotes}\r\n</blockquote>\r\n`"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "97",
-      "activityId": "3ca995eb-2fcb-4bac-b188-3c7e791c7ec1",
-      "type": "Finish",
-      "displayName": "Request was approved",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "98",
-          "name": "ActivityOutput",
-          "expressions": {
-            "$id": "99",
-            "Literal": "Approved"
-          }
-        },
-        {
-          "$id": "100",
-          "name": "OutcomeNames",
-          "expressions": {
-            "$id": "101"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "102",
-      "activityId": "3ab37c38-fc56-4d2c-a597-39cf6446ce12",
-      "type": "Finish",
-      "displayName": "Request was rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "103",
-          "name": "ActivityOutput",
-          "expressions": {
-            "$id": "104",
-            "Literal": "Rejected"
-          }
-        },
-        {
-          "$id": "105",
-          "name": "OutcomeNames",
-          "expressions": {
-            "$id": "106"
+            "$id": "111",
+            "JavaScript": "const requestInfo = getVariable('Request');\r\nreturn `\r\n<p>Văn phòng đang làm việc: ${requestInfo.CurrentOffice}</p>\r\n<p>Thiết bị cần request: ${requestInfo.Equipment}</p>\r\n<p>Lý do: ${requestInfo.Reason}</p>\r\n`"
           }
         }
       ],
@@ -581,101 +609,107 @@
   ],
   "connections": [
     {
-      "$id": "107",
-      "sourceActivityId": "5723c83a-826d-41a0-a621-a50292d9a025",
-      "targetActivityId": "c3ce6d08-a7be-4d8f-b98b-219bfd508914",
-      "outcome": "Done"
-    },
-    {
-      "$id": "108",
-      "sourceActivityId": "c3ce6d08-a7be-4d8f-b98b-219bfd508914",
-      "targetActivityId": "c9edeea6-521c-4051-a40a-a80abc5db0bc",
-      "outcome": "Done"
-    },
-    {
-      "$id": "109",
-      "sourceActivityId": "c9edeea6-521c-4051-a40a-a80abc5db0bc",
-      "targetActivityId": "486cea35-5fbf-4981-8409-c8202985b77a",
-      "outcome": "Done"
-    },
-    {
-      "$id": "110",
+      "$id": "112",
       "sourceActivityId": "486cea35-5fbf-4981-8409-c8202985b77a",
       "targetActivityId": "8a18ca7a-2219-4906-b51f-0c0b101fc990",
       "outcome": "Done"
     },
     {
-      "$id": "111",
+      "$id": "113",
       "sourceActivityId": "8a18ca7a-2219-4906-b51f-0c0b101fc990",
       "targetActivityId": "aa680588-fc5d-4497-b0a2-52aedec55bfe",
       "outcome": "Reject"
     },
     {
-      "$id": "112",
+      "$id": "114",
       "sourceActivityId": "aa680588-fc5d-4497-b0a2-52aedec55bfe",
       "targetActivityId": "dca91e19-fa3f-43b8-8614-994388629feb",
       "outcome": "Done"
     },
     {
-      "$id": "113",
+      "$id": "115",
       "sourceActivityId": "dca91e19-fa3f-43b8-8614-994388629feb",
       "targetActivityId": "0784837d-0af6-4fb9-99bb-73e294c0979b",
       "outcome": "Done"
     },
     {
-      "$id": "114",
+      "$id": "116",
       "sourceActivityId": "8a18ca7a-2219-4906-b51f-0c0b101fc990",
       "targetActivityId": "2409b0d2-71c6-479d-bd5b-e4c0e8c7ca24",
       "outcome": "Approve"
     },
     {
-      "$id": "115",
+      "$id": "117",
       "sourceActivityId": "2409b0d2-71c6-479d-bd5b-e4c0e8c7ca24",
       "targetActivityId": "9e026df5-a95a-4850-8d87-fdca59aaa063",
       "outcome": "Done"
     },
     {
-      "$id": "116",
+      "$id": "118",
       "sourceActivityId": "9e026df5-a95a-4850-8d87-fdca59aaa063",
       "targetActivityId": "1fc7a33d-437f-47ed-9a95-2bead5da51ff",
       "outcome": "Done"
     },
     {
-      "$id": "117",
+      "$id": "119",
       "sourceActivityId": "1fc7a33d-437f-47ed-9a95-2bead5da51ff",
       "targetActivityId": "d8534a49-0976-4e87-be2d-8b50c2b179e9",
       "outcome": "Approve"
     },
     {
-      "$id": "118",
+      "$id": "120",
       "sourceActivityId": "d8534a49-0976-4e87-be2d-8b50c2b179e9",
       "targetActivityId": "e64a738c-f168-4332-a022-f7bb2ec1003a",
       "outcome": "Done"
     },
     {
-      "$id": "119",
+      "$id": "121",
       "sourceActivityId": "1fc7a33d-437f-47ed-9a95-2bead5da51ff",
       "targetActivityId": "838ce456-e857-4050-ae5f-fa42553f5c97",
       "outcome": "Reject"
     },
     {
-      "$id": "120",
+      "$id": "122",
       "sourceActivityId": "838ce456-e857-4050-ae5f-fa42553f5c97",
       "targetActivityId": "ee12c48c-5484-4117-b1c3-56bf5fa1df40",
       "outcome": "Done"
     },
     {
-      "$id": "121",
+      "$id": "123",
       "sourceActivityId": "e64a738c-f168-4332-a022-f7bb2ec1003a",
       "targetActivityId": "3ca995eb-2fcb-4bac-b188-3c7e791c7ec1",
       "outcome": "Done"
     },
     {
-      "$id": "122",
+      "$id": "124",
       "sourceActivityId": "ee12c48c-5484-4117-b1c3-56bf5fa1df40",
       "targetActivityId": "3ab37c38-fc56-4d2c-a597-39cf6446ce12",
       "outcome": "Done"
+    },
+    {
+      "$id": "125",
+      "sourceActivityId": "98a78226-e450-4383-a5cb-5fafa6b4c354",
+      "targetActivityId": "b9078a5b-8b54-4f22-bfc0-c75fc0f62dfa",
+      "outcome": "Done"
+    },
+    {
+      "$id": "126",
+      "sourceActivityId": "018d2656-1ef4-4f96-9236-2f4739c02506",
+      "targetActivityId": "486cea35-5fbf-4981-8409-c8202985b77a",
+      "outcome": "Done"
+    },
+    {
+      "$id": "127",
+      "sourceActivityId": "b9078a5b-8b54-4f22-bfc0-c75fc0f62dfa",
+      "targetActivityId": "735f2071-f6ef-4351-9f48-844aac9b2e0d",
+      "outcome": "Done"
+    },
+    {
+      "$id": "128",
+      "sourceActivityId": "735f2071-f6ef-4351-9f48-844aac9b2e0d",
+      "targetActivityId": "018d2656-1ef4-4f96-9236-2f4739c02506",
+      "outcome": "Done"
     }
   ],
-  "id": "3a0b778c-fd97-0c7f-bce6-838ef5d8bdb4"
+  "id": "3a0b7d11-8e14-bd19-d575-6c2d85e3ae79"
 }
