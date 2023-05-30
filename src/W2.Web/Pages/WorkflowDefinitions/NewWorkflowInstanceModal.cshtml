@@ -136,7 +136,7 @@
                                     <select id="@inputId" name="@inputName" style="width:100%;">
                                         @foreach(var item in Model.OfficeSelectListItems)
                                         {
-                                            <option value="@item.Text" selected="@(item.Selected && propertyDefinition.Name == "CurrentOffice")">@item.Text</option>
+                                            <option value="@item.Value" selected="@(item.Selected && propertyDefinition.Name == "CurrentOffice")">@item.Text</option>
                                         }
                                     </select>
                                     <script type="text/javascript">
