@@ -5,6 +5,7 @@ using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
@@ -18,6 +19,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Emailing;
 using Volo.Abp.TextTemplating;
+using Volo.Abp.Uow;
 using W2.Permissions;
 using W2.Specifications;
 using W2.Templates;
@@ -35,6 +37,8 @@ namespace W2.WorkflowInstances
         private readonly IWorkflowInstanceDeleter _workflowInstanceDeleter;
         private readonly IEmailSender _emailSender;
         private readonly ITemplateRenderer _templateRenderer;
+        private readonly ILogger<WorkflowInstanceAppService> _logger;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -43,7 +47,9 @@ namespace W2.WorkflowInstances
             IWorkflowInstanceCanceller canceller,
             IWorkflowInstanceDeleter workflowInstanceDeleter,
             IEmailSender emailSender,
-            ITemplateRenderer templateRenderer)
+            ITemplateRenderer templateRenderer,
+            ILogger<WorkflowInstanceAppService> logger,
+            IUnitOfWorkManager unitOfWorkManager)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -53,6 +59,8 @@ namespace W2.WorkflowInstances
             _workflowInstanceDeleter = workflowInstanceDeleter;
             _emailSender = emailSender;
             _templateRenderer = templateRenderer;
+            _logger = logger;
+            _unitOfWorkManager = unitOfWorkManager;
         }
 
         public async Task CancelAsync(string id)
@@ -83,13 +91,19 @@ namespace W2.WorkflowInstances
             var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
 
             var instance = executionResult.WorkflowInstance;
-            var workflowInstanceStarter = new WorkflowInstanceStarter
-            {
-                WorkflowInstanceId = instance.Id,
-                Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
-            };
+            using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
+            {              
+                var workflowInstanceStarter = new WorkflowInstanceStarter
+                {
+                    WorkflowInstanceId = instance.Id,
+                    Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
+                };
 
-            await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+                await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+                await uow.CompleteAsync();
+
+                _logger.LogInformation("Saved changes to database");
+            }
 
             return instance.Id;
         }
@@ -113,10 +127,15 @@ namespace W2.WorkflowInstances
             }
 
             var instanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
+            _logger.LogInformation("Fetch WorkflowInstanceDto begin");
             var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id);
             if (workflowInstanceStarter != null)
             {
                 instanceDto.CreatorId = workflowInstanceStarter.CreatorId;
+            }
+            else
+            {
+                _logger.LogInformation("Workflow not found");
             }
 
             return instanceDto;
