@@ -152,7 +152,7 @@
           "expressions": {
             "$id": "29",
             "Literal": "",
-            "JavaScript": "`[Equipment Office Request] [${currentUser.Project}] - ${currentUser.Name}`"
+            "JavaScript": "const userInfo = getRequestUser();\r\n`[Office Equipment Request] [${userInfo.Project}] - ${userInfo.Name}`"
           }
         },
         {
@@ -430,7 +430,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "81",
-            "JavaScript": "`\r\n<p>Yêu cầu cấp thiết bị văn phòng đã được duyệt</p>\r\n<blockquote>\r\n${getVariable(\"Request\").EquiqmentNotes}\r\n</blockquote>\r\n`",
+            "JavaScript": "`\r\n<p>Yêu cầu cấp thiết bị văn phòng đã được duyệt</p>\r\n<blockquote>\r\n${getVariable(\"Request\").EquipmentNotes}\r\n</blockquote>\r\n`",
             "Literal": ""
           }
         }
