@@ -26,6 +26,8 @@ namespace W2.ExternalResources
 
     public class ProjectManager
     {
+        [JsonProperty("fullName")]
+        public string FullName { get; set; }
         [JsonProperty("emailAddress")]
         public string EmailAddress { get; set; }
     }
