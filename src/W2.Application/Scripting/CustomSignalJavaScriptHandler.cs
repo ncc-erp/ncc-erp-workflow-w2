@@ -3,8 +3,10 @@ using Elsa.Activities.Signaling.Extensions;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,10 +51,24 @@ namespace W2.Scripting
             engine.SetValue("getCustomSignalUrlWithForm", getCustomSignalUrlWithForm);
 
             var listOfOffices = await _externalResourceAppService.GetListOfOfficeAsync();
+            var listOfProjects = await _externalResourceAppService.GetCurrentUserProjectsAsync();
             Func<string, OfficeInfo> getOfficeInfo = officeCode =>
             {
                 return listOfOffices.FirstOrDefault(x => x.Code == officeCode);
             };
+
+            Func<string, dynamic> getProjectInfo = projectCode =>
+            {
+                return listOfProjects.Select(x => new
+                {
+                    x.Code,
+                    x.Name,
+                    PM = JsonConvert.SerializeObject(x.PM)
+                }).FirstOrDefault(x => x.Code == projectCode);
+            };
+
+            engine.SetValue("getProjectInfo", getProjectInfo);
+
             engine.SetValue("getOfficeInfo", getOfficeInfo);
 
             engine.SetValue("currentUser", _currentUser);

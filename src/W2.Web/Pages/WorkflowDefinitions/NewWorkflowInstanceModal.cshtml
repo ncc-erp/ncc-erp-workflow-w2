@@ -69,21 +69,6 @@
                                                 $('#@inputId').val(editor.root.innerHTML);
                                             });
 
-                                            if ("@Model.WorkflowDefinition.Name" == "Device Request") {
-                                                editor.setContents([
-                                                    { insert: 'Văn phòng đang làm việc', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentOffice?.DisplayName)) \n' },
-                                                    { insert: 'Dự án', attributes: { bold: true } },
-                                                    { insert: ': [@(Html.Raw(Model.CurrentProject?.Code))] @(Html.Raw(Model.CurrentProject?.Name))\n' },
-                                                    { insert: 'PM', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentProject?.PM?.FullName))\n' },
-                                                    { insert: 'Thiết bị cần request', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                    { insert: 'Lý do', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                ])
-                                            }
-
                                             if ("@Model.WorkflowDefinition.Name" == "WFH Request") {
                                                 editor.setContents([
                                                     { insert: 'Văn phòng đang làm việc', attributes: { bold: true } },
@@ -121,7 +106,7 @@
                                     <select id="@inputId" name="@inputName" style="width:100%;">
                                         @foreach(var item in Model.ProjectSelectListItems)
                                         {
-                                            <option value="@item.Text" selected="@item.Selected">@item.Text (@item.Text)</option>
+                                            <option value="@item.Value" selected="@item.Selected">@item.Text (@item.Text)</option>
                                         }
                                     </select>
                                     <script type="text/javascript">
