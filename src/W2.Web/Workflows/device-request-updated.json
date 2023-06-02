@@ -1,10 +1,10 @@
 {
   "$id": "1",
-  "definitionId": "3a057e11-7cde-1749-5c03-60520662a1f5",
-  "versionId": "3a0b8c8a-9439-c850-5120-aa6d44f10075",
+  "definitionId": "3a0b8d4f-a475-c59f-8161-bdd0f2b2558d",
+  "versionId": "3a0b8d5f-5974-9ce5-1f23-f3383196301d",
   "name": "Device Request",
   "displayName": "Device Request",
-  "version": 53,
+  "version": 5,
   "variables": {
     "$id": "2",
     "data": {}
@@ -18,7 +18,7 @@
   "deleteCompletedInstances": false,
   "isPublished": false,
   "isLatest": true,
-  "createdAt": "2023-06-02T04:29:03.417936Z",
+  "createdAt": "2023-06-02T08:21:27.540053Z",
   "activities": [
     {
       "$id": "4",
@@ -192,7 +192,7 @@
           "expressions": {
             "$id": "29",
             "Literal": "",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Device Request] [${userInfo.Project}] - ${userInfo.Name}`;"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[Device Request] [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
@@ -252,7 +252,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "42",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Device Request] [${userInfo.Project}] - ${userInfo.Name}`;"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\n\r\nreturn `[Device Request] [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
@@ -451,7 +451,7 @@
           "expressions": {
             "$id": "77",
             "Literal": "Device Request Approved",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Device Request] Approved - [${userInfo.Project}] - ${userInfo.Name}`;"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\n\r\nreturn `[Device Request] Approved - [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
@@ -510,7 +510,7 @@
           "expressions": {
             "$id": "90",
             "Literal": "Device Request Rejected",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Device Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`;"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\n\r\nreturn `[Device Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
@@ -556,7 +556,7 @@
           "expressions": {
             "$id": "99",
             "Literal": "Device Request Rejected",
-            "JavaScript": "const userInfo = getRequestUser();\r\n`[Device Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\n\r\nreturn `[Device Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`"
           }
         },
         {
@@ -853,7 +853,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "156",
-            "JavaScript": "`[Device Request] [${currentUserProject}] - ${currentUser.Name}`"
+            "JavaScript": "const projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[Device Request] [${projectInfo.Name}] - ${currentUser.Name}`"
           }
         },
         {
@@ -904,7 +904,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "167",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn [userInfo.Email, ...pmsEmailAddress];\r\n\r\nreturn [userInfo.Email, ...pms.map(x => x.emailAddress)];"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn [userInfo.Email, ...pmsEmailAddress];"
           }
         },
         {
@@ -913,7 +913,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "169",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Device Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`;"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\n\r\nreturn `[Device Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
@@ -973,7 +973,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "182",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Device Request] Approved - [${userInfo.Project}] - ${userInfo.Name}`"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\n\r\nreturn `[Device Request] Approved - [${projectInfo.Name}] - ${userInfo.Name}`"
           }
         },
         {
@@ -1033,7 +1033,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "195",
-            "JavaScript": "const userInfo = getRequestUser();\r\nreturn `[Device Request] Rejected - [${userInfo.Project}] - ${userInfo.Name}`;"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\n\r\nreturn `[Device Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
@@ -1276,5 +1276,5 @@
       "outcome": "Done"
     }
   ],
-  "id": "3a0b8c8a-9439-c850-5120-aa6d44f10075"
+  "id": "3a0b8d5f-5974-9ce5-1f23-f3383196301d"
 }

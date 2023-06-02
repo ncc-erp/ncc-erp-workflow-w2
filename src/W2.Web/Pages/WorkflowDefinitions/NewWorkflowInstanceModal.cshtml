@@ -68,21 +68,6 @@
                                             editor.on('text-change', function() {
                                                 $('#@inputId').val(editor.root.innerHTML);
                                             });
-
-                                            if ("@Model.WorkflowDefinition.Name" == "WFH Request") {
-                                                editor.setContents([
-                                                    { insert: 'Văn phòng đang làm việc', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentOffice?.DisplayName)) \n' },
-                                                    { insert: 'Dự án', attributes: { bold: true } },
-                                                    { insert: ': [@(Html.Raw(Model.CurrentProject?.Code))] @(Html.Raw(Model.CurrentProject?.Name))\n' },
-                                                    { insert: 'PM', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentProject?.PM?.FullName))\n' },
-                                                    { insert: 'WFH các ngày', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                    { insert: 'Lý do', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                ])
-                                            }
                                         }
                                     </script>
                                     break;
