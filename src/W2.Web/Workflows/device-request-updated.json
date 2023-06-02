@@ -1,10 +1,10 @@
 {
   "$id": "1",
   "definitionId": "3a057e11-7cde-1749-5c03-60520662a1f5",
-  "versionId": "3a0b824d-c6ae-8554-a1b7-861a9f31ccf3",
+  "versionId": "3a0b8c8a-9439-c850-5120-aa6d44f10075",
   "name": "Device Request",
   "displayName": "Device Request",
-  "version": 45,
+  "version": 53,
   "variables": {
     "$id": "2",
     "data": {}
@@ -16,9 +16,9 @@
   "isSingleton": false,
   "persistenceBehavior": "Suspended",
   "deleteCompletedInstances": false,
-  "isPublished": true,
+  "isPublished": false,
   "isLatest": true,
-  "createdAt": "2023-05-31T04:46:26.478443Z",
+  "createdAt": "2023-06-02T04:29:03.417936Z",
   "activities": [
     {
       "$id": "4",
@@ -208,7 +208,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "33",
-            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.CustomerRejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst userInfo = getRequestUser();\r\nconst emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Người gửi: ${userInfo.Name} (${userInfo.Email})</p>\r\n<p>Nội dung:</p>\r\n<div>\r\n${emailTemplate}\r\n</div>\r\n<div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.CustomerApproved)}\" style=\"margin-right:10px;\">Khách hàng Duyệt</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px;\">Khách hàng Từ chối</a>\r\n</div>\r\n`;"
+            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.CustomerRejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst userInfo = getRequestUser();\r\nconst emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi</b>: ${userInfo.Name} (${userInfo.Email})</div>\r\n<div>\r\n    ${emailTemplate}\r\n</div>\r\n<div>\r\n    <a href=\"${getCustomSignalUrl(workflowSignals.CustomerApproved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Khách hàng Duyệt</a>\r\n    <a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Khách hàng Từ chối</a>\r\n</div>\r\n`;"
           }
         },
         {
@@ -268,7 +268,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "46",
-            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.Rejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst userInfo = getRequestUser();\r\nconst emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Người gửi: ${userInfo.Name} (${userInfo.Email})</p>\r\n<p>Nội dung:</p>\r\n<div>\r\n${emailTemplate}\r\n</div>\r\n<div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.Approved)}\" style=\"margin-right:10px;\">Duyệt</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px;\">Từ chối</a>\r\n</div>\r\n`;"
+            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.Rejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst userInfo = getRequestUser();\r\nconst emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi: </b>${userInfo.Name} (${userInfo.Email})</div>\r\n<div>\r\n    ${emailTemplate}\r\n</div>\r\n<div>\r\n    <a href=\"${getCustomSignalUrl(workflowSignals.Approved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n    <a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`;"
           }
         },
         {
@@ -467,7 +467,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "81",
-            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị đã được duyệt</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu cấp thiết bị đã được duyệt.</b></div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${emailTemplate}\r\n</div>\r\n`"
           }
         },
         {
@@ -526,7 +526,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "94",
-            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu cấp thiết bị đã bị từ chối.</b><div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b> ${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${emailTemplate}\r\n</div>\r\n`"
           }
         }
       ],
@@ -572,7 +572,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "103",
-            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu cấp thiết bị đã bị từ chối.</b></div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b>${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${emailTemplate}\r\n</div>\r\n`"
           }
         },
         {
@@ -804,7 +804,7 @@
       "$id": "147",
       "activityId": "f96db19f-d77d-4c14-80ce-27e25f400887",
       "type": "SetVariable",
-      "displayName": "Set Email Content Variable",
+      "displayName": "Set Email Template Variable",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
@@ -823,7 +823,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "151",
-            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst currentOffice = getOfficeInfo(requestInfo.CurrentOffice);\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pms = JSON.parse(projectInfo.PM);\r\n\r\nreturn `\r\n<p><b>Văn phòng đang làm việc: </b>${currentOffice.DisplayName}</p>\r\n<p><b>Dự án: </b>[${projectInfo.Code}] ${projectInfo.Name}</p>\r\n<p><b>PM: </b>${pms.map(x => x.fullName).join(' - ')}</p>\r\n<p><b>Thiết bị cần request: </b>${requestInfo.Device}</p>\r\n<p><b>Lý do: </b>${requestInfo.Reason}</p>\r\n`;"
+            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst currentOffice = getOfficeInfo(requestInfo.CurrentOffice);\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pms = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pms.push(projectInfo.PM[i]);\r\n}\r\n\r\nreturn `\r\n<div style=\"margin: 13px 0\">\r\n    <b>Văn phòng đang làm việc: </b>${currentOffice.DisplayName}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Dự án: </b>[${projectInfo.Code}] ${projectInfo.Name}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>PM: </b>${pms.map(x => x.FullName).join(', ')}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Thiết bị cần request: </b>${requestInfo.Device}\r\n</div>\r\n<div style=\"margin: 13px 0;display: flex\">\r\n    <b>Lý do: </b>${requestInfo.Reason}\r\n</div>\r\n`;"
           }
         }
       ],
@@ -844,7 +844,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "154",
-            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst pms = JSON.parse(getProjectInfo(requestInfo.Project).PM);\r\n\r\nreturn pms.map(x => x.emailAddress);"
+            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn pmsEmailAddress;"
           }
         },
         {
@@ -869,7 +869,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "160",
-            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.PMRejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Người gửi: ${currentUser.Name} (${currentUser.Email})</p>\r\n<p>Nội dung:</p>\r\n<div>\r\n${emailTemplate}\r\n</div>\r\n<div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.PMApproved)}\" style=\"margin-right:10px;\">Duyệt</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px;\">Từ chối</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\r\n<a href=\"${getCustomSignalUrl(workflowSignals.SentToCustomer)}\" style=\"margin-right:10px;\">Gửi tới Sale</a>\r\n</div>\r\n`;"
+            "JavaScript": "const rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.PMRejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi</b>: ${currentUser.Name} (${currentUser.Email})</div>\r\n<div>\r\n    ${emailTemplate}\r\n</div>\r\n<div>\r\n  <a href=\"${getCustomSignalUrl(workflowSignals.PMApproved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n  <a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n  <a href=\"${getCustomSignalUrl(workflowSignals.SentToCustomer)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #189ad3; border-radius: 10px; color: white; text-decoration: none;\">Gửi tới Sale</a>\r\n</div>\r\n`;"
           }
         },
         {
@@ -904,7 +904,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "167",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst pms = JSON.parse(getProjectInfo(requestInfo.Project).PM);\r\n\r\nreturn [userInfo.Email, ...pms.map(x => x.emailAddress)];"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn [userInfo.Email, ...pmsEmailAddress];\r\n\r\nreturn [userInfo.Email, ...pms.map(x => x.emailAddress)];"
           }
         },
         {
@@ -929,7 +929,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "173",
-            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu cấp thiết bị đã bị từ chối.</b><div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b> ${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${emailTemplate}\r\n</div>\r\n`"
           }
         },
         {
@@ -964,7 +964,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "180",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst pms = JSON.parse(getProjectInfo(requestInfo.Project).PM);\r\n\r\nreturn [userInfo.Email, ...pms.map(x => x.emailAddress)];"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn [userInfo.Email, ...pmsEmailAddress];"
           }
         },
         {
@@ -989,7 +989,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "186",
-            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị đã được duyệt</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu cấp thiết bị đã được duyệt</b></div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${emailTemplate}\r\n</div>\r\n`"
           }
         },
         {
@@ -1024,7 +1024,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "193",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst pms = JSON.parse(getProjectInfo(requestInfo.Project).PM);\r\n\r\nreturn [userInfo.Email, ...pms.map(x => x.emailAddress)];"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn [userInfo.Email, ...pmsEmailAddress];"
           }
         },
         {
@@ -1049,7 +1049,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "199",
-            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<p>Yêu cầu cấp thiết bị đã bị từ chối.</p>\r\n<p>Lý do: ${activityExecutionContext.Input.Reason}</p>\r\n<p>Từ chối bởi: ${activityExecutionContext.Input.TriggeredBy}</p>\r\n<blockquote>\r\n${emailTemplate}\r\n</blockquote>\r\n`"
+            "JavaScript": "const emailTemplate = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu cấp thiết bị đã bị từ chối.</b></div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b>${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${emailTemplate}\r\n</div>\r\n`"
           }
         },
         {
@@ -1276,5 +1276,5 @@
       "outcome": "Done"
     }
   ],
-  "id": "3a0b824d-c6ae-8554-a1b7-861a9f31ccf3"
+  "id": "3a0b8c8a-9439-c850-5120-aa6d44f10075"
 }

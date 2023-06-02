@@ -57,14 +57,9 @@ namespace W2.Scripting
                 return listOfOffices.FirstOrDefault(x => x.Code == officeCode);
             };
 
-            Func<string, dynamic> getProjectInfo = projectCode =>
+            Func<string, TimesheetProjectItem> getProjectInfo = projectCode =>
             {
-                return listOfProjects.Select(x => new
-                {
-                    x.Code,
-                    x.Name,
-                    PM = JsonConvert.SerializeObject(x.PM)
-                }).FirstOrDefault(x => x.Code == projectCode);
+                return listOfProjects.FirstOrDefault(x => x.Code == projectCode);
             };
 
             engine.SetValue("getProjectInfo", getProjectInfo);
