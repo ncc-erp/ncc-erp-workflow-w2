@@ -39,6 +39,7 @@ namespace W2.WorkflowInstances
         private readonly ITemplateRenderer _templateRenderer;
         private readonly ILogger<WorkflowInstanceAppService> _logger;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
+        private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -49,7 +50,8 @@ namespace W2.WorkflowInstances
             IEmailSender emailSender,
             ITemplateRenderer templateRenderer,
             ILogger<WorkflowInstanceAppService> logger,
-            IUnitOfWorkManager unitOfWorkManager)
+            IUnitOfWorkManager unitOfWorkManager,
+            IWorkflowExecutionLogStore workflowExecutionLogStore)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -61,6 +63,7 @@ namespace W2.WorkflowInstances
             _templateRenderer = templateRenderer;
             _logger = logger;
             _unitOfWorkManager = unitOfWorkManager;
+            _workflowExecutionLogStore = workflowExecutionLogStore;
         }
 
         public async Task CancelAsync(string id)
@@ -155,7 +158,7 @@ namespace W2.WorkflowInstances
             var orderBySpecification = OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt!);
 
             var instances = (await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification)).ToList();
-            var instanceDtos = ObjectMapper.Map<List<WorkflowInstance>, List<WorkflowInstanceDto>>(instances);
+            //var instanceDtos = ObjectMapper.Map<List<WorkflowInstance>, List<WorkflowInstanceDto>>(instances);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
             )).ToList();
@@ -168,23 +171,62 @@ namespace W2.WorkflowInstances
 
                 var workflowInstanceIds = await AsyncExecuter.ToListAsync(workflowInstanceStarterIdsQuery);
 
-                instanceDtos = instanceDtos
-                    .Where(x => workflowInstanceIds.Contains(x.Id))
-                    .ToList();
+                //instanceDtos = instanceDtos
+                //    .Where(x => workflowInstanceIds.Contains(x.Id))
+                //    .ToList();
+
+                instances = instances.Where(x => workflowInstanceIds.Contains(x.Id)).ToList();
             }
 
-            foreach (var instanceDto in instanceDtos)
+            var result = new List<WorkflowInstanceDto>();
+            foreach (var instance in instances)
             {
-                var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instanceDto.WorkflowDefinitionId);
-                if (workflowDefinition == null)
-                {
-                    continue;
-                }
-                instanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
+                var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
+                var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
+                workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
+                workflowInstanceDto.StakeHolders = new List<string>();
+                workflowInstanceDto.Details = new List<string>();
 
+                var pendingActivities = new Dictionary<string, List<string>>();
+                foreach (var blockingActitvity in instance.BlockingActivities)
+                {
+                    var connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == blockingActitvity.ActivityId);
+                    
+                    var parentActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == connection.SourceActivityId);
+                    if (parentActivity.Type == "Fork" && blockingActitvity.ActivityType == "SignalReceived")
+                    {
+                        connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == parentActivity.ActivityId);
+
+                        var mailActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == connection.SourceActivityId);
+
+                        instance.ActivityData.TryGetValue(mailActivity.ActivityId, out var data);
+                        foreach (var email in (List<string>)data["To"])
+                        {
+                            if (!workflowInstanceDto.StakeHolders.Contains(email))
+                            {
+                                workflowInstanceDto.StakeHolders.Add(email);
+                            }
+                        }
+                    }
+                }
+                
+                result.Add(workflowInstanceDto);
             }
 
-            return new PagedResultDto<WorkflowInstanceDto>(instanceDtos.Count, instanceDtos);
+            
+
+            //foreach (var instanceDto in instanceDtos)
+            //{
+            //    var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instanceDto.WorkflowDefinitionId);
+                
+            //    if (workflowDefinition == null)
+            //    {
+            //        continue;
+            //    }
+            //    instanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
+            //}
+
+            return new PagedResultDto<WorkflowInstanceDto>(result.Count, result);
         }
     }
 }

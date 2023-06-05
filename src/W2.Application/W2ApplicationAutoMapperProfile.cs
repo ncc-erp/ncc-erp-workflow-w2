@@ -36,7 +36,7 @@ public class W2ApplicationAutoMapperProfile : Profile
         CreateMap<WorkflowInstance, WorkflowInstanceDto>()
             .ForMember(d => d.WorkflowDefinitionId, options => options.MapFrom(s => s.DefinitionId))
             .ForMember(d => d.CreatedAt, options => options.MapFrom(s => s.CreatedAt.ToDateTimeUtc()))
-            .ForMember(d => d.Status, options => options.MapFrom(s => s.WorkflowStatus.ToString()))
+            .ForMember(d => d.Status, options => options.MapFrom(s => s.WorkflowStatus == WorkflowStatus.Suspended ? "Pending" : s.WorkflowStatus.ToString()))
             .ForMember(d => d.LastExecutedAt, options => options.MapFrom((s, d) =>
             {
                 return s.LastExecutedAt.HasValue ? s.LastExecutedAt.Value.ToDateTimeUtc() : (DateTime?)null;
