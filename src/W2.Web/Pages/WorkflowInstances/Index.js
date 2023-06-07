@@ -16,8 +16,12 @@
                     }
                 },
                 {
-                    title: l('WorkflowInstance:Details'),
-                    data: "details",
+                    title: l('WorkflowInstance:RequestUser'),
+                    data: "userRequestName"
+                },
+                {
+                    title: l('WorkflowInstance:CurrentState'),
+                    data: "currentStates",
                     render: function (row, type, val) {
                         return row.length > 0 ? row.join('<br>') : 'None';
                     }

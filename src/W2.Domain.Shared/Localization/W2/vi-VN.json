@@ -44,6 +44,7 @@
     "WorkflowInstance:MyInstances": "My Requests",
     "WorkflowInstance:SuccessfullyCancelled": "Successfully cancelled request",
     "WorkflowInstance:StakeHolders": "StakeHolders",
-    "WorkflowInstance:Details": "Details"
+    "WorkflowInstance:CurrentState": "Current State",
+    "WorkflowInstance:RequestUser": "Request User"
   }
 }
