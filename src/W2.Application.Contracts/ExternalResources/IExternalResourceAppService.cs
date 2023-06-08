@@ -14,5 +14,6 @@ namespace W2.ExternalResources
         Task<List<OfficeInfo>> GetListOfOfficeAsync();
         Task<OfficeInfo> GetUserBranchInfoAsync(string userEmail);
         Task<ProjectProjectItem> GetCurrentUserWorkingProjectAsync();
+        Task<TimesheetUserInfo> GetUserInfoByEmailAsync(string userEmail);
     }
 }

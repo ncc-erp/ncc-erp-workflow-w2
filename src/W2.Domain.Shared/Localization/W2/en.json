@@ -42,6 +42,9 @@
     "WorkflowInstance:DeleteConfirmationMessage": "This request will be deleted. Do you confirm that?",
     "WorkflowInstance:LastExecutedAt": "Last Executed At",
     "WorkflowInstance:MyInstances": "My Requests",
-    "WorkflowInstance:SuccessfullyCancelled": "Successfully cancelled request"
+    "WorkflowInstance:SuccessfullyCancelled": "Successfully cancelled request",
+    "WorkflowInstance:StakeHolders": "StakeHolders",
+    "WorkflowInstance:CurrentState": "Current State",
+    "WorkflowInstance:RequestUser": "Request User"
   }
 }

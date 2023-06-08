@@ -16,6 +16,24 @@
                     }
                 },
                 {
+                    title: l('WorkflowInstance:RequestUser'),
+                    data: "userRequestName"
+                },
+                {
+                    title: l('WorkflowInstance:CurrentState'),
+                    data: "currentStates",
+                    render: function (row, type, val) {
+                        return row.length > 0 ? row.join('<br>') : 'None';
+                    }
+                },
+                {
+                    title: l('WorkflowInstance:StakeHolders'),
+                    data: "stakeHolders",
+                    render: function (row, type, val) {
+                        return row.length > 0 ? row.join('<br>') : 'None';
+                    }
+                },
+                {
                     title: l('WorkflowInstance:CreatedAt'),
                     data: "createdAt",
                     dataFormat: "datetime"
