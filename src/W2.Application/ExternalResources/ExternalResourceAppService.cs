@@ -146,5 +146,11 @@ namespace W2.ExternalResources
             var response = await _projectClient.GetUserProjectsAsync(CurrentUser.Email);
             return response.Result?.FirstOrDefault();
         }
+
+        public async Task<TimesheetUserInfo> GetUserInfoByEmailAsync(string userEmail)
+        {
+            var response = await _timesheetClient.GetUserInfoByEmailAsync(userEmail);
+            return response.Result;
+        }
     }
 }
