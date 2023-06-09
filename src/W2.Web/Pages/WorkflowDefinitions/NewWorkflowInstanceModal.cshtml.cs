@@ -46,8 +46,11 @@ namespace W2.Web.Pages.WorkflowDefinitions
         public List<SelectListItem> OfficeSelectListItems { get; set; } = new List<SelectListItem>();
         public OfficeInfo CurrentOffice { get; set; }
         public ProjectProjectItem CurrentProject { get; set; }
+        public WorkflowDefinitionSummaryDto WorkflowDefinitionSummaryDto { get; set; }
         public async Task OnGetAsync()
         {
+            WorkflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(WorkflowDefinitionId);
+
             CurrentOffice = await _externalResourceAppService.GetUserBranchInfoAsync(CurrentUser.Email);
             CurrentProject = await _externalResourceAppService.GetCurrentUserWorkingProjectAsync();
 

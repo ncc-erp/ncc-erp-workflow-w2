@@ -1,10 +1,10 @@
 {
   "$id": "1",
-  "definitionId": "3a0b8d4f-a475-c59f-8161-bdd0f2b2558d",
+  "definitionId": "3a0bab5b-8591-d686-3ef0-8016d87881b1",
   "versionId": "3a0b8d5f-5974-9ce5-1f23-f3383196301d",
   "name": "Device Request",
   "displayName": "Device Request",
-  "version": 5,
+  "version": 1,
   "variables": {
     "$id": "2",
     "data": {}
