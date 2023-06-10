@@ -17,7 +17,9 @@ namespace W2.Scripting
                 typeof(OfficeInfo),
                 typeof(SignalInputTypes),
                 typeof(RequestUser),
-                typeof(WorkflowInstanceVariableNames)
+                typeof(WorkflowInstanceVariableNames),
+                typeof(TimesheetProjectItem),
+                typeof(ProjectManager)
             };
         }
     }
