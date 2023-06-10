@@ -14,7 +14,7 @@
     data-check-form-on-close="false"
     onsubmit="return validate()">
     <abp-modal size="Large">
-        <abp-modal-header title="New Request"></abp-modal-header>
+        <abp-modal-header title="@Model.WorkflowDefinitionSummaryDto.DisplayName"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="WorkflowDefinitionId" type="hidden" />
             @for (int i = 0; i < countProperties; i++)
@@ -43,7 +43,8 @@
                                     <script>
                                         {
                                             $('#@inputId').datepicker({
-                                                format: 'dd/mm/yyyy'
+                                                format: 'dd/mm/yyyy',
+                                                multidate: "@propertyDefinition.Name" == "Dates"
                                             });
                                         }
                                     </script>
@@ -68,36 +69,6 @@
                                             editor.on('text-change', function() {
                                                 $('#@inputId').val(editor.root.innerHTML);
                                             });
-
-                                            if ("@Model.WorkflowDefinition.Name" == "Device Request") {
-                                                editor.setContents([
-                                                    { insert: 'Văn phòng đang làm việc', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentOffice?.DisplayName)) \n' },
-                                                    { insert: 'Dự án', attributes: { bold: true } },
-                                                    { insert: ': [@(Html.Raw(Model.CurrentProject?.Code))] @(Html.Raw(Model.CurrentProject?.Name))\n' },
-                                                    { insert: 'PM', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentProject?.PM?.FullName))\n' },
-                                                    { insert: 'Thiết bị cần request', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                    { insert: 'Lý do', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                ])
-                                            }
-
-                                            if ("@Model.WorkflowDefinition.Name" == "WFH Request") {
-                                                editor.setContents([
-                                                    { insert: 'Văn phòng đang làm việc', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentOffice?.DisplayName)) \n' },
-                                                    { insert: 'Dự án', attributes: { bold: true } },
-                                                    { insert: ': [@(Html.Raw(Model.CurrentProject?.Code))] @(Html.Raw(Model.CurrentProject?.Name))\n' },
-                                                    { insert: 'PM', attributes: { bold: true } },
-                                                    { insert: ': @(Html.Raw(Model.CurrentProject?.PM?.FullName))\n' },
-                                                    { insert: 'WFH các ngày', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                    { insert: 'Lý do', attributes: { bold: true } },
-                                                    { insert: ': \n' },
-                                                ])
-                                            }
                                         }
                                     </script>
                                     break;
@@ -121,7 +92,7 @@
                                     <select id="@inputId" name="@inputName" style="width:100%;">
                                         @foreach(var item in Model.ProjectSelectListItems)
                                         {
-                                            <option value="@item.Text" selected="@item.Selected">@item.Text (@item.Text)</option>
+                                            <option value="@item.Value" selected="@item.Selected">@item.Text (@item.Text)</option>
                                         }
                                     </select>
                                     <script type="text/javascript">
@@ -134,6 +105,7 @@
                                     break;
                                 case WorkflowInputDefinitionProperyType.OfficeList:
                                     <select id="@inputId" name="@inputName" style="width:100%;">
+                                        <option value="" selected disabled hidden>Select office</option>
                                         @foreach(var item in Model.OfficeSelectListItems)
                                         {
                                             <option value="@item.Value" selected="@(item.Selected && propertyDefinition.Name == "CurrentOffice")">@item.Text</option>
@@ -159,15 +131,44 @@
 </form>
 
 <script type="text/javascript">
-function validate() {
-    validated = true;
-    $("abp-validation-summary").text("");
-    $("[id^=input_]").each(function(index, self ) {
-        if (!$(self).val()) {
-            validated = false;
-            $("abp-validation-summary").text("Please fill in all fields");
+    function toDate(str) {
+        const dateParts = str.split('/');
+        return new Date(dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0]);
+    }
+
+    function validate() {
+        let validated = true;
+        $("abp-validation-summary").text("");
+        $("[id^=input_]").each(function(index, self) {
+            if ($(self).is('textarea')) 
+            {
+                validated = !(!$(self).val() || $(self).val() == '<p><br></p>');
+            } 
+            else
+            {
+                if (!$(self).val()) {
+                    validated = false;
+                }
+            }
+
+            if (!validated) {
+                $("abp-validation-summary").text("Please fill in all fields!");
+                return false;
+            }
+        })
+        
+        if ($('#input_StartDate').length == 1 && $('#input_EndDate').length == 1 && $('#input_StartDate').val() && $('#input_EndDate')) {
+            const startDate = toDate($('#input_StartDate').val());
+            const endDate = toDate($('#input_EndDate').val());
+            if (startDate > endDate) {
+                $("abp-validation-summary").text("Start date cannot be greater than end date!");
+            }
         }
-    })
-    return validated;
-}
+
+        return validated;
+    }
+
+    $('label[class="form-label"]').each(function(index, self) {
+        self.innerHTML = self.innerHTML.split(/(?=[A-Z])/).join(" ");
+    });
 </script>
