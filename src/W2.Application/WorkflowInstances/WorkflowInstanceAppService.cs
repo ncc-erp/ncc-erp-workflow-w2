@@ -188,15 +188,12 @@ namespace W2.WorkflowInstances
                 });
             }
 
-            var totalCount = instances.Count();
             var instancesIds = instances.Select(x => x.Id);
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
                 workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
                                 .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id));
-
-                totalCount = workflowInstanceStarters.Count;
             }
             else
             {
@@ -204,6 +201,7 @@ namespace W2.WorkflowInstances
                                 .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
             }
 
+            var totalCount = workflowInstanceStarters.Count();
             instances = await AsyncExecuter.ToListAsync(
                 workflowInstanceStarters.Join(instances, x => x.WorkflowInstanceId, x => x.Id, (WorkflowInstanceStarter, WorkflowInstance) => new
                 {
