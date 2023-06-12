@@ -11,6 +11,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -149,6 +150,7 @@ namespace W2.WorkflowInstances
 
         public async Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input)
         {
+            var specialStatus = new string[] { "approved", "rejected" };
             var specification = Specification<WorkflowInstance>.Identity;
             if (CurrentTenant.IsAvailable)
             {
@@ -158,27 +160,58 @@ namespace W2.WorkflowInstances
             {
                 specification = specification.WithWorkflowDefinition(input.WorkflowDefinitionId);
             }
-            var orderBySpecification = OrderBySpecification.OrderByDescending<WorkflowInstance>(x => x.CreatedAt!);
+            if (!string.IsNullOrWhiteSpace(input?.Status))
+            {
+                if (!specialStatus.Contains(input.Status.ToLower()))
+                {
+                    specification = specification.WithStatus((WorkflowStatus)Enum.Parse(typeof(WorkflowStatus), input.Status, true));
+                }
+                else
+                {
+                    specification = specification.WithStatus(WorkflowStatus.Finished);
+                }
+            }
 
-            var instances = (await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification)).ToList();
+            var instances = (await _workflowInstanceStore.FindManyAsync(specification));
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
             )).ToList();
-            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
 
+            if (specialStatus.Contains(input.Status.ToLower()))
+            {
+                instances = instances.Where(instance =>
+                {
+                    var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
+                    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+
+                    return GetFinalStatus(lastExecutedActivity) == input.Status;
+                });
+            }
+
+            var instancesIds = instances.Select(x => x.Id);
+            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
-                workflowInstanceStarters = (await _instanceStarterRepository.GetListAsync(x => x.CreatorId == CurrentUser.Id)).ToList(); 
-                var workflowInstanceStarterIds = workflowInstanceStarters
-                    .Where(x => x.CreatorId == CurrentUser.Id)
-                    .Select(x => x.WorkflowInstanceId);
-
-                instances = instances.Where(x => workflowInstanceStarterIds.Contains(x.Id)).ToList();
+                workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id));
             }
             else
             {
-                workflowInstanceStarters = await _instanceStarterRepository.GetListAsync();
+                workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
             }
+
+            var totalCount = workflowInstanceStarters.Count();
+            instances = await AsyncExecuter.ToListAsync(
+                workflowInstanceStarters.Join(instances, x => x.WorkflowInstanceId, x => x.Id, (WorkflowInstanceStarter, WorkflowInstance) => new
+                {
+                    WorkflowInstanceStarter,
+                    WorkflowInstance
+                })
+                .AsQueryable().OrderBy(NormalizeSortingString(input.Sorting))
+                .Skip(input.SkipCount).Take(input.MaxResultCount)
+                .Select(x => x.WorkflowInstance)
+            );
 
             var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
             var requestUsers = (await _userRepository.GetListAsync())
@@ -194,6 +227,12 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
                 workflowInstanceDto.StakeHolders = new List<string>();
                 workflowInstanceDto.CurrentStates = new List<string>();
+
+                if (instance.WorkflowStatus == WorkflowStatus.Finished)
+                {
+                    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+                    workflowInstanceDto.Status = GetFinalStatus(lastExecutedActivity);
+                }
 
                 var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
                 if (workflowInstanceStarter is not null)
@@ -270,24 +309,47 @@ namespace W2.WorkflowInstances
                                 }
                             }
                         }
-
-                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName))
-                        {
-                            workflowInstanceDto.CurrentStates.Add(parentActivity.DisplayName);
-                        }
                     }
-                }
-
-                if (instance.WorkflowStatus == WorkflowStatus.Finished)
-                {
-                    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
-                    workflowInstanceDto.Status = lastExecutedActivity == null ? "Finished" : (lastExecutedActivity.DisplayName.ToLower().Contains("reject") ? "Rejected" : "Approved");
                 }
                 
                 result.Add(workflowInstanceDto);
             }
 
-            return new PagedResultDto<WorkflowInstanceDto>(result.Count, result);
+            return new PagedResultDto<WorkflowInstanceDto>(totalCount, result);
+        }
+
+        private string GetFinalStatus(ActivityDefinition activityDefinition)
+        {
+            return activityDefinition == null ? "Finished" : (activityDefinition.DisplayName.ToLower().Contains("reject") ? "Rejected" : "Approved");
+        }
+
+        private string NormalizeSortingString(string sorting)
+        {
+            if (sorting.IsNullOrEmpty())
+            {
+                return "WorkflowInstance.CreatedAt DESC";
+            }
+
+            var sortingPart = sorting.Trim().Split(' ');
+            var property = sortingPart[0].ToLower();
+            var direction = sortingPart[1].ToLower();
+            switch (property)
+            {
+                case "createdat":
+                    if (direction == "asc")
+                    {
+                        return "WorkflowInstance.CreatedAt ASC";
+                    }
+                    return "WorkflowInstance.CreatedAt DESC";
+                case "lastexecutedat":
+                    if (direction == "asc")
+                    {
+                        return "WorkflowInstance.LastExecutedAt ASC";
+                    }
+                    return "WorkflowInstance.LastExecutedAt DESC";
+            }
+
+            return "WorkflowInstance.CreatedAt DESC";
         }
     }
 }
