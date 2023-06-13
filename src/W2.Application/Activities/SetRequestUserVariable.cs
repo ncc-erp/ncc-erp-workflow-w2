@@ -50,9 +50,9 @@ namespace W2.Activities
                 Email = _currentUser.Email,
                 Name = _currentUser.Name,
                 Project = _currentUser.FindClaimValue(CustomClaim.ProjectName),
-                HeadOfOfficeEmail = branchResult.HeadOfOfficeEmail,
-                BranchCode = branchResult.Code,
-                BranchName = branchResult.DisplayName,
+                HeadOfOfficeEmail = branchResult?.HeadOfOfficeEmail,
+                BranchCode = branchResult?.Code,
+                BranchName = branchResult?.DisplayName,
                 ProjectCode = project?.Code,
                 PM = project?.PM?.EmailAddress
             };
