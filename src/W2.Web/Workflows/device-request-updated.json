@@ -1,7 +1,7 @@
 {
   "$id": "1",
-  "definitionId": "3a0bab5b-8591-d686-3ef0-8016d87881b1",
-  "versionId": "3a0b8d5f-5974-9ce5-1f23-f3383196301d",
+  "definitionId": "3a0bc591-056d-f659-9480-3d6ec5371312",
+  "versionId": "3a0bc5b3-b505-f6bf-58f7-5b80ac10cad9",
   "name": "Device Request",
   "displayName": "Device Request",
   "version": 1,
@@ -823,7 +823,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "151",
-            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst currentOffice = getOfficeInfo(requestInfo.CurrentOffice);\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pms = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pms.push(projectInfo.PM[i]);\r\n}\r\n\r\nreturn `\r\n<div style=\"margin: 13px 0\">\r\n    <b>Văn phòng đang làm việc: </b>${currentOffice.DisplayName}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Dự án: </b>[${projectInfo.Code}] ${projectInfo.Name}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>PM: </b>${pms.map(x => x.FullName).join(', ')}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Thiết bị cần request: </b>${requestInfo.Device}\r\n</div>\r\n<div style=\"margin: 13px 0;display: flex\">\r\n    <b>Lý do: </b>${requestInfo.Reason}\r\n</div>\r\n`;"
+            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst currentOffice = getOfficeInfo(requestInfo.CurrentOffice);\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pms = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pms.push(projectInfo.PM[i]);\r\n}\r\n\r\nreturn `\r\n<div style=\"margin: 13px 0\">\r\n    <b>Văn phòng đang làm việc: </b>${currentOffice.DisplayName}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Dự án: </b>[${projectInfo.Code}] ${projectInfo.Name}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>PM: </b>${pms.map(x => x.FullName).join(', ')}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Thiết bị cần request: </b>${requestInfo.Device}\r\n</div>\r\n<div style=\"margin: 13px 0;display: flex\">\r\n    <b>Lý do: &nbsp</b>${requestInfo.Reason}\r\n</div>\r\n`;"
           }
         }
       ],
@@ -1276,5 +1276,5 @@
       "outcome": "Done"
     }
   ],
-  "id": "3a0b8d5f-5974-9ce5-1f23-f3383196301d"
+  "id": "3a0bc5b3-b505-f6bf-58f7-5b80ac10cad9"
 }

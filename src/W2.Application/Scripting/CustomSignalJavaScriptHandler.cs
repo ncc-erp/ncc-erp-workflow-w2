@@ -48,7 +48,7 @@ namespace W2.Scripting
             engine.SetValue("getCustomSignalUrlWithForm", getCustomSignalUrlWithForm);
 
             var listOfOffices = await _externalResourceAppService.GetListOfOfficeAsync();
-            var listOfProjects = await _externalResourceAppService.GetCurrentUserProjectsAsync();
+            var listOfProjects = await _externalResourceAppService.GetUserProjectsFromApiAsync(notification.ActivityExecutionContext.GetRequestUserVariable()?.Email);
             Func<string, OfficeInfo> getOfficeInfo = officeCode =>
             {
                 return listOfOffices.FirstOrDefault(x => x.Code == officeCode);
@@ -56,7 +56,7 @@ namespace W2.Scripting
 
             Func<string, TimesheetProjectItem> getProjectInfo = projectCode =>
             {
-                return listOfProjects.FirstOrDefault(x => x.Code == projectCode);
+                return listOfProjects.FirstOrDefault(x => x.Code == projectCode) ?? new TimesheetProjectItem();
             };
 
             engine.SetValue("getProjectInfo", getProjectInfo);
