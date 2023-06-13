@@ -4,7 +4,7 @@
   "versionId": "3a0bc5b5-9e5a-a51a-1dbe-8497597161e7",
   "name": "WFH Request",
   "displayName": "WFH Request",
-  "version": 1,
+  "version": 3,
   "variables": {
     "$id": "2",
     "data": {}
@@ -18,7 +18,7 @@
   "deleteCompletedInstances": false,
   "isPublished": false,
   "isLatest": true,
-  "createdAt": "2023-06-02T08:23:28.722975Z",
+  "createdAt": "2023-06-13T06:54:25.370229Z",
   "activities": [
     {
       "$id": "4",
@@ -139,9 +139,9 @@
     },
     {
       "$id": "27",
-      "activityId": "fe98cde4-9fa8-4682-bf63-895c6d5f4cde",
+      "activityId": "d933a1f0-51c0-4f19-9136-a3c987d8a258",
       "type": "SignalReceived",
-      "displayName": "Approve Request",
+      "displayName": "Reject Request",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
@@ -152,7 +152,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "29",
-            "JavaScript": "workflowSignals.PMApproved"
+            "JavaScript": "workflowSignals.PMRejected"
           }
         }
       ],
@@ -160,9 +160,9 @@
     },
     {
       "$id": "30",
-      "activityId": "d933a1f0-51c0-4f19-9136-a3c987d8a258",
+      "activityId": "8ac08dd0-5bb6-48f7-b0e3-ce1d3f51895e",
       "type": "SignalReceived",
-      "displayName": "Reject Request",
+      "displayName": "Approve and send to CEO for Review",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
@@ -173,27 +173,6 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "32",
-            "JavaScript": "workflowSignals.PMRejected"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "33",
-      "activityId": "8ac08dd0-5bb6-48f7-b0e3-ce1d3f51895e",
-      "type": "SignalReceived",
-      "displayName": "Approve and send to CEO for Review",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "34",
-          "name": "Signal",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "35",
             "JavaScript": "workflowSignals.SentToCustomer"
           }
         }
@@ -201,52 +180,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "36",
-      "activityId": "c8705923-8e92-4676-ae7c-42eb5f604c3c",
-      "type": "SendEmailToInstanceCreatorAndOther",
-      "displayName": "Send notification to staff: Request approved",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "37",
-          "name": "To",
-          "expressions": {
-            "$id": "38"
-          }
-        },
-        {
-          "$id": "39",
-          "name": "Subject",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "40",
-            "Literal": "WFH Request Approved",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Approved - [${projectInfo.Name}] - ${userInfo.Name}`;"
-          }
-        },
-        {
-          "$id": "41",
-          "name": "Attachments",
-          "expressions": {
-            "$id": "42"
-          }
-        },
-        {
-          "$id": "43",
-          "name": "Body",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "44",
-            "JavaScript": "const content = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của bạn đã được duyệt!</b></div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "45",
+      "$id": "33",
       "activityId": "543db8f1-6145-4c3e-bab3-58b89ec34896",
       "type": "SendEmailToInstanceCreatorAndOther",
       "displayName": "Send notification to staff: Request rejected",
@@ -255,35 +189,35 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "46",
+          "$id": "34",
           "name": "To",
           "expressions": {
-            "$id": "47"
+            "$id": "35"
           }
         },
         {
-          "$id": "48",
+          "$id": "36",
           "name": "Subject",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "49",
+            "$id": "37",
             "Literal": "WFH Request Rejected",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`;"
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name} ${JSON.stringify(projectInfo)}`;"
           }
         },
         {
-          "$id": "50",
+          "$id": "38",
           "name": "Attachments",
           "expressions": {
-            "$id": "51"
+            "$id": "39"
           }
         },
         {
-          "$id": "52",
+          "$id": "40",
           "name": "Body",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "53",
+            "$id": "41",
             "JavaScript": "const content = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của bạn đã bị từ chối!</b></div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b>${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
           }
         }
@@ -291,7 +225,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "54",
+      "$id": "42",
       "activityId": "65118c74-16d7-4ab2-a2ea-6670bdbf19dc",
       "type": "SignalReceived",
       "displayName": "Approve Request",
@@ -300,11 +234,11 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "55",
+          "$id": "43",
           "name": "Signal",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "56",
+            "$id": "44",
             "JavaScript": "workflowSignals.Approved"
           }
         }
@@ -312,7 +246,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "57",
+      "$id": "45",
       "activityId": "34026156-ef96-4e8c-ab1f-f1afccf82dbc",
       "type": "SignalReceived",
       "displayName": "Reject Request",
@@ -321,11 +255,11 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "58",
+          "$id": "46",
           "name": "Signal",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "59",
+            "$id": "47",
             "JavaScript": "workflowSignals.Rejected"
           }
         }
@@ -333,7 +267,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "60",
+      "$id": "48",
       "activityId": "69e34787-7712-4b33-8fe5-685c5a1fc296",
       "type": "Fork",
       "displayName": "CEO Review",
@@ -342,10 +276,10 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "61",
+          "$id": "49",
           "name": "Branches",
           "expressions": {
-            "$id": "62",
+            "$id": "50",
             "Json": "[\"Approve\",\"Reject\"]"
           }
         }
@@ -353,7 +287,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "63",
+      "$id": "51",
       "activityId": "3b41be34-9164-468b-b554-07a3e9c4ab2c",
       "type": "Fork",
       "displayName": "Send notifications: Request approved",
@@ -362,10 +296,10 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "64",
+          "$id": "52",
           "name": "Branches",
           "expressions": {
-            "$id": "65",
+            "$id": "53",
             "Json": "[\"To Staff\",\"To PM\"]"
           }
         }
@@ -373,7 +307,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "66",
+      "$id": "54",
       "activityId": "a18ff536-30f9-413c-af5d-8d2f919a79de",
       "type": "Fork",
       "displayName": "Send notifications: Request rejected",
@@ -382,10 +316,10 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "67",
+          "$id": "55",
           "name": "Branches",
           "expressions": {
-            "$id": "68",
+            "$id": "56",
             "Json": "[\"To Staff\",\"To PM\"]"
           }
         }
@@ -393,28 +327,91 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "69",
-      "activityId": "fe9e8e43-a582-4a48-a3ca-de81335d42f5",
+      "$id": "57",
+      "activityId": "abf92e3c-154c-4cb9-ba06-6167672aaff5",
       "type": "Finish",
-      "displayName": "Request approved",
+      "displayName": "Request rejected",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "70",
+          "$id": "58",
           "name": "ActivityOutput",
           "expressions": {
-            "$id": "71",
+            "$id": "59",
             "Literal": "Successful"
           }
         },
         {
-          "$id": "72",
+          "$id": "60",
           "name": "OutcomeNames",
           "expressions": {
-            "$id": "73",
-            "Json": "[]"
+            "$id": "61"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "62",
+      "activityId": "807d7e43-edfa-430e-9609-e26dcff54be5",
+      "type": "SendEmailToInstanceCreatorAndOther",
+      "displayName": "Send notification to staff: Request approved",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "63",
+          "name": "To",
+          "expressions": {
+            "$id": "64"
+          }
+        },
+        {
+          "$id": "65",
+          "name": "Subject",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "66",
+            "Literal": "WFH Request Approved",
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Approved - [${projectInfo.Name}] - ${userInfo.Name}`;"
+          }
+        },
+        {
+          "$id": "67",
+          "name": "Attachments",
+          "expressions": {
+            "$id": "68"
+          }
+        },
+        {
+          "$id": "69",
+          "name": "Body",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "70",
+            "JavaScript": "const content = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của bạn đã được duyệt!</b></div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "71",
+      "activityId": "dda4070e-ff72-4877-9b5d-a14a8ec08e9c",
+      "type": "Join",
+      "displayName": "Finish sending notifications",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "72",
+          "name": "Mode",
+          "expressions": {
+            "$id": "73"
           }
         }
       ],
@@ -422,9 +419,9 @@
     },
     {
       "$id": "74",
-      "activityId": "abf92e3c-154c-4cb9-ba06-6167672aaff5",
+      "activityId": "990459e9-d13f-497a-88ea-6e02d40ad7f2",
       "type": "Finish",
-      "displayName": "Request rejected",
+      "displayName": "Request approved",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
@@ -449,9 +446,9 @@
     },
     {
       "$id": "79",
-      "activityId": "807d7e43-edfa-430e-9609-e26dcff54be5",
+      "activityId": "c207b15c-3277-4940-a2bb-ccc4f3bf843e",
       "type": "SendEmailToInstanceCreatorAndOther",
-      "displayName": "Send notification to staff: Request approved",
+      "displayName": "Send notification to staff: Request rejected",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
@@ -469,8 +466,8 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "83",
-            "Literal": "WFH Request Approved",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Approved - [${projectInfo.Name}] - ${userInfo.Name}`;"
+            "Literal": "WFH Request Rejected",
+            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`"
           }
         },
         {
@@ -486,7 +483,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "87",
-            "JavaScript": "const content = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của bạn đã được duyệt!</b></div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
+            "JavaScript": "const content = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của bạn đã bị từ chối!</b></div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b>${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
           }
         }
       ],
@@ -494,7 +491,7 @@
     },
     {
       "$id": "88",
-      "activityId": "dda4070e-ff72-4877-9b5d-a14a8ec08e9c",
+      "activityId": "9b023bac-94a4-4eb4-96d0-5a4ac8e75e1c",
       "type": "Join",
       "displayName": "Finish sending notifications",
       "persistWorkflow": false,
@@ -513,9 +510,9 @@
     },
     {
       "$id": "91",
-      "activityId": "990459e9-d13f-497a-88ea-6e02d40ad7f2",
+      "activityId": "23a2ac13-5c8e-4933-bc65-b9ac2229bb63",
       "type": "Finish",
-      "displayName": "Request approved",
+      "displayName": "Request rejected",
       "persistWorkflow": false,
       "loadWorkflowContext": false,
       "saveWorkflowContext": false,
@@ -540,97 +537,6 @@
     },
     {
       "$id": "96",
-      "activityId": "c207b15c-3277-4940-a2bb-ccc4f3bf843e",
-      "type": "SendEmailToInstanceCreatorAndOther",
-      "displayName": "Send notification to staff: Request rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "97",
-          "name": "To",
-          "expressions": {
-            "$id": "98"
-          }
-        },
-        {
-          "$id": "99",
-          "name": "Subject",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "100",
-            "Literal": "WFH Request Rejected",
-            "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`"
-          }
-        },
-        {
-          "$id": "101",
-          "name": "Attachments",
-          "expressions": {
-            "$id": "102"
-          }
-        },
-        {
-          "$id": "103",
-          "name": "Body",
-          "syntax": "JavaScript",
-          "expressions": {
-            "$id": "104",
-            "JavaScript": "const content = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của bạn đã bị từ chối!</b></div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b>${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "105",
-      "activityId": "9b023bac-94a4-4eb4-96d0-5a4ac8e75e1c",
-      "type": "Join",
-      "displayName": "Finish sending notifications",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "106",
-          "name": "Mode",
-          "expressions": {
-            "$id": "107"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "108",
-      "activityId": "23a2ac13-5c8e-4933-bc65-b9ac2229bb63",
-      "type": "Finish",
-      "displayName": "Request rejected",
-      "persistWorkflow": false,
-      "loadWorkflowContext": false,
-      "saveWorkflowContext": false,
-      "properties": [
-        {
-          "$id": "109",
-          "name": "ActivityOutput",
-          "expressions": {
-            "$id": "110",
-            "Literal": "Successful"
-          }
-        },
-        {
-          "$id": "111",
-          "name": "OutcomeNames",
-          "expressions": {
-            "$id": "112"
-          }
-        }
-      ],
-      "propertyStorageProviders": {}
-    },
-    {
-      "$id": "113",
       "activityId": "8664817b-a4d9-4e5d-aee3-892fca4c7b35",
       "type": "SetRequestUserVariable",
       "displayName": "Set RequestUser Variable",
@@ -641,7 +547,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "114",
+      "$id": "97",
       "activityId": "aee57c9c-9a8f-450e-bd6e-aaf27117fc75",
       "type": "SetVariable",
       "displayName": "Set Email Template Variable",
@@ -650,19 +556,19 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "115",
+          "$id": "98",
           "name": "VariableName",
           "expressions": {
-            "$id": "116",
+            "$id": "99",
             "Literal": "EmailTemplate"
           }
         },
         {
-          "$id": "117",
+          "$id": "100",
           "name": "Value",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "118",
+            "$id": "101",
             "Literal": "input.Body",
             "JavaScript": "const requestInfo = getVariable('Request');\r\nconst currentOffice = getOfficeInfo(requestInfo.CurrentOffice);\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pms = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pms.push(projectInfo.PM[i]);\r\n}\r\n\r\nreturn `\r\n<div style=\"margin: 13px 0\"><b>Văn phòng đang làm việc: </b>${currentOffice.DisplayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Dự án: </b>${projectInfo.Name}</div>\r\n<div style=\"margin: 13px 0\"><b>PM: </b>${pms.map(x => x.FullName).join(', ')}</div>\r\n<div style=\"margin: 13px 0\"><b>WFH các ngày: </b>${requestInfo.Dates}</div>\r\n<div style=\"margin: 13px 0; display: flex\"><b>Lý do: &nbsp</b>${requestInfo.Reason}</div>\r\n`;"
           }
@@ -671,7 +577,7 @@
       "propertyStorageProviders": {}
     },
     {
-      "$id": "119",
+      "$id": "102",
       "activityId": "35b1d04a-138b-45f3-b4a9-9e7ebc10d254",
       "type": "CustomEmail",
       "displayName": "Send email to branch manager",
@@ -680,58 +586,58 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "120",
+          "$id": "103",
           "name": "To",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "121",
+            "$id": "104",
             "JavaScript": "const requestInfo = getVariable('Request');\r\nconst officeInfo = getOfficeInfo(requestInfo.CurrentOffice);\r\n\r\nreturn [officeInfo.HeadOfOfficeEmail];"
           }
         },
         {
-          "$id": "122",
+          "$id": "105",
           "name": "Subject",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "123",
+            "$id": "106",
             "JavaScript": "const userInfo = getRequestUser(); \r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
-          "$id": "124",
+          "$id": "107",
           "name": "Attachments",
           "expressions": {
-            "$id": "125"
+            "$id": "108"
           }
         },
         {
-          "$id": "126",
+          "$id": "109",
           "name": "Body",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "127",
+            "$id": "110",
             "JavaScript": "const content = getVariable('EmailTemplate');\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.Rejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst emailBody = `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Người gửi</b>: ${currentUser.Name} (${currentUser.Email})\r\n</div>\r\n<div>\r\n    ${content}\r\n</div>\r\n<div>\r\n    <a href=\"${getCustomSignalUrl(workflowSignals.Approved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n    <a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`;\r\n\r\nreturn emailBody;"
           }
         },
         {
-          "$id": "128",
+          "$id": "111",
           "name": "Cc",
           "expressions": {
-            "$id": "129"
+            "$id": "112"
           }
         },
         {
-          "$id": "130",
+          "$id": "113",
           "name": "Bcc",
           "expressions": {
-            "$id": "131"
+            "$id": "114"
           }
         }
       ],
       "propertyStorageProviders": {}
     },
     {
-      "$id": "132",
+      "$id": "115",
       "activityId": "a46f2216-a7e7-4a83-9a31-cf4f43e923f3",
       "type": "CustomEmail",
       "displayName": "Send email to PM: Request approved",
@@ -740,58 +646,58 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "133",
+          "$id": "116",
           "name": "To",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "134",
+            "$id": "117",
             "JavaScript": "const requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn pmsEmailAddress;"
           }
         },
         {
-          "$id": "135",
+          "$id": "118",
           "name": "Subject",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "136",
+            "$id": "119",
             "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Approved - [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
-          "$id": "137",
+          "$id": "120",
           "name": "Attachments",
           "expressions": {
-            "$id": "138"
+            "$id": "121"
           }
         },
         {
-          "$id": "139",
+          "$id": "122",
           "name": "Body",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "140",
+            "$id": "123",
             "JavaScript": "const content = getVariable('EmailTemplate');\r\nconst userInfo = getRequestUser();\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của ${userInfo.Name} (${userInfo.Email}) đã được duyệt!</b></div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
           }
         },
         {
-          "$id": "141",
+          "$id": "124",
           "name": "Cc",
           "expressions": {
-            "$id": "142"
+            "$id": "125"
           }
         },
         {
-          "$id": "143",
+          "$id": "126",
           "name": "Bcc",
           "expressions": {
-            "$id": "144"
+            "$id": "127"
           }
         }
       ],
       "propertyStorageProviders": {}
     },
     {
-      "$id": "145",
+      "$id": "128",
       "activityId": "adaa40f7-3355-498a-9f0f-236db3fb671d",
       "type": "CustomEmail",
       "displayName": "Send email to PM",
@@ -800,58 +706,58 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "146",
+          "$id": "129",
           "name": "To",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "147",
+            "$id": "130",
             "JavaScript": "const requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn pmsEmailAddress;"
           }
         },
         {
-          "$id": "148",
+          "$id": "131",
           "name": "Subject",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "149",
+            "$id": "132",
             "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
-          "$id": "150",
+          "$id": "133",
           "name": "Attachments",
           "expressions": {
-            "$id": "151"
+            "$id": "134"
           }
         },
         {
-          "$id": "152",
+          "$id": "135",
           "name": "Body",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "153",
+            "$id": "136",
             "JavaScript": "const content = getVariable('EmailTemplate');\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.PMRejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nconst emailBody = `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Người gửi</b>: ${currentUser.Name} (${currentUser.Email})\r\n</div>\r\n<div>\r\n    ${content}\r\n</div>\r\n<div>\r\n    <a href=\"${getCustomSignalUrl(workflowSignals.SentToCustomer)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt và chuyển tiếp tới GĐVP</a>\r\n    <a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`;\r\n\r\nreturn emailBody;"
           }
         },
         {
-          "$id": "154",
+          "$id": "137",
           "name": "Cc",
           "expressions": {
-            "$id": "155"
+            "$id": "138"
           }
         },
         {
-          "$id": "156",
+          "$id": "139",
           "name": "Bcc",
           "expressions": {
-            "$id": "157"
+            "$id": "140"
           }
         }
       ],
       "propertyStorageProviders": {}
     },
     {
-      "$id": "158",
+      "$id": "141",
       "activityId": "744c5a35-557b-4810-9387-f22cf0d6bcab",
       "type": "CustomEmail",
       "displayName": "Send email to PM: Request rejected",
@@ -860,51 +766,51 @@
       "saveWorkflowContext": false,
       "properties": [
         {
-          "$id": "159",
+          "$id": "142",
           "name": "To",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "160",
+            "$id": "143",
             "JavaScript": "const requestInfo = getVariable('Request');\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pmsEmailAddress = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pmsEmailAddress.push(projectInfo.PM[i].EmailAddress);\r\n}\r\n\r\nreturn pmsEmailAddress;"
           }
         },
         {
-          "$id": "161",
+          "$id": "144",
           "name": "Subject",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "162",
+            "$id": "145",
             "JavaScript": "const userInfo = getRequestUser();\r\nconst projectInfo = getProjectInfo(getVariable('Request').Project);\r\nreturn `[WFH Request] Rejected - [${projectInfo.Name}] - ${userInfo.Name}`;"
           }
         },
         {
-          "$id": "163",
+          "$id": "146",
           "name": "Attachments",
           "expressions": {
-            "$id": "164"
+            "$id": "147"
           }
         },
         {
-          "$id": "165",
+          "$id": "148",
           "name": "Body",
           "syntax": "JavaScript",
           "expressions": {
-            "$id": "166",
+            "$id": "149",
             "JavaScript": "const userInfo = getRequestUser();\r\nconst content = getVariable('EmailTemplate');\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Yêu cầu WFH của ${userInfo.Name} (${userInfo.Email}) đã bị từ chối!</b></div>\r\n<div style=\"margin: 13px 0\"><b>Lý do: </b>${activityExecutionContext.Input.Reason}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ chối bởi: </b>${activityExecutionContext.Input.TriggeredBy}</div>\r\n<div style=\"padding: 3px 10px; border-radius: 10px; background-color: aliceblue\">\r\n    <div style=\"margin: 13px 0\"><i>Nội dung request</i></div>\r\n    ${content}\r\n</div>\r\n`;"
           }
         },
         {
-          "$id": "167",
+          "$id": "150",
           "name": "Cc",
           "expressions": {
-            "$id": "168"
+            "$id": "151"
           }
         },
         {
-          "$id": "169",
+          "$id": "152",
           "name": "Bcc",
           "expressions": {
-            "$id": "170"
+            "$id": "153"
           }
         }
       ],
@@ -913,175 +819,157 @@
   ],
   "connections": [
     {
-      "$id": "171",
+      "$id": "154",
       "sourceActivityId": "d4bba2c4-6a5a-4a23-a43b-881b89034fba",
       "targetActivityId": "d74a8305-61b2-4ecd-9df2-02a23cc050db",
       "outcome": "Done"
     },
     {
-      "$id": "172",
-      "sourceActivityId": "6dff8e89-c08a-4d33-a555-4dc8f8ff26da",
-      "targetActivityId": "fe98cde4-9fa8-4682-bf63-895c6d5f4cde",
-      "outcome": "Approve Request"
-    },
-    {
-      "$id": "173",
+      "$id": "155",
       "sourceActivityId": "6dff8e89-c08a-4d33-a555-4dc8f8ff26da",
       "targetActivityId": "d933a1f0-51c0-4f19-9136-a3c987d8a258",
       "outcome": "Reject Request"
     },
     {
-      "$id": "174",
+      "$id": "156",
       "sourceActivityId": "6dff8e89-c08a-4d33-a555-4dc8f8ff26da",
       "targetActivityId": "8ac08dd0-5bb6-48f7-b0e3-ce1d3f51895e",
       "outcome": "Send to CEO for Review"
     },
     {
-      "$id": "175",
-      "sourceActivityId": "fe98cde4-9fa8-4682-bf63-895c6d5f4cde",
-      "targetActivityId": "c8705923-8e92-4676-ae7c-42eb5f604c3c",
-      "outcome": "Done"
-    },
-    {
-      "$id": "176",
+      "$id": "157",
       "sourceActivityId": "d933a1f0-51c0-4f19-9136-a3c987d8a258",
       "targetActivityId": "543db8f1-6145-4c3e-bab3-58b89ec34896",
       "outcome": "Done"
     },
     {
-      "$id": "177",
+      "$id": "158",
       "sourceActivityId": "69e34787-7712-4b33-8fe5-685c5a1fc296",
       "targetActivityId": "65118c74-16d7-4ab2-a2ea-6670bdbf19dc",
       "outcome": "Approve"
     },
     {
-      "$id": "178",
+      "$id": "159",
       "sourceActivityId": "69e34787-7712-4b33-8fe5-685c5a1fc296",
       "targetActivityId": "34026156-ef96-4e8c-ab1f-f1afccf82dbc",
       "outcome": "Reject"
     },
     {
-      "$id": "179",
+      "$id": "160",
       "sourceActivityId": "65118c74-16d7-4ab2-a2ea-6670bdbf19dc",
       "targetActivityId": "3b41be34-9164-468b-b554-07a3e9c4ab2c",
       "outcome": "Done"
     },
     {
-      "$id": "180",
+      "$id": "161",
       "sourceActivityId": "34026156-ef96-4e8c-ab1f-f1afccf82dbc",
       "targetActivityId": "a18ff536-30f9-413c-af5d-8d2f919a79de",
       "outcome": "Done"
     },
     {
-      "$id": "181",
-      "sourceActivityId": "c8705923-8e92-4676-ae7c-42eb5f604c3c",
-      "targetActivityId": "fe9e8e43-a582-4a48-a3ca-de81335d42f5",
-      "outcome": "Done"
-    },
-    {
-      "$id": "182",
+      "$id": "162",
       "sourceActivityId": "543db8f1-6145-4c3e-bab3-58b89ec34896",
       "targetActivityId": "abf92e3c-154c-4cb9-ba06-6167672aaff5",
       "outcome": "Done"
     },
     {
-      "$id": "183",
+      "$id": "163",
       "sourceActivityId": "3b41be34-9164-468b-b554-07a3e9c4ab2c",
       "targetActivityId": "807d7e43-edfa-430e-9609-e26dcff54be5",
       "outcome": "To Staff"
     },
     {
-      "$id": "184",
+      "$id": "164",
       "sourceActivityId": "807d7e43-edfa-430e-9609-e26dcff54be5",
       "targetActivityId": "dda4070e-ff72-4877-9b5d-a14a8ec08e9c",
       "outcome": "Done"
     },
     {
-      "$id": "185",
+      "$id": "165",
       "sourceActivityId": "dda4070e-ff72-4877-9b5d-a14a8ec08e9c",
       "targetActivityId": "990459e9-d13f-497a-88ea-6e02d40ad7f2",
       "outcome": "Done"
     },
     {
-      "$id": "186",
+      "$id": "166",
       "sourceActivityId": "a18ff536-30f9-413c-af5d-8d2f919a79de",
       "targetActivityId": "c207b15c-3277-4940-a2bb-ccc4f3bf843e",
       "outcome": "To Staff"
     },
     {
-      "$id": "187",
+      "$id": "167",
       "sourceActivityId": "c207b15c-3277-4940-a2bb-ccc4f3bf843e",
       "targetActivityId": "9b023bac-94a4-4eb4-96d0-5a4ac8e75e1c",
       "outcome": "Done"
     },
     {
-      "$id": "188",
+      "$id": "168",
       "sourceActivityId": "9b023bac-94a4-4eb4-96d0-5a4ac8e75e1c",
       "targetActivityId": "23a2ac13-5c8e-4933-bc65-b9ac2229bb63",
       "outcome": "Done"
     },
     {
-      "$id": "189",
+      "$id": "169",
       "sourceActivityId": "6dff8e89-c08a-4d33-a555-4dc8f8ff26da",
       "targetActivityId": "8ac08dd0-5bb6-48f7-b0e3-ce1d3f51895e",
       "outcome": "Approve and send to CEO for Review"
     },
     {
-      "$id": "190",
+      "$id": "170",
       "sourceActivityId": "d74a8305-61b2-4ecd-9df2-02a23cc050db",
       "targetActivityId": "aee57c9c-9a8f-450e-bd6e-aaf27117fc75",
       "outcome": "Done"
     },
     {
-      "$id": "191",
+      "$id": "171",
       "sourceActivityId": "aee57c9c-9a8f-450e-bd6e-aaf27117fc75",
       "targetActivityId": "8664817b-a4d9-4e5d-aee3-892fca4c7b35",
       "outcome": "Done"
     },
     {
-      "$id": "192",
+      "$id": "172",
       "sourceActivityId": "8ac08dd0-5bb6-48f7-b0e3-ce1d3f51895e",
       "targetActivityId": "35b1d04a-138b-45f3-b4a9-9e7ebc10d254",
       "outcome": "Done"
     },
     {
-      "$id": "193",
+      "$id": "173",
       "sourceActivityId": "35b1d04a-138b-45f3-b4a9-9e7ebc10d254",
       "targetActivityId": "69e34787-7712-4b33-8fe5-685c5a1fc296",
       "outcome": "Done"
     },
     {
-      "$id": "194",
+      "$id": "174",
       "sourceActivityId": "3b41be34-9164-468b-b554-07a3e9c4ab2c",
       "targetActivityId": "a46f2216-a7e7-4a83-9a31-cf4f43e923f3",
       "outcome": "To PM"
     },
     {
-      "$id": "195",
+      "$id": "175",
       "sourceActivityId": "a46f2216-a7e7-4a83-9a31-cf4f43e923f3",
       "targetActivityId": "dda4070e-ff72-4877-9b5d-a14a8ec08e9c",
       "outcome": "Done"
     },
     {
-      "$id": "196",
+      "$id": "176",
       "sourceActivityId": "8664817b-a4d9-4e5d-aee3-892fca4c7b35",
       "targetActivityId": "adaa40f7-3355-498a-9f0f-236db3fb671d",
       "outcome": "Done"
     },
     {
-      "$id": "197",
+      "$id": "177",
       "sourceActivityId": "adaa40f7-3355-498a-9f0f-236db3fb671d",
       "targetActivityId": "6dff8e89-c08a-4d33-a555-4dc8f8ff26da",
       "outcome": "Done"
     },
     {
-      "$id": "198",
+      "$id": "178",
       "sourceActivityId": "a18ff536-30f9-413c-af5d-8d2f919a79de",
       "targetActivityId": "744c5a35-557b-4810-9387-f22cf0d6bcab",
       "outcome": "To PM"
     },
     {
-      "$id": "199",
+      "$id": "179",
       "sourceActivityId": "744c5a35-557b-4810-9387-f22cf0d6bcab",
       "targetActivityId": "9b023bac-94a4-4eb4-96d0-5a4ac8e75e1c",
       "outcome": "Done"
