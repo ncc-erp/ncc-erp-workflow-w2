@@ -1,7 +1,7 @@
 {
   "$id": "1",
-  "definitionId": "3a0bab5e-5d10-956b-3a0e-ff9787c8bc2f",
-  "versionId": "3a0b8d61-32d2-8fd8-8147-6cb7a5743958",
+  "definitionId": "3a0bc592-504e-b252-f149-087b76034e07",
+  "versionId": "3a0bc5b5-9e5a-a51a-1dbe-8497597161e7",
   "name": "WFH Request",
   "displayName": "WFH Request",
   "version": 1,
@@ -664,7 +664,7 @@
           "expressions": {
             "$id": "118",
             "Literal": "input.Body",
-            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst currentOffice = getOfficeInfo(requestInfo.CurrentOffice);\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pms = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pms.push(projectInfo.PM[i]);\r\n}\r\n\r\nreturn `\r\n<div style=\"margin: 13px 0\"><b>Văn phòng đang làm việc: </b>${currentOffice.DisplayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Dự án: </b>${projectInfo.Name}</div>\r\n<div style=\"margin: 13px 0\"><b>PM: </b>${pms.map(x => x.FullName).join(', ')}</div>\r\n<div style=\"margin: 13px 0\"><b>WFH các ngày: </b>${requestInfo.Dates}</div>\r\n<div style=\"margin: 13px 0; display: flex\"><b>Lý do: </b>${requestInfo.Reason}</div>\r\n`;"
+            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst currentOffice = getOfficeInfo(requestInfo.CurrentOffice);\r\nconst projectInfo = getProjectInfo(requestInfo.Project);\r\nconst pms = [];\r\n\r\nfor (let i = 0;i < projectInfo.PM.Count;i++) {\r\n    pms.push(projectInfo.PM[i]);\r\n}\r\n\r\nreturn `\r\n<div style=\"margin: 13px 0\"><b>Văn phòng đang làm việc: </b>${currentOffice.DisplayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Dự án: </b>${projectInfo.Name}</div>\r\n<div style=\"margin: 13px 0\"><b>PM: </b>${pms.map(x => x.FullName).join(', ')}</div>\r\n<div style=\"margin: 13px 0\"><b>WFH các ngày: </b>${requestInfo.Dates}</div>\r\n<div style=\"margin: 13px 0; display: flex\"><b>Lý do: &nbsp</b>${requestInfo.Reason}</div>\r\n`;"
           }
         }
       ],
@@ -1087,5 +1087,5 @@
       "outcome": "Done"
     }
   ],
-  "id": "3a0b8d61-32d2-8fd8-8147-6cb7a5743958"
+  "id": "3a0bc5b5-9e5a-a51a-1dbe-8497597161e7"
 }

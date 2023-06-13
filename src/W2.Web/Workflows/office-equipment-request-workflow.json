@@ -1,10 +1,10 @@
 {
   "$id": "1",
-  "definitionId": "3a0b7dda-ee69-761e-c522-1228bce44ab7",
-  "versionId": "3a0b8c31-db2f-f749-35ce-b41f092937d5",
+  "definitionId": "3a0bc58f-cf2b-7e83-1485-72e74f33683f",
+  "versionId": "3a0bc5b4-ce1f-d8a2-97b1-3391c9b5d002",
   "name": "Office Equipment Request",
   "displayName": "Office Equipment Request",
-  "version": 18,
+  "version": 1,
   "variables": {
     "$id": "2",
     "data": {}
@@ -552,7 +552,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "102",
-            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst officeInfo = getOfficeInfo(requestInfo.CurrentOffice);\r\nreturn `\r\n<style>\r\n    p {\r\n        margin: 0;\r\n    }\r\n</style>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Văn phòng đang làm việc</b>: ${officeInfo.DisplayName}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Thiết bị cần request</b>: ${requestInfo.Equipment}\r\n</div>\r\n<div style=\"display: flex; margin: 13px 0;\">\r\n    <b>Lý do</b>: ${requestInfo.Reason}\r\n</div>\r\n`"
+            "JavaScript": "const requestInfo = getVariable('Request');\r\nconst officeInfo = getOfficeInfo(requestInfo.CurrentOffice);\r\nreturn `\r\n<style>\r\n    p {\r\n        margin: 0;\r\n    }\r\n</style>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Văn phòng đang làm việc</b>: ${officeInfo.DisplayName}\r\n</div>\r\n<div style=\"margin: 13px 0\">\r\n    <b>Thiết bị cần request</b>: ${requestInfo.Equipment}\r\n</div>\r\n<div style=\"display: flex; margin: 13px 0;\">\r\n    <b>Lý do</b>: &nbsp${requestInfo.Reason}\r\n</div>\r\n`"
           }
         }
       ],
@@ -723,5 +723,5 @@
       "outcome": "Done"
     }
   ],
-  "id": "3a0b8c31-db2f-f749-35ce-b41f092937d5"
+  "id": "3a0bc5b4-ce1f-d8a2-97b1-3391c9b5d002"
 }

@@ -90,6 +90,7 @@
                                 case WorkflowInputDefinitionProperyType.MyProject:
                                 case WorkflowInputDefinitionProperyType.MyPMProject:
                                     <select id="@inputId" name="@inputName" style="width:100%;">
+                                        <option value="" selected disabled hidden>Select project</option>
                                         @foreach(var item in Model.ProjectSelectListItems)
                                         {
                                             <option value="@item.Value" selected="@item.Selected">@item.Text (@item.Text)</option>

@@ -9,6 +9,7 @@ namespace W2.ExternalResources
     {
         Task<List<UserInfoCacheItem>> GetAllUsersInfoAsync();
         Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync();
+        Task<List<TimesheetProjectItem>> GetUserProjectsFromApiAsync(string email);
         Task RefreshAllUsersInfoAsync();
         Task<List<TimesheetProjectItem>> GetUserProjectsWithRolePMFromApiAsync();
         Task<List<OfficeInfo>> GetListOfOfficeAsync();
