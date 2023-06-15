@@ -6,6 +6,7 @@ using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
@@ -16,6 +17,7 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
+using W2.WorkflowInstanceStates;
 
 namespace W2.EntityFrameworkCore;
 
@@ -41,6 +43,8 @@ public class W2DbContext :
      * More info: Replacing a DbContext of a module ensures that the related module
      * uses this DbContext on runtime. Otherwise, it will use its own DbContext class.
      */
+    public DbSet<WorkflowInstanceState> WorkflowInstanceStates { get; set; }
+    public DbSet<WorkflowInstanceStakeHolder> WorkflowInstanceStakeHolders { get; set; }
     public DbSet<WorkflowInstanceStarter> WorkflowInstanceStarters { get; set; }
     public DbSet<WorkflowCustomInputDefinition> WorkflowCustomInputDefinitions { get; set; }
 
@@ -102,6 +106,29 @@ public class W2DbContext :
             b.Property(x => x.PropertyDefinitions).HasConversion(new ElsaEFJsonValueConverter<ICollection<WorkflowCustomInputPropertyDefinition>>(), ValueComparer.CreateDefault(typeof(ICollection<WorkflowCustomInputPropertyDefinition>), false));
             b.Property(x => x.WorkflowDefinitionId).IsRequired();
             b.HasIndex(x => x.WorkflowDefinitionId);
+        });
+
+        builder.Entity<WorkflowInstanceState>(b =>
+        {
+            b.ToTable("WorkflowInstanceStates");
+
+            b.HasOne(x => x.WorkflowInstanceStarter)
+             .WithMany(x => x.States)
+             .HasForeignKey(x => x.WorkflowInstanceStarterId);
+        });
+
+        builder.Entity<WorkflowInstanceStakeHolder>(b =>
+        {
+            b.ToTable("WorkflowInstanceStakeHolders");
+            b.HasKey(x => new { x.UserId, x.WorkflowInstanceStateId });
+
+            b.HasOne(x => x.WorkflowInstanceState)
+             .WithMany(x => x.StakeHolders)
+             .HasForeignKey(x => x.WorkflowInstanceStateId);
+
+            b.HasOne(x => x.User)
+             .WithMany()
+             .HasForeignKey(x => x.UserId);
         });
     }
 }

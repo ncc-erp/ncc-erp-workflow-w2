@@ -53,6 +53,7 @@ using Volo.Abp.Timing;
 using Volo.Abp.IdentityServer;
 using Parlot.Fluent;
 using System.Linq;
+using W2.WorkflowInstances;
 
 namespace W2.Web;
 
@@ -269,6 +270,8 @@ public class W2WebModule : AbpModule
             .AddRazorPages();
 
         context.Services
+            .AddNotificationHandlersFrom<WorkflowInstanceEndedEventHandler>()
+            .AddNotificationHandlersFrom<WorkflowInstanceSuspendedEventHandler>()
             .AddNotificationHandlersFrom<CustomSignalJavaScriptHandler>()
             .AddJavaScriptTypeDefinitionProvider<CustomTypeDefinitionProvider>();
 

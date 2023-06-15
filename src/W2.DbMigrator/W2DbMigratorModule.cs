@@ -5,6 +5,11 @@ using Volo.Abp.Modularity;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Timing;
 using System;
+using W2.Configurations;
+using Autofac.Core;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.PostgreSql;
+using Microsoft.Extensions.Configuration;
 
 namespace W2.DbMigrator;
 
@@ -26,5 +31,16 @@ public class W2DbMigratorModule : AbpModule
         {
             options.Kind = DateTimeKind.Utc;
         });
+
+        ConfigureElsa(context, configuration);
+    }
+
+    private void ConfigureElsa(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        var elsaConfigurationSection = configuration.GetSection(nameof(ElsaConfiguration));
+
+        context.Services.AddElsa(options => options
+            .UseEntityFrameworkPersistence(
+                ef => ef.UsePostgreSql(elsaConfigurationSection.GetValue<string>(nameof(ElsaConfiguration.ConnectionString)))));
     }
 }

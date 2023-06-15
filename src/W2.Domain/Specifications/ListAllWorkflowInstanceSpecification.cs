@@ -18,13 +18,7 @@ namespace W2.Specifications
 
         public override Expression<Func<WorkflowInstance, bool>> ToExpression()
         {
-            Expression<Func<WorkflowInstance, bool>> predicate = x => true;
-
-            if (Ids != null && Ids.Any())
-            {
-                predicate = predicate.And(x => Ids.Contains(x.Id));
-            }
-
+            Expression<Func<WorkflowInstance, bool>> predicate = x => Ids.Contains(x.Id);
             return predicate;
         }
     }
