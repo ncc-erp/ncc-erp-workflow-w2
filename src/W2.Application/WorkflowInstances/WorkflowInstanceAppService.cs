@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -150,7 +151,7 @@ namespace W2.WorkflowInstances
 
         public async Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input)
         {
-            var specialStatus = new string[] { "approved", "rejected" };
+            var specialStatus = new string[] { "Approved", "Rejected" };
             var specification = Specification<WorkflowInstance>.Identity;
             if (CurrentTenant.IsAvailable)
             {
@@ -162,7 +163,7 @@ namespace W2.WorkflowInstances
             }
             if (!string.IsNullOrWhiteSpace(input?.Status))
             {
-                if (!specialStatus.Contains(input.Status.ToLower()))
+                if (!specialStatus.Contains(input.Status))
                 {
                     specification = specification.WithStatus((WorkflowStatus)Enum.Parse(typeof(WorkflowStatus), input.Status, true));
                 }
@@ -172,12 +173,23 @@ namespace W2.WorkflowInstances
                 }
             }
 
-            var instances = (await _workflowInstanceStore.FindManyAsync(specification));
+            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
+            if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
+            {
+                workflowInstanceStarters = await _instanceStarterRepository.GetListAsync(x => x.CreatorId == CurrentUser.Id);
+                specification = specification.And(new ListAllWorkflowInstanceSpecification(workflowInstanceStarters.Select(x => x.WorkflowInstanceId).Distinct().ToArray()));
+            }
+
+            var orderBySpecification = NormalizeSorting(input.Sorting);
+            var pagingSpecification = Paging.Create(input.SkipCount, input.MaxResultCount);
+
+            var instances = await _workflowInstanceStore.FindManyAsync(specification, orderBySpecification, pagingSpecification);
+            var totalCount = await _workflowInstanceStore.CountAsync(specification);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
-                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).Distinct().ToArray())
             )).ToList();
 
-            if (specialStatus.Contains(input.Status.ToLower()))
+            if (specialStatus.Contains(input.Status))
             {
                 instances = instances.Where(instance =>
                 {
@@ -189,11 +201,10 @@ namespace W2.WorkflowInstances
             }
 
             var instancesIds = instances.Select(x => x.Id);
-            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
-                workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id));
+                workflowInstanceStarters = workflowInstanceStarters
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId)).ToList();
             }
             else
             {
@@ -201,25 +212,12 @@ namespace W2.WorkflowInstances
                                 .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
             }
 
-            var totalCount = workflowInstanceStarters.Count();
-            instances = await AsyncExecuter.ToListAsync(
-                workflowInstanceStarters.Join(instances, x => x.WorkflowInstanceId, x => x.Id, (WorkflowInstanceStarter, WorkflowInstance) => new
-                {
-                    WorkflowInstanceStarter,
-                    WorkflowInstance
-                })
-                .AsQueryable().OrderBy(NormalizeSortingString(input.Sorting))
-                .Skip(input.SkipCount).Take(input.MaxResultCount)
-                .Select(x => x.WorkflowInstance)
-            );
-
             var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
             var requestUsers = (await _userRepository.GetListAsync())
                 .Where(x => x.Id.IsIn(requestUserIds))
                 .ToList();
             var result = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
-
             foreach (var instance in instances)
             {
                 var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
@@ -323,11 +321,11 @@ namespace W2.WorkflowInstances
             return activityDefinition == null ? "Finished" : (activityDefinition.DisplayName.ToLower().Contains("reject") ? "Rejected" : "Approved");
         }
 
-        private string NormalizeSortingString(string sorting)
+        private OrderBy<WorkflowInstance> NormalizeSorting(string sorting)
         {
             if (sorting.IsNullOrEmpty())
             {
-                return "WorkflowInstance.CreatedAt DESC";
+                return new OrderBy<WorkflowInstance>(x => x.CreatedAt, SortDirection.Descending);
             }
 
             var sortingPart = sorting.Trim().Split(' ');
@@ -338,18 +336,18 @@ namespace W2.WorkflowInstances
                 case "createdat":
                     if (direction == "asc")
                     {
-                        return "WorkflowInstance.CreatedAt ASC";
+                        return new OrderBy<WorkflowInstance>(x => x.CreatedAt, SortDirection.Ascending);
                     }
-                    return "WorkflowInstance.CreatedAt DESC";
+                    return new OrderBy<WorkflowInstance>(x => x.CreatedAt, SortDirection.Descending);
                 case "lastexecutedat":
                     if (direction == "asc")
                     {
-                        return "WorkflowInstance.LastExecutedAt ASC";
+                        return new OrderBy<WorkflowInstance>(x => x.LastExecutedAt, SortDirection.Ascending);
                     }
-                    return "WorkflowInstance.LastExecutedAt DESC";
+                    return new OrderBy<WorkflowInstance>(x => x.LastExecutedAt, SortDirection.Descending);
             }
 
-            return "WorkflowInstance.CreatedAt DESC";
+            return new OrderBy<WorkflowInstance>(x => x.CreatedAt, SortDirection.Descending);
         }
     }
 }
