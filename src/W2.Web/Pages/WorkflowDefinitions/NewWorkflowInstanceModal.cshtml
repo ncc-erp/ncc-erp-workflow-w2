@@ -25,20 +25,25 @@
                 <div class="row">
                     <div class="col">
                         <div class="mb-3">
-                            <label class="form-label" for="@inputName">@propertyDefinition.Name</label>
+                            <label class="form-label" for="@inputName">@propertyDefinition.Name
+                                @if (propertyDefinition.IsRequired)
+                                {
+                                    <span style="color: red">*</span>
+                                }
+                            </label>
                             @switch (propertyDefinition.Type)
                             {
                                 case WorkflowInputDefinitionProperyType.Text:
-                                    <input id="@inputId" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
                                         type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.Numeric:
-                                    <input id="@inputId" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
                                         type="number" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
-                                case WorkflowInputDefinitionProperyType.DateTime: 
-                                    <input id="@inputId" name="@inputName" 
-                                        type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]"
+                                case WorkflowInputDefinitionProperyType.DateTime:
+                                    <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
+                                           type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]"
                                         readonly style="cursor: pointer"/>
                                     <script>
                                         {
@@ -50,7 +55,7 @@
                                     </script>
                                     break;
                                 case WorkflowInputDefinitionProperyType.RichText:
-                                    <textarea id="@inputId" name="@inputName" hidden="hidden"></textarea>
+                                    <textarea id="@inputId" name="@inputName" hidden="hidden" data-validate-required="@propertyDefinition.IsRequired"></textarea>
                                     <div id="container_@propertyDefinition.Name" style="height:200px;"></div>
                                     <script>
                                         {
@@ -73,7 +78,7 @@
                                     </script>
                                     break;
                                 case WorkflowInputDefinitionProperyType.UserList:
-                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                    <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
                                         @foreach(var item in Model.UserSelectListItems)
                                         {
                                             <option value="@item.Value">@item.Text (@item.Value)</option>
@@ -89,7 +94,7 @@
                                     break;
                                 case WorkflowInputDefinitionProperyType.MyProject:
                                 case WorkflowInputDefinitionProperyType.MyPMProject:
-                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                    <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
                                         @foreach(var item in Model.ProjectSelectListItems)
                                         {
                                             <option value="@item.Value" selected="@item.Selected">@item.Text (@item.Text)</option>
@@ -104,7 +109,7 @@
                                     </script>
                                     break;
                                 case WorkflowInputDefinitionProperyType.OfficeList:
-                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                    <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
                                         <option value="" selected disabled hidden>Select office</option>
                                         @foreach(var item in Model.OfficeSelectListItems)
                                         {
@@ -139,7 +144,7 @@
     function validate() {
         let validated = true;
         $("abp-validation-summary").text("");
-        $("[id^=input_]").each(function(index, self) {
+        $("[id^=input_][data-validate-required=True]").each(function(index, self) {
             if ($(self).is('textarea')) 
             {
                 validated = !(!$(self).val() || $(self).val() == '<p><br></p>');
