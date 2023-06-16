@@ -26,7 +26,7 @@
         const count = $('.property-wrapper').length;
         const newElementHtml = `        
             <div class="row property-wrapper">
-                <div class="col-5">
+                <div class="col-4">
                     <div class="mb-3">
 	                    <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__Name">Property Name</label><span> * </span>
 	                    <input type="text" data-val="true" 
@@ -40,7 +40,7 @@
                             data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].Name" data-valmsg-replace="true"></span>
                     </div>
                 </div>
-                <div class="col-5">
+                <div class="col-4">
                     <div class="mb-3">
                         <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__Type">Property Type</label>
                         <select class="form-select form-control property-type" data-val="true"
@@ -61,6 +61,20 @@
                         <span class="text-danger field-validation-valid"
                             data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].Type" data-valmsg-replace="true"></span>
                     </div>
+                </div>
+                <div class="col-2 d-flex flex-column">
+                    <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__IsRequired">Required</label>
+                    <input class="property-required form-check-input" 
+                            type="checkbox" checked="checked" 
+                            data-val="true" 
+                            data-val-required="The Required field is required." 
+                            id="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__IsRequired" 
+                            name="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].IsRequired"
+                            value="true"
+                            style="width: 2em; height: 2em"
+                    >
+                    <span class="text-danger field-validation-valid"
+                        data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].IsRequired" data-valmsg-replace="true"></span>
                 </div>
                 <div class="col">
                     <div class="mb-3">
@@ -113,6 +127,14 @@
                 typeSelect.attr('aria-describedby', `${typeSelectId}-error`);
                 nameInput.siblings('label').attr('for', typeSelectId);
                 nameInput.siblings('span').attr('data-valmsg-for', typeSelectName);
+            }
+            const requiredInput = row.find('.property-required');
+            if (requiredInput.length) {
+                const requiredInputId = `WorkflowInputDefinition_PropertyDefinitionViewModels_${i}__IsRequired`;
+                const requiredInputName = `WorkflowInputDefinition.PropertyDefinitionViewModels[${i}].IsRequired`;
+
+                requiredInput.attr('id', requiredInputId);
+                requiredInput.attr('name', requiredInputName);
             }
         }
     }

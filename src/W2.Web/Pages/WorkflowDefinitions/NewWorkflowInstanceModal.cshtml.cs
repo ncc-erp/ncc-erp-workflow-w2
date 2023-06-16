@@ -114,11 +114,6 @@ namespace W2.Web.Pages.WorkflowDefinitions
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (WorkflowInput.Any(s => string.IsNullOrWhiteSpace(s.Value)))
-            {
-                return Content(null);
-            }
-
             var workflowInstanceId = await _workflowInstanceAppService.CreateNewInstanceAsync(new CreateNewWorkflowInstanceDto
             {
                 WorkflowDefinitionId = WorkflowDefinitionId,

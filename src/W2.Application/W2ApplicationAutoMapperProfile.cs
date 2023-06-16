@@ -21,7 +21,8 @@ public class W2ApplicationAutoMapperProfile : Profile
                 options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinitionDto
                 {
                     Name = i.Name,
-                    Type = i.Type
+                    Type = i.Type,
+                    IsRequired = i.IsRequired
                 })
                 .ToList()));
         CreateMap<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>()
@@ -29,7 +30,8 @@ public class W2ApplicationAutoMapperProfile : Profile
                 options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinition
                 {
                     Name = i.Name,
-                    Type = i.Type
+                    Type = i.Type,
+                    IsRequired = i.IsRequired
                 })
                 .ToList()));
         CreateMap<CreateWorkflowDefinitionDto, WorkflowDefinition>();
