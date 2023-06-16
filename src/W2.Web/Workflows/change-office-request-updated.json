@@ -1,7 +1,7 @@
 {
   "$id": "1",
-  "definitionId": "3a0bab60-1c2a-9085-98d9-e6c89e2d1859",
-  "versionId": "3a0b8d7a-4b75-375d-7de3-67d53bd4f00d",
+  "definitionId": "3a0bc593-7021-85da-4c91-9544b9930cf5",
+  "versionId": "3a0bc5b2-c3e3-90a9-feb6-e35f3a131caf",
   "name": "ChangeOfficeRequestWorkflow",
   "displayName": "Change Office Request",
   "version": 1,
@@ -145,7 +145,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "30",
-            "JavaScript": "const request = getVariable(\"Request\");\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.PMRejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi yêu cầu: </b>${getRequestUser().Name}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ văn phòng: </b>${request.currentOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Tới văn phòng: </b>${request.destinationOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày bắt đầu: </b>${request.startDate}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày kết thúc: </b>${request.endDate}</div>\r\n<div style=\"margin: 13px 0; display: flex\">\r\n    <b>Nội dung: </b>${request.content}\r\n</div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.PMApproved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`"
+            "JavaScript": "const request = getVariable(\"Request\");\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.PMRejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi yêu cầu: </b>${getRequestUser().Name}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ văn phòng: </b>${request.currentOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Tới văn phòng: </b>${request.destinationOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày bắt đầu: </b>${request.startDate}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày kết thúc: </b>${request.endDate}</div>\r\n<div style=\"margin: 13px 0; display: flex\">\r\n    <b>Nội dung: &nbsp</b>${request.content}\r\n</div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.PMApproved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`"
           }
         }
       ],
@@ -192,7 +192,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "39",
-            "JavaScript": "const request = getVariable(\"Request\");\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.Rejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi yêu cầu: </b>${getRequestUser().Name}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ văn phòng: </b>${request.currentOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Tới văn phòng: </b>${request.destinationOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày bắt đầu: </b>${request.startDate}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày kết thúc: </b>${request.endDate}</div>\r\n<div style=\"margin: 13px 0; display: flex\">\r\n    <b>Nội dung: </b>${request.content}\r\n</div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.Approved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`"
+            "JavaScript": "const request = getVariable(\"Request\");\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.Rejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi yêu cầu: </b>${getRequestUser().Name}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ văn phòng: </b>${request.currentOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Tới văn phòng: </b>${request.destinationOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày bắt đầu: </b>${request.startDate}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày kết thúc: </b>${request.endDate}</div>\r\n<div style=\"margin: 13px 0; display: flex\">\r\n    <b>Nội dung: &nbsp</b>${request.content}\r\n</div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.Approved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`"
           }
         },
         {
@@ -253,7 +253,7 @@
           "syntax": "JavaScript",
           "expressions": {
             "$id": "52",
-            "JavaScript": "const request = getVariable(\"Request\");\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.HoORejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi yêu cầu: </b>${getRequestUser().Name}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ văn phòng: </b>${request.currentOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Tới văn phòng: </b>${request.destinationOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày bắt đầu: </b>${request.startDate}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày kết thúc: </b>${request.endDate}</div>\r\n<div style=\"margin: 13px 0; display: flex\">\r\n    <b>Nội dung: </b>${request.content}\r\n</div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.HoOApproved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`"
+            "JavaScript": "const request = getVariable(\"Request\");\r\nconst rejectSignalUrl = getCustomSignalUrlWithForm(workflowSignals.HoORejected, [signalInputTypes.Reason, signalInputTypes.TriggeredBy]);\r\nreturn `\r\n<head>\r\n <style>\r\n   p { margin: 0; }\r\n </style>\r\n</head>\r\n<div style=\"margin: 13px 0\"><b>Người gửi yêu cầu: </b>${getRequestUser().Name}</div>\r\n<div style=\"margin: 13px 0\"><b>Từ văn phòng: </b>${request.currentOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Tới văn phòng: </b>${request.destinationOffice.displayName}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày bắt đầu: </b>${request.startDate}</div>\r\n<div style=\"margin: 13px 0\"><b>Ngày kết thúc: </b>${request.endDate}</div>\r\n<div style=\"margin: 13px 0; display: flex\">\r\n    <b>Nội dung: &nbsp</b>${request.content}\r\n</div>\r\n<a href=\"${getCustomSignalUrl(workflowSignals.HoOApproved)}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #33b864; border-radius: 10px; color: white; text-decoration: none;\">Duyệt</a>\r\n<a href=\"${rejectSignalUrl}\" style=\"margin-right:10px; padding: 3px 15px; background-color: #FF0000; border-radius: 10px; color: white; text-decoration: none;\">Từ chối</a>\r\n</div>\r\n`"
           }
         },
         {
@@ -839,5 +839,5 @@
       "outcome": "Done"
     }
   ],
-  "id": "3a0b8d7a-4b75-375d-7de3-67d53bd4f00d"
+  "id": "3a0bc5b2-c3e3-90a9-feb6-e35f3a131caf"
 }

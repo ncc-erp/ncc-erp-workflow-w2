@@ -122,7 +122,7 @@ namespace W2.ExternalResources
             return new AllUserInfoCacheItem(users);
         }
 
-        private async Task<List<TimesheetProjectItem>> GetUserProjectsFromApiAsync(string email)
+        public async Task<List<TimesheetProjectItem>> GetUserProjectsFromApiAsync(string email)
         {
             var response = await _timesheetClient.GetUserProjectAsync(email);
             var projects = response.Result != null ? response.Result
