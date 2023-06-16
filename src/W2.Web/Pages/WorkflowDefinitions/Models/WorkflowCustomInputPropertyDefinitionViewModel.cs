@@ -12,5 +12,8 @@ namespace W2.Web.Pages.WorkflowDefinitions.Models
 
         [DisplayName("Property Type")]
         public WorkflowInputDefinitionProperyType Type { get; set; }
+
+        [DisplayName("Required")]
+        public bool IsRequired { get; set; }
     }
 }
