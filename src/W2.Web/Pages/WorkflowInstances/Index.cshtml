@@ -1,8 +1,11 @@
 ﻿@page
 @using Elsa.Models;
+@using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization
 @using W2.Localization
+@using W2.Permissions;
 @inject IStringLocalizer<W2Resource> L
+@inject IAuthorizationService AuthorizationService
 
 @model W2.Web.Pages.WorkflowInstances.IndexModel
 
@@ -44,6 +47,13 @@
                     }
                 </select>
             </abp-column>
+            @if (await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
+            {
+                <abp-column size="_4" class="d-flex align-items-center">
+                    <label for="input_stakeholder">Stakeholder: </label>
+                    <input type="text" class="form-control ms-2" id="input_stakeholder" placeholder="Enter stakeholder's name">
+                </abp-column>
+            }
         </abp-row>
     </abp-card-header>
     <abp-card-body>

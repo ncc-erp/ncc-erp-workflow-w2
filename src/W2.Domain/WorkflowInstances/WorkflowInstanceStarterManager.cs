@@ -87,6 +87,8 @@ namespace W2.WorkflowInstances
                             WorkflowInstanceStarter = workflowInstanceStarter
                         };
 
+                        await _instanceStateRepository.InsertAsync(workflowInstanceState);
+
                         foreach (var email in (List<string>)data["To"])
                         {
                             var user = await _userRepository.FindByNormalizedEmailAsync(email.ToUpper());
@@ -99,13 +101,9 @@ namespace W2.WorkflowInstances
                                     User = user
                                 };
 
-                                workflowInstanceState.StakeHolders.Add(workflowInstanceStakeholder);
                                 await _instanceStakeHolderRepository.InsertAsync(workflowInstanceStakeholder);
                             }
                         }
-
-                        await _instanceStateRepository.InsertAsync(workflowInstanceState);
-                        workflowInstanceStarter.States.Add(workflowInstanceState);
                     }
                 }
             }
@@ -113,7 +111,7 @@ namespace W2.WorkflowInstances
 
         public async Task RefreshStateAsync(WorkflowInstanceStarter workflowInstanceStarter)
         {
-            if (workflowInstanceStarter.States.Any())
+            if (workflowInstanceStarter.States != null && workflowInstanceStarter.States.Any())
             {
                 workflowInstanceStarter.States.Clear();
 

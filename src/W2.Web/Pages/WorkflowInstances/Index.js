@@ -3,6 +3,7 @@
 
     var getFilter = function () {
         return {
+            StakeHolder: $('#input_stakeholder').val(),
             Status: $("#input_status").val(),
             WorkflowDefinitionId: $("#input_workflowDefinitionId").val()
         };
@@ -104,6 +105,10 @@
             ]
         })
     );
+
+    $("#input_stakeholder").change(function () {
+        dataTable.ajax.reload();
+    });
 
     $("#input_workflowDefinitionId").change(function () {
         dataTable.ajax.reload();

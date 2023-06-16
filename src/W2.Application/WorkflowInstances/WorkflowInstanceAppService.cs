@@ -185,12 +185,18 @@ namespace W2.WorkflowInstances
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
-                workflowInstanceStarters = await _instanceStarterRepository.GetListAsync(x => x.CreatorId == CurrentUser.Id && (!specialStatus.Contains(input.Status) || x.FinalStatus == (WorkflowFinalStatus)Enum.Parse(typeof(WorkflowFinalStatus), input.Status, true)), includeDetails: true);
+                workflowInstanceStarters = await _instanceStarterRepository.GetListAsync(x =>
+                                                        x.CreatorId == CurrentUser.Id &&
+                                                        (!specialStatus.Contains(input.Status) || x.FinalStatus == (WorkflowFinalStatus)Enum.Parse(typeof(WorkflowFinalStatus), input.Status, true))
+                                                      , includeDetails: true);
                 specification = specification.And(new ListAllWorkflowInstanceSpecification(workflowInstanceStarters.Select(x => x.WorkflowInstanceId).Distinct().ToArray()));
             }
-            else if (specialStatus.Contains(input.Status))
+            else if (specialStatus.Contains(input.Status) || !string.IsNullOrWhiteSpace(input.StakeHolder))
             {
-                workflowInstanceStarters = await _instanceStarterRepository.GetListAsync(x => x.FinalStatus == (WorkflowFinalStatus)Enum.Parse(typeof(WorkflowFinalStatus), input.Status, true), includeDetails: true);
+                workflowInstanceStarters = await _instanceStarterRepository.GetListAsync(x =>
+                                                        (string.IsNullOrWhiteSpace(input.StakeHolder) || x.States.SelectMany(x => x.StakeHolders).Any(x => x.User.Name.ToLower().Contains(input.StakeHolder.ToLower()))) &&
+                                                        (!specialStatus.Contains(input.Status) || x.FinalStatus == (WorkflowFinalStatus)Enum.Parse(typeof(WorkflowFinalStatus), input.Status, true))
+                                                      , includeDetails: true);
                 specification = specification.And(new ListAllWorkflowInstanceSpecification(workflowInstanceStarters.Select(x => x.WorkflowInstanceId).Distinct().ToArray()));
             }
 
@@ -204,7 +210,7 @@ namespace W2.WorkflowInstances
             )).ToList();
 
             var instancesIds = instances.Select(x => x.Id);
-            if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
+            if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll) || specialStatus.Contains(input.Status) || !string.IsNullOrWhiteSpace(input.StakeHolder))
             {
                 workflowInstanceStarters = workflowInstanceStarters
                                 .Where(x => instancesIds.Contains(x.WorkflowInstanceId)).ToList();
@@ -244,7 +250,7 @@ namespace W2.WorkflowInstances
                         workflowInstanceDto.StakeHolders.Add("IT Department");
                     }
 
-                    if (workflowInstanceDto.CurrentStates.Any(x => x.Contains("Sale")))
+                    if (workflowInstanceDto.CurrentStates.Any(x => x.Contains("Customer")))
                     {
                         workflowInstanceDto.StakeHolders.Add("Sale Department");
                     }
