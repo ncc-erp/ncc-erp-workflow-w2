@@ -1,10 +1,9 @@
 name: Deploy Workflow W2 Dev
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
-    tags:
-      - '*'
 
 jobs:
   build:
