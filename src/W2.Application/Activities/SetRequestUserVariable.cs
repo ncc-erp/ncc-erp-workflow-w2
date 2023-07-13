@@ -41,7 +41,7 @@ namespace W2.Activities
             // set PM
             var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(_currentUser?.Email);
             ProjectProjectItem project = null;
-            if (userProjectsResult?.Result != null)
+            if (userProjectsResult?.Result != null && userProjectsResult?.Result.Count > 0)
             {
                 project = userProjectsResult.Result.First();
             }
