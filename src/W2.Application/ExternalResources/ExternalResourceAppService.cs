@@ -47,7 +47,7 @@ namespace W2.ExternalResources
                 {
                     Code = "SG1",
                     DisplayName = "Sài Gòn 1",
-                    HeadOfOfficeEmail = "duong.nguyen@ncc.asia"
+                    HeadOfOfficeEmail = "linh.nguyen@ncc.asia"
                 },
                 new OfficeInfo
                 {
@@ -59,7 +59,7 @@ namespace W2.ExternalResources
                 {
                     Code = "QN",
                     DisplayName = "Quy Nhơn",
-                    HeadOfOfficeEmail = "phi.lekim@ncc.asia"
+                    HeadOfOfficeEmail = "duy.nguyenxuan@ncc.asia"
                 }
             };
 
