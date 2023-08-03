@@ -4,7 +4,6 @@ using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,10 +48,19 @@ namespace W2.Scripting
             engine.SetValue("getCustomSignalUrlWithForm", getCustomSignalUrlWithForm);
 
             var listOfOffices = await _externalResourceAppService.GetListOfOfficeAsync();
+            var listOfProjects = await _externalResourceAppService.GetUserProjectsFromApiAsync(notification.ActivityExecutionContext.GetRequestUserVariable()?.Email);
             Func<string, OfficeInfo> getOfficeInfo = officeCode =>
             {
                 return listOfOffices.FirstOrDefault(x => x.Code == officeCode);
             };
+
+            Func<string, TimesheetProjectItem> getProjectInfo = projectCode =>
+            {
+                return listOfProjects.FirstOrDefault(x => x.Code == projectCode) ?? new TimesheetProjectItem();
+            };
+
+            engine.SetValue("getProjectInfo", getProjectInfo);
+
             engine.SetValue("getOfficeInfo", getOfficeInfo);
 
             engine.SetValue("currentUser", _currentUser);

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using W2.ExternalResources;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
 
 namespace W2.Web.Pages.WorkflowDefinitions
 {
@@ -18,12 +19,18 @@ namespace W2.Web.Pages.WorkflowDefinitions
     {
         private readonly IWorkflowInstanceAppService _workflowInstanceAppService;
         private readonly IExternalResourceAppService _externalResourceAppService;
+        private readonly IWorkflowDefinitionAppService _workflowDefinitionAppService;
+        private readonly ILogger<NewWorkflowInstanceModalModel> _logger;
 
         public NewWorkflowInstanceModalModel(IWorkflowInstanceAppService workflowInstanceAppService, 
-            IExternalResourceAppService externalResourceAppService)
+            IExternalResourceAppService externalResourceAppService,
+            IWorkflowDefinitionAppService workflowDefinitionAppService,
+            ILogger<NewWorkflowInstanceModalModel> logger)
         {
+            _workflowDefinitionAppService = workflowDefinitionAppService;
             _workflowInstanceAppService = workflowInstanceAppService;
             _externalResourceAppService = externalResourceAppService;
+            _logger = logger;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -37,9 +44,16 @@ namespace W2.Web.Pages.WorkflowDefinitions
         public List<SelectListItem> UserSelectListItems { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> ProjectSelectListItems { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> OfficeSelectListItems { get; set; } = new List<SelectListItem>();
-
+        public OfficeInfo CurrentOffice { get; set; }
+        public ProjectProjectItem CurrentProject { get; set; }
+        public WorkflowDefinitionSummaryDto WorkflowDefinitionSummaryDto { get; set; }
         public async Task OnGetAsync()
         {
+            WorkflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(WorkflowDefinitionId);
+
+            CurrentOffice = await _externalResourceAppService.GetUserBranchInfoAsync(CurrentUser.Email);
+            CurrentProject = await _externalResourceAppService.GetCurrentUserWorkingProjectAsync();
+
             PropertyDefinitionViewModels = JsonConvert.DeserializeObject<List<WorkflowCustomInputPropertyDefinitionViewModel>>(PropertiesDefinitionJson);
             foreach (var propertyDefinition in PropertyDefinitionViewModels)
             {
@@ -65,7 +79,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     .Select(x => new SelectListItem
                     {
                         Text = x.Name,
-                        Value = x.Code
+                        Value = x.Code,
+                        Selected = x.Code == CurrentProject?.Code
                     })
                     .ToList();
             }
@@ -77,7 +92,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     .Select(x => new SelectListItem
                     {
                         Text = x.Name,
-                        Value = x.Code
+                        Value = x.Code,
+                        Selected = x.Code == CurrentProject?.Code
                     })
                     .ToList();
             }
@@ -89,7 +105,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     .Select(x => new SelectListItem
                     {
                         Text = x.DisplayName,
-                        Value = x.Code
+                        Value = x.Code,
+                        Selected = x.Code == CurrentOffice?.Code
                     })
                     .ToList();
             }
@@ -97,17 +114,13 @@ namespace W2.Web.Pages.WorkflowDefinitions
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (WorkflowInput.Any(s => string.IsNullOrWhiteSpace(s.Value)))
-            {
-                return Content(null);
-            }
-
             var workflowInstanceId = await _workflowInstanceAppService.CreateNewInstanceAsync(new CreateNewWorkflowInstanceDto
             {
                 WorkflowDefinitionId = WorkflowDefinitionId,
                 Input = WorkflowInput
             });
 
+            _logger.LogInformation($"Return Id {workflowInstanceId} to client");
             return Content(workflowInstanceId);
         }
     }

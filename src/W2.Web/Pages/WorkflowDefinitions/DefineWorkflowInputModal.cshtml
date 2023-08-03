@@ -23,11 +23,24 @@
                     for (int i = 0; i < Model.WorkflowInputDefinition.PropertyDefinitionViewModels.Count; i++)
                     {
                         <div class="row property-wrapper">
-                            <div class="col-5">
+                            <div class="col-4">
                                 <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Name" class="property-name" />
                             </div>
-                            <div class="col-5">
+                            <div class="col-4">
                                 <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Type" class="property-type" />
+                            </div>
+                            <div class="col-2 d-flex flex-column">
+                                <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_@(i)__IsRequired">Required</label>
+                                <input class="property-required form-check-input"
+                                       type="checkbox" checked="@Model.WorkflowInputDefinition.PropertyDefinitionViewModels[i].IsRequired"
+                                       data-val="true" data-val-required="The Required field is required."
+                                       id="WorkflowInputDefinition_PropertyDefinitionViewModels_@(i)__IsRequired"
+                                       name="WorkflowInputDefinition.PropertyDefinitionViewModels[@(i)].IsRequired"
+                                       value="true"
+                                       style="width: 2em; height: 2em"
+                                >
+                                <span class="text-danger field-validation-valid"
+                                      data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[@(i)].IsRequired" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col">
                                 <div class="mb-3">
@@ -43,11 +56,22 @@
                 else
                 {
                     <div class="row property-wrapper">
-                        <div class="col-5">
+                        <div class="col-4">
                             <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Name" class="property-name" />
                         </div>
-                        <div class="col-5">
+                        <div class="col-4">
                             <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Type" class="property-type" />
+                        </div>
+                        <div class="col-2 d-flex flex-column">
+                            <input class="property-required form-check-input"
+                                   type="checkbox" checked="checked"
+                                   id="WorkflowInputDefinition_PropertyDefinitionViewModels_0__IsRequired"
+                                   name="WorkflowInputDefinition.PropertyDefinitionViewModels[0].IsRequired"
+                                   style="width: 2em; height: 2em"
+                            >
+                            <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_0__IsRequired">Required</label>
+                            <span class="text-danger field-validation-valid"
+                                  data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].IsRequired" data-valmsg-replace="true"></span>
                         </div>
                         <div class="col">
                             <div class="mb-3">

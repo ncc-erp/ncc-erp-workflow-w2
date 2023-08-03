@@ -1,33 +1,68 @@
 ﻿$(function () {
     var l = abp.localization.getResource('W2');
+
+    var getFilter = function () {
+        return {
+            Status: $("#input_status").val(),
+            WorkflowDefinitionId: $("#input_workflowDefinitionId").val()
+        };
+    };
+
     var dataTable = $("#WorkflowInstancesTable").DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
             searching: false,
-            paging: false,
+            paging: true,
+            sorting: true,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(w2.workflowInstances.workflowInstance.list),
+            order: [[4, 'desc']],
+            ajax: abp.libs.datatables.createAjax(w2.workflowInstances.workflowInstance.list, getFilter),
             columnDefs: [
                 {
                     title: l('WorkflowInstance:DefinitionDisplayName'),
                     data: "workflowDefinitionDisplayName",
                     render: function (row, type, val) {
                         return `<a href="/WorkflowInstances/Designer?id=${val.id}">${row}</a>`;
-                    }
+                    },
+                    orderable: false
+                },
+                {
+                    title: l('WorkflowInstance:RequestUser'),
+                    data: "userRequestName",
+                    orderable: false
+                },
+                {
+                    title: l('WorkflowInstance:CurrentState'),
+                    data: "currentStates",
+                    render: function (row, type, val) {
+                        return row.length > 0 ? row.join('<br>') : 'None';
+                    },
+                    orderable: false
+                },
+                {
+                    title: l('WorkflowInstance:StakeHolders'),
+                    data: "stakeHolders",
+                    render: function (row, type, val) {
+                        return row.length > 0 ? row.join('<br>') : 'None';
+                    },
+                    orderable: false
                 },
                 {
                     title: l('WorkflowInstance:CreatedAt'),
                     data: "createdAt",
-                    dataFormat: "datetime"
+                    dataFormat: "datetime",
+                    orderable: true
                 },
                 {
                     title: l('WorkflowInstance:LastExecutedAt'),
                     data: "lastExecutedAt",
-                    dataFormat: "datetime"
+                    dataFormat: "datetime",
+                    orderable: true
                 },
                 {
                     title: l('Status'),
-                    data: "status"
+                    data: "status",
+                    orderable: false
                 },
                 {
                     title: l('Actions'),
@@ -69,4 +104,12 @@
             ]
         })
     );
+
+    $("#input_workflowDefinitionId").change(function () {
+        dataTable.ajax.reload();
+    });
+
+    $("#input_status").change(function () {
+        dataTable.ajax.reload();
+    });
 });

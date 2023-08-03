@@ -3,7 +3,8 @@
 @using W2.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @using W2.WorkflowDefinitions
-@model W2.Web.Pages.WorkflowDefinitions.NewWorkflowInstanceModalModel
+@using W2.Web.Pages.WorkflowDefinitions
+@model NewWorkflowInstanceModalModel
 @{
     Layout = null;
     var countProperties = Model.PropertyDefinitionViewModels.Count;
@@ -13,7 +14,7 @@
     data-check-form-on-close="false"
     onsubmit="return validate()">
     <abp-modal size="Large">
-        <abp-modal-header title="New Request"></abp-modal-header>
+        <abp-modal-header title="@Model.WorkflowDefinitionSummaryDto.DisplayName"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="WorkflowDefinitionId" type="hidden" />
             @for (int i = 0; i < countProperties; i++)
@@ -24,31 +25,37 @@
                 <div class="row">
                     <div class="col">
                         <div class="mb-3">
-                            <label class="form-label" for="@inputName">@propertyDefinition.Name</label>
+                            <label class="form-label" for="@inputName">@propertyDefinition.Name
+                                @if (propertyDefinition.IsRequired)
+                                {
+                                    <span style="color: red">*</span>
+                                }
+                            </label>
                             @switch (propertyDefinition.Type)
                             {
                                 case WorkflowInputDefinitionProperyType.Text:
-                                    <input id="@inputId" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
                                         type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.Numeric:
-                                    <input id="@inputId" name="@inputName" 
+                                    <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
                                         type="number" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
-                                case WorkflowInputDefinitionProperyType.DateTime: 
-                                    <input id="@inputId" name="@inputName" 
-                                        type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]"
+                                case WorkflowInputDefinitionProperyType.DateTime:
+                                    <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
+                                           type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]"
                                         readonly style="cursor: pointer"/>
                                     <script>
                                         {
                                             $('#@inputId').datepicker({
-                                                format: 'dd/mm/yyyy'
+                                                format: 'dd/mm/yyyy',
+                                                multidate: "@propertyDefinition.Name" == "Dates"
                                             });
                                         }
                                     </script>
                                     break;
                                 case WorkflowInputDefinitionProperyType.RichText:
-                                    <textarea id="@inputId" name="@inputName" hidden="hidden"></textarea>
+                                    <textarea id="@inputId" name="@inputName" hidden="hidden" data-validate-required="@propertyDefinition.IsRequired"></textarea>
                                     <div id="container_@propertyDefinition.Name" style="height:200px;"></div>
                                     <script>
                                         {
@@ -71,7 +78,7 @@
                                     </script>
                                     break;
                                 case WorkflowInputDefinitionProperyType.UserList:
-                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                    <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
                                         @foreach(var item in Model.UserSelectListItems)
                                         {
                                             <option value="@item.Value">@item.Text (@item.Value)</option>
@@ -87,10 +94,11 @@
                                     break;
                                 case WorkflowInputDefinitionProperyType.MyProject:
                                 case WorkflowInputDefinitionProperyType.MyPMProject:
-                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                    <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
+                                        <option value="" selected disabled hidden>Select project</option>
                                         @foreach(var item in Model.ProjectSelectListItems)
                                         {
-                                            <option value="@item.Text">@item.Text (@item.Text)</option>
+                                            <option value="@item.Value" selected="@item.Selected">@item.Text (@item.Text)</option>
                                         }
                                     </select>
                                     <script type="text/javascript">
@@ -102,10 +110,11 @@
                                     </script>
                                     break;
                                 case WorkflowInputDefinitionProperyType.OfficeList:
-                                    <select id="@inputId" name="@inputName" style="width:100%;">
+                                    <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
+                                        <option value="" selected disabled hidden>Select office</option>
                                         @foreach(var item in Model.OfficeSelectListItems)
                                         {
-                                            <option value="@item.Value">@item.Text</option>
+                                            <option value="@item.Value" selected="@(item.Selected && propertyDefinition.Name == "CurrentOffice")">@item.Text</option>
                                         }
                                     </select>
                                     <script type="text/javascript">
@@ -128,15 +137,44 @@
 </form>
 
 <script type="text/javascript">
-function validate() {
-    validated = true;
-    $("abp-validation-summary").text("");
-    $("[id^=input_]").each(function(index, self ) {
-        if (!$(self).val()) {
-            validated = false;
-            $("abp-validation-summary").text("Please fill in all fields");
+    function toDate(str) {
+        const dateParts = str.split('/');
+        return new Date(dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0]);
+    }
+
+    function validate() {
+        let validated = true;
+        $("abp-validation-summary").text("");
+        $("[id^=input_][data-validate-required=True]").each(function(index, self) {
+            if ($(self).is('textarea')) 
+            {
+                validated = !(!$(self).val() || $(self).val() == '<p><br></p>');
+            } 
+            else
+            {
+                if (!$(self).val()) {
+                    validated = false;
+                }
+            }
+
+            if (!validated) {
+                $("abp-validation-summary").text("Please fill in all fields!");
+                return false;
+            }
+        })
+        
+        if ($('#input_StartDate').length == 1 && $('#input_EndDate').length == 1 && $('#input_StartDate').val() && $('#input_EndDate')) {
+            const startDate = toDate($('#input_StartDate').val());
+            const endDate = toDate($('#input_EndDate').val());
+            if (startDate > endDate) {
+                $("abp-validation-summary").text("Start date cannot be greater than end date!");
+            }
         }
-    })
-    return validated;
-}
+
+        return validated;
+    }
+
+    $('label[class="form-label"]').each(function(index, self) {
+        self.innerHTML = self.innerHTML.split(/(?=[A-Z])/).join(" ");
+    });
 </script>

@@ -39,5 +39,9 @@ public class W2ApplicationContractsModule : AbpModule
         context.Services
             .AddRefitClient<ITimesheetClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Timesheet"]));
+        //context.Services
+        //    .AddRefitClient<IHrmClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
+        //    .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]))
+        //    .ConfigureHttpClient(c => c.DefaultRequestHeaders.Add("X-Secret-Key", configuration["Apis:HrmCode"]));
     }
 }

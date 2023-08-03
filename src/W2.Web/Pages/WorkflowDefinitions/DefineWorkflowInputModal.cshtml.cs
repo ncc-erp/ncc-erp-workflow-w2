@@ -37,7 +37,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                 WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
                 {
                     Name = "",
-                    Type = WorkflowInputDefinitionProperyType.Text
+                    Type = WorkflowInputDefinitionProperyType.Text,
+                    IsRequired = false
                 });
             }
             else
@@ -51,7 +52,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     WorkflowInputDefinition.PropertyDefinitionViewModels.Add(new WorkflowCustomInputPropertyDefinitionViewModel
                     {
                         Name = "",
-                        Type = WorkflowInputDefinitionProperyType.Text
+                        Type = WorkflowInputDefinitionProperyType.Text,
+                        IsRequired = false
                     });
                     _logger.LogException(ex);
                 }

@@ -16,6 +16,13 @@ namespace W2.ExternalResources
     {
         [JsonProperty("pMs")]
         public IEnumerable<ProjectManager> PM { get; set; }
+
+        public TimesheetProjectItem()
+        {
+            Code = string.Empty;
+            Name = string.Empty;
+            PM = new List<ProjectManager>();
+        }
     }
 
     public class ProjectProjectItem : ProjectItemBase
@@ -26,6 +33,8 @@ namespace W2.ExternalResources
 
     public class ProjectManager
     {
+        [JsonProperty("fullName")]
+        public string FullName { get; set; }
         [JsonProperty("emailAddress")]
         public string EmailAddress { get; set; }
     }

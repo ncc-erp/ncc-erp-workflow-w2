@@ -466,6 +466,7 @@ $(function () {
     newWorkflowInstanceModal.onResult(function () {
         if (arguments?.length > 1) {
             arguments[1].xhr.then(res => {
+                abp.notify.success('Making request successfully.');
                 window.open(abp.appPath + 'WorkflowInstances/Designer?id=' + res);
             });
         }

@@ -9,5 +9,8 @@ namespace W2.ExternalResources
     {
         [Get("/api/services/app/Public/GetPMsOfUser")]
         Task<AbpResponse<TimesheetProjectItem>> GetUserProjectAsync([AliasAs("email")] string email);
+
+        [Get("/api/services/app/HRMv2/GetUserInfoByEmail")]
+        Task<AbpResponseSingle<TimesheetUserInfo>> GetUserInfoByEmailAsync([AliasAs("email")] string email);
     }
 }
