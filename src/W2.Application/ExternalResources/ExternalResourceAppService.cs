@@ -1,4 +1,5 @@
 ﻿using Google.Apis.Auth;
+using Google.Apis.Auth.OAuth2.Flows;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -191,6 +192,11 @@ namespace W2.ExternalResources
         public async Task<ExternalAuthUser> ExternalLogin(ExternalAuthDto externalAuth)
         {
             var payload = await this.VerifyGoogleToken(externalAuth);
+            // verify @ncc.asia email
+            if (!payload.Email.Contains("@ncc.asia"))
+            {
+                throw new UserFriendlyException("Invalid Email @ncc.asia.");
+            }
             if (payload == null)
                 throw new UserFriendlyException("Invalid External Authentication.");
             var info = new UserLoginInfo(externalAuth.Provider, payload.Subject, externalAuth.Provider);
