@@ -16,6 +16,7 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
+using W2.ToDo;
 
 namespace W2.EntityFrameworkCore;
 
@@ -64,6 +65,9 @@ public class W2DbContext :
 
     }
 
+    public DbSet<TodoItem> TodoItems { get; set; }
+
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -102,6 +106,12 @@ public class W2DbContext :
             b.Property(x => x.PropertyDefinitions).HasConversion(new ElsaEFJsonValueConverter<ICollection<WorkflowCustomInputPropertyDefinition>>(), ValueComparer.CreateDefault(typeof(ICollection<WorkflowCustomInputPropertyDefinition>), false));
             b.Property(x => x.WorkflowDefinitionId).IsRequired();
             b.HasIndex(x => x.WorkflowDefinitionId);
+        });
+
+        /* Configure your own tables/entities inside here */
+        builder.Entity<TodoItem>(b =>
+        {
+            b.ToTable("TodoItems");
         });
     }
 }
