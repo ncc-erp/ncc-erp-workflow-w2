@@ -8,5 +8,6 @@ namespace W2.Tasks
 {
     public interface ITaskAppService : IApplicationService
     {
+        Task assignTask(string email, Guid userId, string workflowInstanceId);
     }
 }
