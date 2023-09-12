@@ -12,9 +12,9 @@ namespace W2.Tasks
     [Authorize]
     public class TaskAppService : W2AppService, ITaskAppService
     {
-        private readonly IRepository<Tasks, Guid> _taskRepository;
+        private readonly IRepository<MyTask, Guid> _taskRepository;
 
-        public TaskAppService(IRepository<Tasks, Guid> taskRepository)
+        public TaskAppService(IRepository<MyTask, Guid> taskRepository)
         {
             _taskRepository = taskRepository;
         }

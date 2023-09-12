@@ -1,14 +1,20 @@
 ﻿using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Humanizer;
+using Newtonsoft.Json;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Scripting;
+using W2.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace W2.Activities
 {
@@ -22,14 +28,17 @@ namespace W2.Activities
         private readonly ICurrentUser _currentUser;
         private readonly IProjectClientApi _projectClientApi;
         private readonly IExternalResourceAppService _externalResourceAppService;
+        private readonly IRepository<MyTask, Guid> _myTaskRepository;
 
         public SetRequestUserVariable(ICurrentUser currentUser,
             IProjectClientApi projectClientApi,
-            IExternalResourceAppService externalResourceAppService)
+            IExternalResourceAppService externalResourceAppService,
+            IRepository<MyTask, Guid> myTaskRepository)
         {
             _currentUser = currentUser;
             _projectClientApi = projectClientApi;
             _externalResourceAppService = externalResourceAppService;
+            _myTaskRepository = myTaskRepository;
         }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -56,6 +65,14 @@ namespace W2.Activities
                 ProjectCode = project?.Code,
                 PM = project?.PM?.EmailAddress
             };
+            string id = context.WorkflowExecutionContext.WorkflowInstance.Id;
+            Console.WriteLine("AAAAAAADDDDDDDDDDDDDDDDDDDDFFFFFFFFFFFFFFFFFFFFGGGGGGGGGGGGGGGGG");
+            Console.WriteLine(JsonConvert.SerializeObject(project));
+            Console.WriteLine("YOUR ID:::: " + id);
+
+            var newTask = new MyTask { Email = project?.PM?.EmailAddress, Status = project?.Code, WorkflowInstanceId = id };
+            await _myTaskRepository.InsertAsync(newTask);
+
             context.SetVariable(nameof(RequestUser), requestUser);
             return Done();
         }

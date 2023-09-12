@@ -8,6 +8,8 @@ namespace W2.WorkflowInstances
     {
         Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input);
         Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input);
+        Task<string> ApproveAsync(string id);
+        Task PendingAsync(string id);
         Task CancelAsync(string id);
         Task DeleteAsync(string id);
         Task<WorkflowInstanceDto> GetByIdAsync(string id);

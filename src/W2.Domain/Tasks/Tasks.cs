@@ -5,12 +5,11 @@ using Volo.Abp.MultiTenancy;
 
 namespace W2.Tasks
 {
-    public class Tasks : CreationAuditedEntity<Guid>, IMultiTenant
+    public class MyTask : CreationAuditedEntity<Guid>
     {
-        //public string WorkflowInstanceId { get; set; } = default!;
-        //public Dictionary<string, string> Input { get; set; }
+        public string Email { get; set; }
+        public string Status { get; set; }
+
         public string WorkflowInstanceId { get; set; } = default!;
-        public Dictionary<string, string> Data { get; set; }
-        public Guid? TenantId { get; set; }
     }
 }

@@ -14,6 +14,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 
@@ -64,6 +65,8 @@ public class W2DbContext :
 
     }
 
+    public DbSet<MyTask> MyTasks { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -102,6 +105,11 @@ public class W2DbContext :
             b.Property(x => x.PropertyDefinitions).HasConversion(new ElsaEFJsonValueConverter<ICollection<WorkflowCustomInputPropertyDefinition>>(), ValueComparer.CreateDefault(typeof(ICollection<WorkflowCustomInputPropertyDefinition>), false));
             b.Property(x => x.WorkflowDefinitionId).IsRequired();
             b.HasIndex(x => x.WorkflowDefinitionId);
+        });
+
+        builder.Entity<MyTask>(b =>
+        {
+            b.ToTable("MyTasks");
         });
     }
 }

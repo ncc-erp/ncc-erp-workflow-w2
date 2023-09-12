@@ -83,6 +83,32 @@ namespace W2.WorkflowInstances
             }
         }
 
+        public async Task<string> ApproveAsync(string id)
+        {
+            var workflowInstance = await _workflowInstanceStore.FindAsync(new WorkflowInstanceIdsSpecification(new[] { id }));
+
+            if (workflowInstance == null)
+            {
+                throw new UserFriendlyException(L["Exception:InstanceNotFound"]);
+            }
+
+            // Check if the workflow is in a state where it can be approved
+            // if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
+            // {
+            //    throw new UserFriendlyException(L["Exception:InvalidApproval"]);
+            // }
+
+            workflowInstance.WorkflowStatus = WorkflowStatus.Finished;
+            await _workflowInstanceStore.UpdateAsync(workflowInstance);
+
+            return "Approval successful";
+        }
+
+        public async Task PendingAsync(string id)
+        {
+            Console.WriteLine("PENDING HERE::: " + id);
+        }
+
         [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
         public async Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
         {
