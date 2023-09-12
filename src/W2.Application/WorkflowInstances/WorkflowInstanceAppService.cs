@@ -8,8 +8,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Rebus.Extensions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
@@ -44,7 +47,6 @@ namespace W2.WorkflowInstances
         private readonly ILogger<WorkflowInstanceAppService> _logger;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IIdentityUserRepository _userRepository;
-
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IWorkflowInstanceStore workflowInstanceStore,
@@ -99,7 +101,7 @@ namespace W2.WorkflowInstances
 
             var instance = executionResult.WorkflowInstance;
             using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
-            {              
+            {
                 var workflowInstanceStarter = new WorkflowInstanceStarter
                 {
                     WorkflowInstanceId = instance.Id,
@@ -146,6 +148,64 @@ namespace W2.WorkflowInstances
             }
 
             return instanceDto;
+        }
+        public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, [Required] DateTime date)
+        {
+            var specification = Specification<WorkflowInstance>.Identity;
+            if (CurrentTenant.IsAvailable)
+            {
+                specification = specification.WithTenant(CurrentTenantStrId);
+            }
+            specification = specification.WithWorkflowDefinition("3a0d4dd9-e727-08e1-44e6-f17c5b8833a7");
+
+            var instances = await _workflowInstanceStore.FindManyAsync(specification);
+            var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
+            )).ToList();
+
+            var instancesIds = instances.Select(x => x.Id);
+            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
+
+            var requestUser = (await _userRepository.GetListAsync())
+                .FirstOrDefault(x => x.Email == email) ?? throw new UserFriendlyException(L["Exception:EmailNotFound"]);
+
+            var allWorkflowInstanceStarters = await AsyncExecuter.ToListAsync(await _instanceStarterRepository.GetQueryableAsync());
+            workflowInstanceStarters = allWorkflowInstanceStarters
+                .Where(x => x != null && instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.ContainsValue(date.ToUniversalTime().ToString("dd/MM/yyyy")) && x.CreatorId == requestUser.Id)
+                .ToList();
+
+            instances = await AsyncExecuter.ToListAsync(
+                workflowInstanceStarters.Join(instances, x => x.WorkflowInstanceId, x => x.Id, (WorkflowInstanceStarter, WorkflowInstance) => new
+                {
+                    WorkflowInstanceStarter,
+                    WorkflowInstance
+                })
+                .AsQueryable()
+                .Select(x => x.WorkflowInstance)
+            );
+
+            var result = new WorkflowStatusDto();
+
+            foreach (var instance in instances)
+            {
+                var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
+                var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowStatusDto>(instance);
+                workflowInstanceDto.Email = email;
+                workflowInstanceDto.Date = DateTime.ParseExact(workflowInstanceStarter.Input.GetValue("Dates"), "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                result = workflowInstanceDto;
+            }
+            if (result.Email == null)
+            {
+                var newInstanceError = new WorkflowStatusDto
+                {
+                    Email = email,
+                    Date = date,
+                    Status = "-1"
+                };
+                return newInstanceError;
+            };
+
+            return result;
         }
 
         public async Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input)
@@ -254,7 +314,7 @@ namespace W2.WorkflowInstances
 
                     var parentActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == connection?.SourceActivityId);
                     if (parentActivity?.Type == "Fork")
-                    {                    
+                    {
                         var childNodes = workflowDefinition.Connections.Where(x => x.SourceActivityId == parentActivity.ActivityId && instance.ActivityData.ContainsKey(x.TargetActivityId))
                                                                        .Select(x => x.TargetActivityId);
                         if (!childNodes.All(x => blockingActivityIds.Contains(x)))
@@ -311,7 +371,7 @@ namespace W2.WorkflowInstances
                         }
                     }
                 }
-                
+
                 result.Add(workflowInstanceDto);
             }
 
