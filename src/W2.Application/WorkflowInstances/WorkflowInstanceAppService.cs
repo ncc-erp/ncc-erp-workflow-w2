@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Namotion.Reflection;
 using Newtonsoft.Json;
@@ -54,6 +55,7 @@ namespace W2.WorkflowInstances
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
+        private readonly IConfiguration _configuration;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -67,6 +69,7 @@ namespace W2.WorkflowInstances
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi)
+            IConfiguration configuration)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -80,6 +83,7 @@ namespace W2.WorkflowInstances
             _unitOfWorkManager = unitOfWorkManager;
             _userRepository = userRepository;
             _antClientApi = antClientApi;
+            _configuration = configuration;
         }
 
         public async Task CancelAsync(string id)
@@ -161,12 +165,14 @@ namespace W2.WorkflowInstances
         }
         public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, [Required] DateTime date)
         {
+            string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
+
             var specification = Specification<WorkflowInstance>.Identity;
             if (CurrentTenant.IsAvailable)
             {
                 specification = specification.WithTenant(CurrentTenantStrId);
             }
-            specification = specification.WithWorkflowDefinition("3a0d4dd9-e727-08e1-44e6-f17c5b8833a7");
+            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId);
 
             var instances = await _workflowInstanceStore.FindManyAsync(specification);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
@@ -221,8 +227,10 @@ namespace W2.WorkflowInstances
         [HttpGet("api/wfh/users")]
         public async Task<PagedResultDto<WFHDto>> GetWFHListAsync(ListAllWFHRequestInput input)
         {
+            string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
+
             var specification = Specification<WorkflowInstance>.Identity;
-            specification = specification.WithWorkflowDefinition("3a0d4dd9-e727-08e1-44e6-f17c5b8833a7");
+            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId);
 
             var instances = (await _workflowInstanceStore.FindManyAsync(specification));
 
