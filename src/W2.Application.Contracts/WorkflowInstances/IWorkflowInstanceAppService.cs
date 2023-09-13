@@ -1,6 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using W2.ExternalResources;
 
 namespace W2.WorkflowInstances
 {
@@ -11,5 +13,8 @@ namespace W2.WorkflowInstances
         Task CancelAsync(string id);
         Task DeleteAsync(string id);
         Task<WorkflowInstanceDto> GetByIdAsync(string id);
+        Task<PagedResultDto<WFHDto>> GetWFHListAsync(ListAllWFHRequestInput input);
+        Task<List<UserInfoBySlug>> GetUserInfoBySlug(string slug);
+        Task<List<PostItem>> GetPostByAuthor(int author);
     }
 }
