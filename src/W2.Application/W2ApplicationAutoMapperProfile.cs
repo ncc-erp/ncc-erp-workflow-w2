@@ -17,7 +17,7 @@ public class W2ApplicationAutoMapperProfile : Profile
         CreateMap<WorkflowDefinition, WorkflowDefinitionSummaryDto>();
         CreateMap<WorkflowCustomInputPropertyDefinition, WorkflowCustomInputPropertyDefinitionDto>();
         CreateMap<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>()
-            .ForMember(d => d.PropertyDefinitions, options => 
+            .ForMember(d => d.PropertyDefinitions, options =>
                 options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinitionDto
                 {
                     Name = i.Name,
@@ -43,5 +43,21 @@ public class W2ApplicationAutoMapperProfile : Profile
             {
                 return s.LastExecutedAt.HasValue ? s.LastExecutedAt.Value.ToDateTimeUtc() : (DateTime?)null;
             }));
+        CreateMap<WorkflowInstance, WorkflowStatusDto>()
+            // .ForMember(d => d.CreatedAt, options => options.MapFrom(s => s.CreatedAt.ToDateTimeUtc()))
+            .ForMember(d => d.Status, options => options.MapFrom(s => GetMappedStatus(s.WorkflowStatus)));
+    }
+    private string GetMappedStatus(WorkflowStatus workflowStatus)
+    {
+        if (workflowStatus == WorkflowStatus.Suspended)
+        {
+            return "0";
+        }
+        return workflowStatus.ToString().ToLower() switch
+        {
+            "approved" => "1",
+            "rejected" => "2",
+            _ => "0",
+        };
     }
 }

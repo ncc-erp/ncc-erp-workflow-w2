@@ -1,4 +1,6 @@
-﻿namespace W2.Scripting
+﻿using System;
+
+namespace W2.Scripting
 {
     public class RequestUser
     {
@@ -10,5 +12,6 @@
         public string ProjectCode { get; set; }
         public string BranchName { get; set; }
         public string BranchCode { get; set; }
+        public Guid? Id { get; set; }
     }
 }

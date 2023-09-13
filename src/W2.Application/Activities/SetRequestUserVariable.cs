@@ -47,6 +47,7 @@ namespace W2.Activities
             }
             var requestUser = new RequestUser
             {
+                Id = _currentUser.Id,
                 Email = _currentUser.Email,
                 Name = _currentUser.Name,
                 Project = _currentUser.FindClaimValue(CustomClaim.ProjectName),
