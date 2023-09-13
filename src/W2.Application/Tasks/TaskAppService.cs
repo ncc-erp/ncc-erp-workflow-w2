@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Open.Linq.AsyncExtensions;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
@@ -71,6 +72,46 @@ namespace W2.Tasks
             await _taskRepository.UpdateAsync(myTask);
 
             return "Approval successful";
+        }
+
+        public async Task<string> RejectAsync(string id)
+        {
+            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending)
+            {
+                throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            }
+
+            var Inputs = new Dictionary<string, string>
+            {
+                { "TriggeredBy", $"({myTask.Email})" }
+            };
+
+            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
+
+            var signal = new SignalModel(myTask.RejectSignal, myTask.WorkflowInstanceId);
+            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
+
+            myTask.Status = W2TaskStatus.Reject;
+            await _taskRepository.UpdateAsync(myTask);
+
+            return "Reject successful";
+        }
+
+        public async Task<string> CancelAsync(string id)
+        {
+            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending)
+            {
+                throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            }
+
+            myTask.Status = W2TaskStatus.Cancel;
+            await _taskRepository.UpdateAsync(myTask);
+
+            return "Cancel successful";
         }
     }
 }
