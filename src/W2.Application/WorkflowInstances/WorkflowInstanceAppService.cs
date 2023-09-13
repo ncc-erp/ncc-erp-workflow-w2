@@ -1,19 +1,13 @@
-﻿using Elsa;
-using Elsa.Models;
+﻿using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Namotion.Reflection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Rebus.Extensions;
 using System;
 using System.Collections.Generic;
@@ -22,8 +16,6 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -32,15 +24,13 @@ using Volo.Abp.Emailing;
 using Volo.Abp.Identity;
 using Volo.Abp.TextTemplating;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
-using W2.Templates;
 
 namespace W2.WorkflowInstances
 {
-    [Microsoft.AspNetCore.Authorization.Authorize(W2Permissions.WorkflowManagementWorkflowInstances)]
+    [Authorize(W2Permissions.WorkflowManagementWorkflowInstances)]
     public class WorkflowInstanceAppService : W2AppService, IWorkflowInstanceAppService
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
@@ -56,7 +46,6 @@ namespace W2.WorkflowInstances
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
-
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IWorkflowInstanceStore workflowInstanceStore,
@@ -99,7 +88,7 @@ namespace W2.WorkflowInstances
             }
         }
 
-        [Microsoft.AspNetCore.Authorization.Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
+        [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
         public async Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
         {
             var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(input.WorkflowDefinitionId, tenantId: CurrentTenantStrId);
@@ -224,8 +213,7 @@ namespace W2.WorkflowInstances
             return result;
         }
 
-        [HttpGet("api/wfh/users")]
-        public async Task<PagedResultDto<WFHDto>> GetWFHListAsync(ListAllWFHRequestInput input)
+        public async Task<PagedResultDto<WFHDto>> GetWfhListAsync(ListAllWFHRequestInput input)
         {
             string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
 

@@ -13,8 +13,6 @@ namespace W2.WorkflowInstances
         Task CancelAsync(string id);
         Task DeleteAsync(string id);
         Task<WorkflowInstanceDto> GetByIdAsync(string id);
-        Task<PagedResultDto<WFHDto>> GetWFHListAsync(ListAllWFHRequestInput input);
-        Task<List<UserInfoBySlug>> GetUserInfoBySlug(string slug);
-        Task<List<PostItem>> GetPostByAuthor(int author);
+        Task<PagedResultDto<WFHDto>> GetWfhListAsync(ListAllWFHRequestInput input);
     }
 }
