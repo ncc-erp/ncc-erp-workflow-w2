@@ -9,6 +9,7 @@ namespace W2.Tasks
         Pending,
         Approve,
         Reject,
-        Failed
+        Failed,
+        Cancel
     }
 }
