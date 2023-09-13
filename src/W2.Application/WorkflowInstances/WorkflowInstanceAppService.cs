@@ -5,6 +5,7 @@ using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -47,6 +48,8 @@ namespace W2.WorkflowInstances
         private readonly ILogger<WorkflowInstanceAppService> _logger;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IIdentityUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
+
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IWorkflowInstanceStore workflowInstanceStore,
@@ -57,7 +60,8 @@ namespace W2.WorkflowInstances
             ITemplateRenderer templateRenderer,
             ILogger<WorkflowInstanceAppService> logger,
             IUnitOfWorkManager unitOfWorkManager,
-            IIdentityUserRepository userRepository)
+            IIdentityUserRepository userRepository,
+            IConfiguration configuration)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -70,6 +74,7 @@ namespace W2.WorkflowInstances
             _logger = logger;
             _unitOfWorkManager = unitOfWorkManager;
             _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         public async Task CancelAsync(string id)
@@ -151,20 +156,14 @@ namespace W2.WorkflowInstances
         }
         public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, [Required] DateTime date)
         {
-            // TODO: Hard code to get workflow definition Id follow name
-            var requestWFH = new string[] { "wfh request", "request wfh", "work from home request", "request work from home" }; ;
-            var spe = Specification<WorkflowDefinition>.Identity;
-            spe = spe.And(new PublishedWorkflowDefinitionsSpecification());
-            var workflowDefinitionByName = (await _workflowDefinitionStore
-                .FindManyAsync(spe))
-                .ToList().FirstOrDefault(x => requestWFH.Contains(x.Name.ToLower()));
+            string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
 
             var specification = Specification<WorkflowInstance>.Identity;
             if (CurrentTenant.IsAvailable)
             {
                 specification = specification.WithTenant(CurrentTenantStrId);
             }
-            specification = specification.WithWorkflowDefinition(workflowDefinitionByName.DefinitionId);
+            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId);
 
             var instances = await _workflowInstanceStore.FindManyAsync(specification);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
