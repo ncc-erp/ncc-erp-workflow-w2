@@ -11,7 +11,7 @@ namespace W2.Tasks
         Task assignTask(string email, Guid userId, string workflowInstanceId, string Name, string ApproveSignal, string RejectSignal);
         Task<string> ApproveAsync(string id);
 
-        Task<string> RejectAsync(string id);
+        Task<string> RejectAsync(string id, string reason);
 
         Task<string> CancelAsync(string id);
     }
