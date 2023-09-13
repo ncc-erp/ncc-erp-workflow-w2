@@ -3,12 +3,11 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Rebus.Extensions;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,6 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -26,11 +24,9 @@ using Volo.Abp.Emailing;
 using Volo.Abp.Identity;
 using Volo.Abp.TextTemplating;
 using Volo.Abp.Uow;
-using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
-using W2.Templates;
 
 namespace W2.WorkflowInstances
 {
@@ -48,8 +44,8 @@ namespace W2.WorkflowInstances
         private readonly ILogger<WorkflowInstanceAppService> _logger;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IIdentityUserRepository _userRepository;
+        private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
-
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IWorkflowInstanceStore workflowInstanceStore,
@@ -61,6 +57,7 @@ namespace W2.WorkflowInstances
             ILogger<WorkflowInstanceAppService> logger,
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
+            IAntClientApi antClientApi,
             IConfiguration configuration)
         {
             _workflowLaunchpad = workflowLaunchpad;
@@ -74,6 +71,7 @@ namespace W2.WorkflowInstances
             _logger = logger;
             _unitOfWorkManager = unitOfWorkManager;
             _userRepository = userRepository;
+            _antClientApi = antClientApi;
             _configuration = configuration;
         }
 
@@ -214,6 +212,73 @@ namespace W2.WorkflowInstances
 
             return result;
         }
+
+        public async Task<PagedResultDto<WFHDto>> GetWfhListAsync(ListAllWFHRequestInput input)
+        {
+            string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
+
+            var specification = Specification<WorkflowInstance>.Identity;
+            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId);
+
+            var instances = (await _workflowInstanceStore.FindManyAsync(specification));
+
+            var instancesIds = instances.Select(x => x.Id);
+            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
+            workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
+
+            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
+            var totalCount = (await _userRepository.GetListAsync())
+                .Where(x => x.Id.IsIn(requestUserIds))
+                .Count();
+
+            var requestUsers = (await _userRepository.GetListAsync())
+                .Where(x => x.Id.IsIn(requestUserIds))
+                .AsQueryable()
+                .OrderBy(NormalizeSortingStringWFH(input.Sorting))
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .ToList();
+
+            var WFHList = new List<WFHDto>();
+            foreach (var requestUser in requestUsers)
+            {
+                var totalDays = 0;
+                var workflowInstanceStarterList = workflowInstanceStarters.Where(x => x.CreatorId == requestUser.Id).ToList();
+                foreach (var workflowInstanceStarter in workflowInstanceStarterList)
+                {
+                    var workflowInstance = instances.FirstOrDefault(x => x.Id == workflowInstanceStarter.WorkflowInstanceId);
+                    var data = workflowInstance.Variables.Data;
+                    foreach (KeyValuePair<string, object> kvp in data)
+                    {
+                        var value = kvp.Value;
+                        if (value is Dictionary<string, string> dateDictionary && dateDictionary.ContainsKey("Dates"))
+                        {
+                            string dateStr = dateDictionary["Dates"];
+                            char[] separator = new char[] { ',' };
+                            string[] dateArray = dateStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                            totalDays += dateArray.Length;
+                        }
+                    }
+                }
+                
+                var users = await GetUserInfoBySlug(ConvertEmailToSlug(requestUser.Email));
+                List<PostItem> posts = (users.Count > 0) ? await GetPostByAuthor(users[0].id) : new List<PostItem>();
+
+                var wfhDto = new WFHDto
+                {
+                    UserRequestName = requestUser.Email,
+                    Posts = posts,
+                    Totalposts = posts.Count,
+                    Requests = workflowInstanceStarterList,
+                    Totaldays = totalDays
+                };
+                WFHList.Add(wfhDto);
+            }
+
+            return new PagedResultDto<WFHDto>(totalCount, WFHList);
+        }
+
 
         public async Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input)
         {
@@ -417,6 +482,47 @@ namespace W2.WorkflowInstances
             }
 
             return "WorkflowInstance.CreatedAt DESC";
+        }
+
+        private string NormalizeSortingStringWFH(string sorting)
+        {
+            if (sorting.IsNullOrEmpty())
+            {
+                return "Email DESC";
+            }
+
+            var sortingPart = sorting.Trim().Split(' ');
+            var direction = sortingPart[1].ToLower();
+            if (direction == "asc")
+            {
+                return "Email ASC";
+            }
+            return "Email DESC";
+        }
+
+        private string ConvertEmailToSlug(string email)
+        {
+            string cleanedUsername = email.Split("@")[0].Replace(".", "-");
+
+            return cleanedUsername;
+        }
+
+        public async Task<List<UserInfoBySlug>> GetUserInfoBySlug(string slug)
+        {
+            var response = await _antClientApi.GetUsersBySlugAsync(slug);
+            var users = response != null ? response
+                .OrderBy(x => x.id)
+                .ToList() : new List<UserInfoBySlug>();
+            return users;
+        }
+
+        public async Task<List<PostItem>> GetPostByAuthor(int author)
+        {
+            var response = await _antClientApi.GetPostsByUserIdAsync(author);
+            var posts = response != null ? response
+                .OrderBy(x => x.id)
+                .ToList() : new List<PostItem>();
+            return posts;
         }
     }
 }
