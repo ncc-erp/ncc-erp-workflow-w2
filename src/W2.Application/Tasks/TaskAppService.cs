@@ -80,11 +80,6 @@ namespace W2.Tasks
 
         public async Task<string> RejectAsync([Required] string id, [Required] string reason)
         {
-            if (reason == null)
-            {
-                throw new UserFriendlyException(L["Exception:RejectReasonInvalid"]);
-            }
-
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
             if (myTask == null  || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
