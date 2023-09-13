@@ -33,13 +33,15 @@ namespace W2.Scripting
             var engine = notification.Engine;
             engine.SetValue("workflowSignals", new WorkflowSignals());
 
+            // gen token or something
             Func<string, string> getCustomSignalUrl = signal =>
             {
                 var url = $"/Signals?token={notification.ActivityExecutionContext.GenerateSignalToken(signal)}";
                 return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
             };
             engine.SetValue("getCustomSignalUrl", getCustomSignalUrl);
-
+            
+            // gen token or something
             Func<string, string[], string> getCustomSignalUrlWithForm = (signal, requiredInputs) =>
             {
                 var url = $"/Signals/Form?token={notification.ActivityExecutionContext.GenerateSignalTokenWithForm(signal, requiredInputs)}";

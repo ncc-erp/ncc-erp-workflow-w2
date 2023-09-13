@@ -56,6 +56,7 @@ using System.Linq;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Collections.Generic;
+using W2.Web.Workflows;
 
 namespace W2.Web;
 
@@ -266,15 +267,17 @@ public class W2WebModule : AbpModule
 
         context.Services.AddElsa(options => options
             .UseEntityFrameworkPersistence(
-                ef => ef.UsePostgreSql(elsaConfigurationSection.GetValue<string>(nameof(ElsaConfiguration.ConnectionString))))
+                ef => ef.UsePostgreSql(elsaConfigurationSection.GetValue<string>(nameof(ElsaConfiguration.ConnectionString))), true)
             .AddConsoleActivities()
             .AddUserTaskActivities()
             .AddHttpActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Server)).Bind)
+            .AddWorkflow<HelloWorkflow>()
             .AddEmailActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Smtp)).Bind)
             .AddQuartzTemporalActivities()
             .AddJavaScriptActivities()
             .AddActivitiesFrom<W2ApplicationModule>()
-            .AddWorkflowsFrom<ElsaConfiguration>());
+            .AddWorkflowsFrom<ElsaConfiguration>()
+         );
 
         context.Services
             .AddElsaApiEndpoints()

@@ -14,6 +14,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 
@@ -55,6 +56,8 @@ public class W2DbContext :
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
+    // tasks
+    public DbSet<W2Task> Tasks { get; set; }
 
     #endregion
 
@@ -87,6 +90,14 @@ public class W2DbContext :
         //    b.ConfigureByConvention(); //auto configure for the base class props
         //    //...
         //});
+
+        builder.Entity<W2Task>(b =>
+        {
+            b.ToTable("W2Tasks");
+            b.Property(x => x.WorkflowInstanceId).IsRequired();
+            b.Property(x => x.Data).HasConversion(new ElsaEFJsonValueConverter<Dictionary<string, string>>(), ValueComparer.CreateDefault(typeof(Dictionary<string, string>), false));
+            b.HasIndex(x => x.WorkflowInstanceId);
+        });
 
         builder.Entity<WorkflowInstanceStarter>(b =>
         {
