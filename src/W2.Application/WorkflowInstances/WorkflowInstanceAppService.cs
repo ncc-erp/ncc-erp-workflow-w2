@@ -151,12 +151,20 @@ namespace W2.WorkflowInstances
         }
         public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, [Required] DateTime date)
         {
+            // TODO: Hard code to get workflow definition Id follow name
+            var requestWFH = new string[] { "wfh request", "request wfh", "work from home request", "request work from home" }; ;
+            var spe = Specification<WorkflowDefinition>.Identity;
+            spe = spe.And(new PublishedWorkflowDefinitionsSpecification());
+            var workflowDefinitionByName = (await _workflowDefinitionStore
+                .FindManyAsync(spe))
+                .ToList().FirstOrDefault(x => requestWFH.Contains(x.Name.ToLower()));
+
             var specification = Specification<WorkflowInstance>.Identity;
             if (CurrentTenant.IsAvailable)
             {
                 specification = specification.WithTenant(CurrentTenantStrId);
             }
-            specification = specification.WithWorkflowDefinition("3a0d4dd9-e727-08e1-44e6-f17c5b8833a7");
+            specification = specification.WithWorkflowDefinition(workflowDefinitionByName.DefinitionId);
 
             var instances = await _workflowInstanceStore.FindManyAsync(specification);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
