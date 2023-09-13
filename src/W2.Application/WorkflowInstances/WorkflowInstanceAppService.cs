@@ -68,7 +68,7 @@ namespace W2.WorkflowInstances
             ILogger<WorkflowInstanceAppService> logger,
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
-            IAntClientApi antClientApi)
+            IAntClientApi antClientApi,
             IConfiguration configuration)
         {
             _workflowLaunchpad = workflowLaunchpad;
