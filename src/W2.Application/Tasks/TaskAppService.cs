@@ -139,28 +139,24 @@ namespace W2.Tasks
 
         public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
         {
-            var query = (await _taskRepository.GetListAsync()).Where(x =>
+            var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
+            var hasWorkflowDefinitionId = !string.IsNullOrEmpty(input.WorkflowDefinitionId);
+            var query = (await _taskRepository.GetListAsync()).Where(x => x.Email == _currentUser.Email);
+
+            if (hasTaskStatus && hasWorkflowDefinitionId)
             {
-                var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
-                var hasWorkflowDefinitionId = !string.IsNullOrEmpty(input.WorkflowDefinitionId);
+                query = query.Where(x => x.Status == input.Status && x.WorkflowDefinitionId == input.WorkflowDefinitionId);
+            }
 
-                if (hasTaskStatus && hasWorkflowDefinitionId)
-                {
-                    return x.Status == input.Status && x.Email == _currentUser.Email && x.WorkflowDefinitionId == input.WorkflowDefinitionId;
-                }
+            if (hasTaskStatus && !hasWorkflowDefinitionId)
+            {
+                query = query.Where(x => x.Status == input.Status);
+            }
 
-                if (hasTaskStatus)
-                {
-                    return x.Status == input.Status && x.Email == _currentUser.Email;
-                }
-
-                if (hasWorkflowDefinitionId)
-                {
-                    return x.Email == _currentUser.Email && x.WorkflowDefinitionId == input.WorkflowDefinitionId;
-                }
-
-                return x.Email == _currentUser.Email;
-            });
+            if (!hasTaskStatus && hasWorkflowDefinitionId)
+            {
+                query = query.Where(x => x.WorkflowDefinitionId == input.WorkflowDefinitionId);
+            }
 
             var totalItemCount = query.Count();
 
