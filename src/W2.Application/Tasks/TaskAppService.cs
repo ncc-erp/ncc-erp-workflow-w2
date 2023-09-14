@@ -7,16 +7,22 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Open.Linq.AsyncExtensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 using Volo.Abp.Users;
+using W2.ExternalResources;
 using W2.Permissions;
+using W2.Scripting;
 using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
 using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace W2.Tasks
@@ -118,6 +124,40 @@ namespace W2.Tasks
             await _taskRepository.UpdateAsync(myTask);
 
             return "Cancel successful";
+        }
+
+        public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
+        {
+            var requestTasks = (await _taskRepository.GetListAsync()).Where(x =>
+            {
+                if (input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status))
+                {
+                    return x.Status == input.Status && x.Email == _currentUser.Email;
+                }
+                return x.Email == _currentUser.Email;
+            })
+            .AsQueryable()
+            .Skip(input.SkipCount)
+            .Take(input.MaxResultCount)
+            .ToList();
+
+            var W2TaskList = new List<W2TasksDto>();
+            foreach (var element in requestTasks)
+            {
+                var taskDto = new W2TasksDto
+                {
+                    WorkflowInstanceId = element.WorkflowInstanceId,
+                    Email = element.Email,
+                    Status = element.Status,
+                    Name = element.Name,
+                    Reason = element.Reason,
+                    ApproveSignal = element.ApproveSignal,
+                    RejectSignal = element.RejectSignal,
+                };
+                W2TaskList.Add(taskDto);
+            }
+
+            return new PagedResultDto<W2TasksDto>(requestTasks.Count(), W2TaskList);
         }
     }
 }
