@@ -7,16 +7,22 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Open.Linq.AsyncExtensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 using Volo.Abp.Users;
+using W2.ExternalResources;
 using W2.Permissions;
+using W2.Scripting;
 using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
 using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace W2.Tasks
@@ -118,6 +124,29 @@ namespace W2.Tasks
             await _taskRepository.UpdateAsync(myTask);
 
             return "Cancel successful";
+        }
+
+        public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
+        {
+            var query = (await _taskRepository.GetListAsync()).Where(x =>
+            {
+                if (input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status))
+                {
+                    return x.Status == input.Status && x.Email == _currentUser.Email;
+                }
+                return x.Email == _currentUser.Email;
+            });
+
+            var totalItemCount = query.Count();
+
+            var requestTasks = query
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .ToList();
+
+            var W2TaskList = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(requestTasks);
+
+            return new PagedResultDto<W2TasksDto>(totalItemCount, W2TaskList);
         }
     }
 }
