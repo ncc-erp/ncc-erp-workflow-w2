@@ -13,7 +13,5 @@ namespace W2.Tasks
         public W2TaskStatus Status { get; set; }
         public string Name { get; set; } 
         public string Reason { get; set; } 
-        public string ApproveSignal { get; set; }
-        public string RejectSignal { get; set; } 
     }
 }

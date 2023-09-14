@@ -128,18 +128,21 @@ namespace W2.Tasks
 
         public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
         {
-            var requestTasks = (await _taskRepository.GetListAsync()).Where(x =>
+            var query = (await _taskRepository.GetListAsync()).Where(x =>
             {
                 if (input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status))
                 {
                     return x.Status == input.Status && x.Email == _currentUser.Email;
                 }
                 return x.Email == _currentUser.Email;
-            })
-            .AsQueryable()
-            .Skip(input.SkipCount)
-            .Take(input.MaxResultCount)
-            .ToList();
+            });
+
+            var totalItemCount = query.Count();
+
+            var requestTasks = query
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .ToList();
 
             var W2TaskList = new List<W2TasksDto>();
             foreach (var element in requestTasks)
@@ -151,13 +154,11 @@ namespace W2.Tasks
                     Status = element.Status,
                     Name = element.Name,
                     Reason = element.Reason,
-                    ApproveSignal = element.ApproveSignal,
-                    RejectSignal = element.RejectSignal,
                 };
                 W2TaskList.Add(taskDto);
             }
 
-            return new PagedResultDto<W2TasksDto>(requestTasks.Count(), W2TaskList);
+            return new PagedResultDto<W2TasksDto>(totalItemCount, W2TaskList);
         }
     }
 }
