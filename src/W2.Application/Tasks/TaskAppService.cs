@@ -144,19 +144,7 @@ namespace W2.Tasks
                 .Take(input.MaxResultCount)
                 .ToList();
 
-            var W2TaskList = new List<W2TasksDto>();
-            foreach (var element in requestTasks)
-            {
-                var taskDto = new W2TasksDto
-                {
-                    WorkflowInstanceId = element.WorkflowInstanceId,
-                    Email = element.Email,
-                    Status = element.Status,
-                    Name = element.Name,
-                    Reason = element.Reason,
-                };
-                W2TaskList.Add(taskDto);
-            }
+            var W2TaskList = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(requestTasks);
 
             return new PagedResultDto<W2TasksDto>(totalItemCount, W2TaskList);
         }
