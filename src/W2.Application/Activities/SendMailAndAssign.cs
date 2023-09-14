@@ -61,7 +61,7 @@ namespace W2.Activities
             {
                 if (email != null)
                 {
-                    await _taskAppService.assignTask(email, (Guid)currentUser.Id, context.WorkflowInstance.Id, Subject, ApproveSignal.Trim(), RejectSignal.Trim());
+                    await _taskAppService.assignTask(email, (Guid)currentUser.Id, context.WorkflowInstance.Id, ApproveSignal.Trim(), RejectSignal.Trim());
                 }
             }
 
