@@ -54,7 +54,7 @@ namespace W2.Tasks
 
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
-                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).ToList();
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
             await _taskRepository.InsertAsync(new W2Task
             {
@@ -64,7 +64,7 @@ namespace W2.Tasks
                 WorkflowInstanceId = workflowInstanceId,
                 WorkflowDefinitionId = workflowInstance.DefinitionId,
                 Status = W2TaskStatus.Pending,
-                Name = workflowDefinitions.First().Name,
+                Name = workflowDefinitions.Name,
                 ApproveSignal = ApproveSignal, 
                 RejectSignal = RejectSignal 
             });
