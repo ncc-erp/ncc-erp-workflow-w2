@@ -132,6 +132,12 @@ namespace W2.Web.Pages.Account
             var user = new IdentityUser(GuidGenerator.Create(), emailAddress, emailAddress, CurrentTenant.Id);
             user.Name = externalLoginInfo.Principal.Identities.First().Name;
 
+            var existingUser = await UserManager.FindByEmailAsync(emailAddress);
+            if (existingUser != null)
+            {
+                await UserManager.DeleteAsync(existingUser);
+            }
+
             (await UserManager.CreateAsync(user)).CheckErrors();
             (await UserManager.AddDefaultRolesAsync(user)).CheckErrors();
 
