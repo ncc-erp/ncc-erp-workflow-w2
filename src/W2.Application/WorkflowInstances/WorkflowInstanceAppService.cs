@@ -236,9 +236,9 @@ namespace W2.WorkflowInstances
                 .Where(x => x.Id.IsIn(requestUserIds))
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(input.Filter))
+            if (!string.IsNullOrEmpty(input.KeySearch))
             {
-                query = query.Where(x => x.Email.Contains(input.Filter));
+                query = query.Where(x => x.Email.Contains(input.KeySearch));
             }
 
             var requestUsers = query
