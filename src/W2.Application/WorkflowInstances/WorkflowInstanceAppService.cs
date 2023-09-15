@@ -232,9 +232,16 @@ namespace W2.WorkflowInstances
                 .Where(x => x.Id.IsIn(requestUserIds))
                 .Count();
 
-            var requestUsers = (await _userRepository.GetListAsync())
+            var query = (await _userRepository.GetListAsync())
                 .Where(x => x.Id.IsIn(requestUserIds))
-                .AsQueryable()
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(input.KeySearch))
+            {
+                query = query.Where(x => x.Email.Contains(input.KeySearch));
+            }
+
+            var requestUsers = query
                 .OrderBy(NormalizeSortingStringWFH(input.Sorting))
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount)
