@@ -106,7 +106,8 @@ namespace W2.Tasks
 
             var Inputs = new Dictionary<string, string>
             {
-                { "TriggeredBy", $"({myTask.Email})" }
+                { "Reason", $"{reason}" },
+                { "TriggeredBy", $"{myTask.Email}" }
             };
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
