@@ -153,39 +153,29 @@ namespace W2.Tasks
             var isAdmin = _currentUser.IsInRole("admin");
             if (!input.Email.IsNullOrWhiteSpace())
             {
-                if (isAdmin)
-                {
-                    checks.Add(x => x.Email == input.Email);
-                }
-                else
-                {
-                    checks.Add(x => x.Email == _currentUser.Email);
-                }
+                query = isAdmin
+                    ? query.Where(x => x.Email == input.Email)
+                    : query.Where(x => x.Email == _currentUser.Email);
             }
-            else
+            else if (!isAdmin)
             {
-                if (!isAdmin)
-                {
-                    checks.Add(x => x.Email == _currentUser.Email);
-                }
+                query = query.Where(x => x.Email == _currentUser.Email);
             }
 
             if (!input.Dates.IsNullOrWhiteSpace())
             {
-                checks.Add(x => new DateTimeOffset(x.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
+                query = query.Where(x => new DateTimeOffset(x.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
             }
 
             if (hasTaskStatus)
             {
-                checks.Add(x => x.Status == input.Status);
+                query = query.Where(x => x.Status == input.Status);
             }
 
             if (hasWorkflowDefinitionId)
             {
-                checks.Add(x => x.WorkflowDefinitionId == input.WorkflowDefinitionId);
+                query = query.Where(x => x.WorkflowDefinitionId == input.WorkflowDefinitionId);
             }
-
-            query = query.Where(x => checks.All(check => check(x)));
 
             var totalItemCount = query.Count();
 
