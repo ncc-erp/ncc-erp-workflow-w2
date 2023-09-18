@@ -1,13 +1,18 @@
-﻿using Elsa.Models;
+﻿using Elsa.Activities.Http.Events;
+using Elsa.Activities.Signaling.Models;
+using Elsa.Activities.Signaling.Services;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
 using System;
 using System.Collections.Generic;
@@ -27,6 +32,7 @@ using Volo.Abp.Uow;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
+using W2.Tasks;
 
 namespace W2.WorkflowInstances
 {
@@ -46,6 +52,9 @@ namespace W2.WorkflowInstances
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
+        private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly ISignaler _signaler;
+        private readonly IMediator _mediator;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IWorkflowInstanceStore workflowInstanceStore,
@@ -58,7 +67,10 @@ namespace W2.WorkflowInstances
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IRepository<W2Task, Guid> taskRepository,
+            ISignaler signaler,
+            IMediator mediator)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -73,10 +85,27 @@ namespace W2.WorkflowInstances
             _userRepository = userRepository;
             _antClientApi = antClientApi;
             _configuration = configuration;
+            _signaler = signaler;
+            _taskRepository = taskRepository;
+            _mediator = mediator;
         }
 
-        public async Task CancelAsync(string id)
+        public async Task<string> CancelAsync(string id)
         {
+            var tasks =  (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
+            if (tasks == null || tasks.Count == 0)
+            {
+                throw new UserFriendlyException(L["Exception:TasksNotValid"]);
+            }
+
+            foreach (var task in tasks)
+            {
+                task.Status = W2TaskStatus.Reject;
+                task.Reason = "Workflow being canceled";
+            }
+
+            await _taskRepository.UpdateManyAsync(tasks);
+
             var cancelResult = await _canceller.CancelAsync(id);
 
             switch (cancelResult.Status)
@@ -86,6 +115,8 @@ namespace W2.WorkflowInstances
                 case CancelWorkflowInstanceResultStatus.InvalidStatus:
                     throw new UserFriendlyException(L["Exception:CancelInstanceInvalidStatus", cancelResult.WorkflowInstance!.WorkflowStatus]);
             }
+
+            return "Cancel Request workflow successful";
         }
 
         [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
@@ -120,13 +151,29 @@ namespace W2.WorkflowInstances
             return instance.Id;
         }
 
-        public async Task DeleteAsync(string id)
+        public async Task<string> DeleteAsync(string id)
         {
+            var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
+            if (tasks == null || tasks.Count == 0)
+            {
+                throw new UserFriendlyException(L["Exception:TasksNotValid"]);
+            }
+
+            foreach (var task in tasks)
+            {
+                task.Status = W2TaskStatus.Reject;
+                task.Reason = "Workflow being canceled";
+            }
+
+            await _taskRepository.UpdateManyAsync(tasks);
+            
             var result = await _workflowInstanceDeleter.DeleteAsync(id);
             if (result.Status == DeleteWorkflowInstanceResultStatus.NotFound)
             {
                 throw new UserFriendlyException(L["Exception:InstanceNotFound"]);
             }
+
+            return "Delete Request workflow successful";
         }
 
         public async Task<WorkflowInstanceDto> GetByIdAsync(string id)
