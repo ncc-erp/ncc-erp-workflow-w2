@@ -16,6 +16,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -152,8 +153,15 @@ namespace W2.WorkflowInstances
 
             return instanceDto;
         }
-        public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, [Required] DateTime date)
-        {
+
+        [AllowAnonymous]
+        public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, 
+            [Required]
+            [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string date)
+        {// date "dd/MM/yyyy"
+            var dateArray = date.Split("-");
+            var dateDb = $"{dateArray[2]}/{dateArray[1]}/{dateArray[0]}";
             string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
 
             var specification = Specification<WorkflowInstance>.Identity;
@@ -176,7 +184,7 @@ namespace W2.WorkflowInstances
 
             var allWorkflowInstanceStarters = await AsyncExecuter.ToListAsync(await _instanceStarterRepository.GetQueryableAsync());
             workflowInstanceStarters = allWorkflowInstanceStarters
-                .Where(x => x != null && instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.ContainsValue(date.ToUniversalTime().ToString("dd/MM/yyyy")) && x.CreatorId == requestUser.Id)
+                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.GetValueOrDefault("Dates").Contains(dateDb) && x.CreatorId == requestUser.Id)
                 .ToList();
 
             instances = await AsyncExecuter.ToListAsync(
@@ -196,7 +204,7 @@ namespace W2.WorkflowInstances
                 var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
                 var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowStatusDto>(instance);
                 workflowInstanceDto.Email = email;
-                workflowInstanceDto.Date = DateTime.ParseExact(workflowInstanceStarter.Input.GetValue("Dates"), "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                workflowInstanceDto.Date = date; //  workflowInstanceStarter.Input.GetValue("Dates");
                 result = workflowInstanceDto;
             }
             if (result.Email == null)
@@ -205,7 +213,7 @@ namespace W2.WorkflowInstances
                 {
                     Email = email,
                     Date = date,
-                    Status = "-1"
+                    Status = -1
                 };
                 return newInstanceError;
             };
