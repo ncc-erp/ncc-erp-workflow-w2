@@ -154,12 +154,6 @@ namespace W2.WorkflowInstances
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
             {
-                foreach (var task in tasks)
-                {
-                    task.Status = W2TaskStatus.Reject;
-                    task.Reason = "Workflow being canceled";
-                }
-
                 await _taskRepository.DeleteManyAsync(tasks);
             }
             
