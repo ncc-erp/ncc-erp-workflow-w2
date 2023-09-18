@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Elsa.Models;
-using System;
+ using System;
 using System.Linq;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
@@ -15,7 +15,7 @@ public class W2ApplicationAutoMapperProfile : Profile
         /* You can configure your AutoMapper mapping configuration here.
          * Alternatively, you can split your mapping configurations
          * into multiple profile classes for a better organization. */
-        CreateMap<W2Task, W2TasksDto>();
+        CreateMap<W2Task, W2TasksDto>().ForMember(d => d.CreatedAt, options => options.MapFrom(s => s.CreationTime.ToUniversalTime()));
         CreateMap<WorkflowDefinition, WorkflowDefinitionSummaryDto>();
         CreateMap<WorkflowCustomInputPropertyDefinition, WorkflowCustomInputPropertyDefinitionDto>();
         CreateMap<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>()
