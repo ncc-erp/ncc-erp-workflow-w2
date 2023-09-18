@@ -42,10 +42,10 @@ namespace W2.Activities
         }
 
         public new string From => string.Empty;
-        [ActivityInput(Hint = "The approved signal")]
+        [ActivityInput(Hint = "The approved signal", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
         public string ApproveSignal { get; set; }
 
-        [ActivityInput(Hint = "The reject signal")]
+        [ActivityInput(Hint = "The reject signal", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
         public string RejectSignal { get; set; }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
