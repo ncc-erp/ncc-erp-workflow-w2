@@ -57,7 +57,7 @@ public class W2ApplicationAutoMapperProfile : Profile
         }
         return workflowStatus.ToString().ToLower() switch
         {
-            "approved" => 1,
+            "finished" => 1,
             "rejected" => 2,
             _ => 0,
         };
