@@ -97,7 +97,7 @@ namespace W2.WorkflowInstances
             {
                 foreach (var task in tasks)
                 {
-                    task.Status = W2TaskStatus.Reject;
+                    task.Status = W2TaskStatus.Cancel;
                     task.Reason = "Workflow being canceled";
                 }
 
@@ -160,7 +160,7 @@ namespace W2.WorkflowInstances
                     task.Reason = "Workflow being canceled";
                 }
 
-                await _taskRepository.UpdateManyAsync(tasks);
+                await _taskRepository.DeleteManyAsync(tasks);
             }
             
             var result = await _workflowInstanceDeleter.DeleteAsync(id);
