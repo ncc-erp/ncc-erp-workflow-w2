@@ -216,8 +216,7 @@ namespace W2.WorkflowInstances
             var instancesIds = instances.Select(x => x.Id);
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
 
-            var requestUser = (await _userRepository.GetListAsync())
-                .FirstOrDefault(x => x.Email == email) ?? throw new UserFriendlyException(L["Exception:EmailNotFound"]);
+            var requestUser = await _userRepository.FindByNormalizedEmailAsync(email.ToUpper());
 
             var allWorkflowInstanceStarters = await AsyncExecuter.ToListAsync(await _instanceStarterRepository.GetQueryableAsync());
             workflowInstanceStarters = allWorkflowInstanceStarters
