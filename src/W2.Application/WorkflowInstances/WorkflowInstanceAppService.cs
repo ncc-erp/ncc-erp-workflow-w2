@@ -93,18 +93,16 @@ namespace W2.WorkflowInstances
         public async Task<string> CancelAsync(string id)
         {
             var tasks =  (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
-            if (tasks == null || tasks.Count == 0)
+            if (tasks != null && tasks.Count > 0)
             {
-                throw new UserFriendlyException(L["Exception:TasksNotValid"]);
-            }
+                foreach (var task in tasks)
+                {
+                    task.Status = W2TaskStatus.Reject;
+                    task.Reason = "Workflow being canceled";
+                }
 
-            foreach (var task in tasks)
-            {
-                task.Status = W2TaskStatus.Reject;
-                task.Reason = "Workflow being canceled";
+                await _taskRepository.UpdateManyAsync(tasks);
             }
-
-            await _taskRepository.UpdateManyAsync(tasks);
 
             var cancelResult = await _canceller.CancelAsync(id);
 
@@ -154,18 +152,16 @@ namespace W2.WorkflowInstances
         public async Task<string> DeleteAsync(string id)
         {
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
-            if (tasks == null || tasks.Count == 0)
+            if (tasks != null && tasks.Count > 0)
             {
-                throw new UserFriendlyException(L["Exception:TasksNotValid"]);
-            }
+                foreach (var task in tasks)
+                {
+                    task.Status = W2TaskStatus.Reject;
+                    task.Reason = "Workflow being canceled";
+                }
 
-            foreach (var task in tasks)
-            {
-                task.Status = W2TaskStatus.Reject;
-                task.Reason = "Workflow being canceled";
+                await _taskRepository.UpdateManyAsync(tasks);
             }
-
-            await _taskRepository.UpdateManyAsync(tasks);
             
             var result = await _workflowInstanceDeleter.DeleteAsync(id);
             if (result.Status == DeleteWorkflowInstanceResultStatus.NotFound)
