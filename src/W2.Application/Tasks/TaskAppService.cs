@@ -50,12 +50,14 @@ namespace W2.Tasks
         }
 
         //[Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
-        public async Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal)
+        public async Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, string OtherActionSignal, string Description)
         {
 
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
+
+            var OtherAction = string.IsNullOrEmpty(OtherActionSignal) ? null : OtherActionSignal;
 
             await _taskRepository.InsertAsync(new W2Task
             {
@@ -66,8 +68,10 @@ namespace W2.Tasks
                 WorkflowDefinitionId = workflowInstance.DefinitionId,
                 Status = W2TaskStatus.Pending,
                 Name = workflowDefinitions.Name,
+                Description = Description,
                 ApproveSignal = ApproveSignal, 
-                RejectSignal = RejectSignal 
+                RejectSignal = RejectSignal,
+                OtherActionSignal = OtherAction
             });
         }
 
