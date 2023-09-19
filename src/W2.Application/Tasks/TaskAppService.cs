@@ -179,19 +179,11 @@ namespace W2.Tasks
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
 
             var data = workflowInstance.Variables.Data;
-            var taskDto = new TaskDto
-            {
-                id = myTask.Id,
-                name = myTask.Name,
-                email = myTask.Email,
-                status = myTask.Status,
-                creationTime = myTask.CreationTime,
-            };
-
+            var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(myTask);
             var taskDetailDto = new TaskDetailDto
             {
-                tasks = taskDto,
-                input = data,
+                Tasks = taskDto,
+                Input = data,
             };
 
             return taskDetailDto;
