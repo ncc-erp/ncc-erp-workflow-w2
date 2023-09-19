@@ -20,6 +20,7 @@ using Elsa.Persistence;
 using W2.Specifications;
 using Elsa;
 using Newtonsoft.Json;
+using W2.WorkflowInstances;
 
 namespace W2.Tasks
 {
@@ -106,7 +107,8 @@ namespace W2.Tasks
 
             var Inputs = new Dictionary<string, string>
             {
-                { "TriggeredBy", $"({myTask.Email})" }
+                { "Reason", $"{reason}" },
+                { "TriggeredBy", $"{myTask.Email}" }
             };
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
@@ -168,6 +170,23 @@ namespace W2.Tasks
             var W2TaskList = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(requestTasks);
 
             return new PagedResultDto<W2TasksDto>(totalItemCount, W2TaskList);
+        }
+
+        public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
+        {
+            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+            var workflowInstanceId = myTask.WorkflowInstanceId;
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
+
+            var data = workflowInstance.Variables.Data;
+            var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(myTask);
+            var taskDetailDto = new TaskDetailDto
+            {
+                Tasks = taskDto,
+                Input = data,
+            };
+
+            return taskDetailDto;
         }
     }
 }

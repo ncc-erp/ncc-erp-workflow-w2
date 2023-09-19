@@ -44,15 +44,15 @@ namespace W2.Identity
         {
             var identityResult = await base.CreateAsync(user);
 
-            var defaultDesignerEmails = _configuration.GetSection("DefaultDesignerEmails")
-                .Get<string[]>()
-                .Where(x => !x.IsNullOrWhiteSpace())
-                .ToList();
-            if (defaultDesignerEmails.Any(x => x.Equals(user.Email))
-                && await _identityRoleManager.RoleExistsAsync(RoleNames.Designer))
-            {
-                await AddToRoleAsync(user, RoleNames.Designer);
-            }
+            //var defaultDesignerEmails = _configuration.GetSection("DefaultDesignerEmails")
+            //    .Get<string[]>()
+            //    .Where(x => !x.IsNullOrWhiteSpace())
+            //    .ToList();
+            //if (defaultDesignerEmails.Any(x => x.Equals(user.Email))
+            //    && await _identityRoleManager.RoleExistsAsync(RoleNames.Designer))
+            //{
+            //    await AddToRoleAsync(user, RoleNames.Designer);
+            //}
 
             return identityResult;
         }

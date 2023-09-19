@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace W2.WorkflowInstances
 {
@@ -6,6 +7,6 @@ namespace W2.WorkflowInstances
     {
         [Required]
         public string WorkflowDefinitionId { get; set; }
-        public object Input { get; set; }
+        public Dictionary<string, string> Input { get; set; }
     }
 }
