@@ -191,6 +191,7 @@ namespace W2.WorkflowInstances
             return instanceDto;
         }
 
+        // todo refactor/ new logic
         [AllowAnonymous]
         public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, 
             [Required]
@@ -237,8 +238,20 @@ namespace W2.WorkflowInstances
 
             foreach (var instance in instances)
             {
+                if (result.Email != null && result.Status == 1)
+                {
+                    continue;
+                }
                 var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
                 var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowStatusDto>(instance);
+
+                if (instance.WorkflowStatus == WorkflowStatus.Finished)
+                {
+                    var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
+                    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+                    workflowInstanceDto.Status = GetFinalStatus(lastExecutedActivity) == "Approved" ? 1 : 2;
+                }
+
                 workflowInstanceDto.Email = email;
                 workflowInstanceDto.Date = date; //  workflowInstanceStarter.Input.GetValue("Dates");
                 result = workflowInstanceDto;
