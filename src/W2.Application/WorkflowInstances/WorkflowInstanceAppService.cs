@@ -1,3 +1,4 @@
+﻿using Elsa;
 ﻿using Elsa.Activities.Http.Events;
 using Elsa.Activities.Signaling.Models;
 using Elsa.Activities.Signaling.Services;
@@ -42,6 +43,7 @@ namespace W2.WorkflowInstances
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
+        private readonly IRepository<W2Task, Guid> _taskRepository;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
@@ -58,6 +60,7 @@ namespace W2.WorkflowInstances
         private readonly IMediator _mediator;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
+            IRepository<W2Task, Guid> taskRepository,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
@@ -75,6 +78,7 @@ namespace W2.WorkflowInstances
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
+            _taskRepository = taskRepository;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
             _canceller = canceller;
@@ -587,6 +591,27 @@ namespace W2.WorkflowInstances
                 .OrderBy(x => x.id)
                 .ToList() : new List<PostItem>();
             return posts;
+        }
+
+        public async Task<WorkflowInstanceDetailDto> GetDetailByIdAsync(string id)
+        {
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
+
+            var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
+                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
+
+            var tasks = (await _taskRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == workflowInstance.Id));
+            var requestTasks = ObjectMapper.Map<W2Task, W2TasksDto>(tasks);
+
+            var workflowInstanceDetailDto = new WorkflowInstanceDetailDto
+            {
+                workInstanceId = id,
+                tasks = requestTasks,
+                input = workflowInstance.Variables.Data,
+                typeRequest = workflowDefinitions.DisplayName,
+            };
+
+            return workflowInstanceDetailDto;
         }
     }
 }
