@@ -15,6 +15,6 @@ namespace W2.Tasks
         public string Name { get; set; }
         public string Reason { get; set; }
         public string CreatedAt { get; set; }
-
+        public DateTime CreationTime { get; set; }
     }
 }

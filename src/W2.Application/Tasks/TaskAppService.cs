@@ -21,6 +21,7 @@ using W2.Specifications;
 using Elsa;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Logging;
+using W2.WorkflowInstances;
 
 namespace W2.Tasks
 {
@@ -151,15 +152,13 @@ namespace W2.Tasks
             var query = (await _taskRepository.GetListAsync()).AsQueryable();
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
-            if (!input.Email.IsNullOrWhiteSpace())
-            {
-                query = isAdmin
-                    ? query.Where(x => x.Email == input.Email)
-                    : query.Where(x => x.Email == _currentUser.Email);
-            }
-            else if (!isAdmin)
+            if (!isAdmin)
             {
                 query = query.Where(x => x.Email == _currentUser.Email);
+            }
+            if (!input.Email.IsNullOrWhiteSpace() && isAdmin)
+            {
+                query = query.Where(x => x.Email == input.Email);
             }
 
             if (!input.Dates.IsNullOrWhiteSpace())
@@ -188,6 +187,23 @@ namespace W2.Tasks
             var W2TaskList = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(requestTasks);
 
             return new PagedResultDto<W2TasksDto>(totalItemCount, W2TaskList);
+        }
+
+        public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
+        {
+            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+            var workflowInstanceId = myTask.WorkflowInstanceId;
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
+
+            var data = workflowInstance.Variables.Data;
+            var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(myTask);
+            var taskDetailDto = new TaskDetailDto
+            {
+                Tasks = taskDto,
+                Input = data,
+            };
+
+            return taskDetailDto;
         }
     }
 }

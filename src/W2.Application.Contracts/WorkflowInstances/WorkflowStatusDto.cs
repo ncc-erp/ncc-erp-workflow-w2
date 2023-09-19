@@ -5,7 +5,7 @@ namespace W2.WorkflowInstances
     public class WorkflowStatusDto
     {
         public string Email { get; set; }
-        public DateTime Date { get; set; }
-        public string Status { get; set; }
+        public string Date { get; set; }
+        public int Status { get; set; }
     }
 }

@@ -1,13 +1,18 @@
-﻿using Elsa.Models;
+﻿using Elsa.Activities.Http.Events;
+using Elsa.Activities.Signaling.Models;
+using Elsa.Activities.Signaling.Services;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
 using System;
 using System.Collections.Generic;
@@ -16,6 +21,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -27,6 +33,7 @@ using Volo.Abp.Uow;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
+using W2.Tasks;
 
 namespace W2.WorkflowInstances
 {
@@ -46,6 +53,9 @@ namespace W2.WorkflowInstances
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
+        private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly ISignaler _signaler;
+        private readonly IMediator _mediator;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IWorkflowInstanceStore workflowInstanceStore,
@@ -58,7 +68,10 @@ namespace W2.WorkflowInstances
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IRepository<W2Task, Guid> taskRepository,
+            ISignaler signaler,
+            IMediator mediator)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -73,10 +86,25 @@ namespace W2.WorkflowInstances
             _userRepository = userRepository;
             _antClientApi = antClientApi;
             _configuration = configuration;
+            _signaler = signaler;
+            _taskRepository = taskRepository;
+            _mediator = mediator;
         }
 
-        public async Task CancelAsync(string id)
+        public async Task<string> CancelAsync(string id)
         {
+            var tasks =  (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
+            if (tasks != null && tasks.Count > 0)
+            {
+                foreach (var task in tasks)
+                {
+                    task.Status = W2TaskStatus.Cancel;
+                    task.Reason = "Workflow being canceled";
+                }
+
+                await _taskRepository.UpdateManyAsync(tasks);
+            }
+
             var cancelResult = await _canceller.CancelAsync(id);
 
             switch (cancelResult.Status)
@@ -86,6 +114,8 @@ namespace W2.WorkflowInstances
                 case CancelWorkflowInstanceResultStatus.InvalidStatus:
                     throw new UserFriendlyException(L["Exception:CancelInstanceInvalidStatus", cancelResult.WorkflowInstance!.WorkflowStatus]);
             }
+
+            return "Cancel Request workflow successful";
         }
 
         [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
@@ -120,13 +150,21 @@ namespace W2.WorkflowInstances
             return instance.Id;
         }
 
-        public async Task DeleteAsync(string id)
+        public async Task<string> DeleteAsync(string id)
         {
+            var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
+            if (tasks != null && tasks.Count > 0)
+            {
+                await _taskRepository.DeleteManyAsync(tasks);
+            }
+            
             var result = await _workflowInstanceDeleter.DeleteAsync(id);
             if (result.Status == DeleteWorkflowInstanceResultStatus.NotFound)
             {
                 throw new UserFriendlyException(L["Exception:InstanceNotFound"]);
             }
+
+            return "Delete Request workflow successful";
         }
 
         public async Task<WorkflowInstanceDto> GetByIdAsync(string id)
@@ -152,8 +190,16 @@ namespace W2.WorkflowInstances
 
             return instanceDto;
         }
-        public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, [Required] DateTime date)
-        {
+
+        // todo refactor/ new logic
+        [AllowAnonymous]
+        public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, 
+            [Required]
+            [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string date)
+        {// date "dd/MM/yyyy"
+            var dateArray = date.Split("-");
+            var dateDb = $"{dateArray[2]}/{dateArray[1]}/{dateArray[0]}";
             string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
 
             var specification = Specification<WorkflowInstance>.Identity;
@@ -171,12 +217,11 @@ namespace W2.WorkflowInstances
             var instancesIds = instances.Select(x => x.Id);
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
 
-            var requestUser = (await _userRepository.GetListAsync())
-                .FirstOrDefault(x => x.Email == email) ?? throw new UserFriendlyException(L["Exception:EmailNotFound"]);
+            var requestUser = await _userRepository.FindByNormalizedEmailAsync(email.ToUpper());
 
             var allWorkflowInstanceStarters = await AsyncExecuter.ToListAsync(await _instanceStarterRepository.GetQueryableAsync());
             workflowInstanceStarters = allWorkflowInstanceStarters
-                .Where(x => x != null && instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.ContainsValue(date.ToUniversalTime().ToString("dd/MM/yyyy")) && x.CreatorId == requestUser.Id)
+                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.GetValueOrDefault("Dates").Contains(dateDb) && x.CreatorId == requestUser.Id)
                 .ToList();
 
             instances = await AsyncExecuter.ToListAsync(
@@ -193,10 +238,22 @@ namespace W2.WorkflowInstances
 
             foreach (var instance in instances)
             {
+                if (result.Email != null && result.Status == 1)
+                {
+                    continue;
+                }
                 var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
                 var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowStatusDto>(instance);
+
+                if (instance.WorkflowStatus == WorkflowStatus.Finished)
+                {
+                    var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
+                    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+                    workflowInstanceDto.Status = GetFinalStatus(lastExecutedActivity) == "Approved" ? 1 : 2;
+                }
+
                 workflowInstanceDto.Email = email;
-                workflowInstanceDto.Date = DateTime.ParseExact(workflowInstanceStarter.Input.GetValue("Dates"), "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                workflowInstanceDto.Date = date; //  workflowInstanceStarter.Input.GetValue("Dates");
                 result = workflowInstanceDto;
             }
             if (result.Email == null)
@@ -205,7 +262,7 @@ namespace W2.WorkflowInstances
                 {
                     Email = email,
                     Date = date,
-                    Status = "-1"
+                    Status = -1
                 };
                 return newInstanceError;
             };

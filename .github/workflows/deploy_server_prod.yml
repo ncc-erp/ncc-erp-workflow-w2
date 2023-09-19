@@ -82,6 +82,7 @@ jobs:
         GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
         GG_SECRET: ${{ secrets.GG_SECRET_prod }}
         TALENT_DF: ${{ secrets.TALENT_DF_prod }}
+        WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
             
     - name: Download Migrator & Host from S3
       run: |
