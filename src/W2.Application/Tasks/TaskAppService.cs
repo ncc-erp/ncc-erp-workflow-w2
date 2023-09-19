@@ -57,7 +57,7 @@ namespace W2.Tasks
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
-            var OtherAction = string.IsNullOrEmpty(OtherActionSignal) ? null : OtherActionSignal;
+            var OtherAction = string.IsNullOrEmpty(OtherActionSignal) ? null : OtherActionSignal.Trim();
 
             await _taskRepository.InsertAsync(new W2Task
             {

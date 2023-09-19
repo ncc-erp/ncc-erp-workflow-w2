@@ -64,7 +64,7 @@ namespace W2.Activities
                         context.WorkflowInstance.Id,
                         ApproveSignal.Trim(),
                         RejectSignal.Trim(),
-                        OtherActionSignal.Trim(),
+                        OtherActionSignal,
                         Description);
                 }
             }
