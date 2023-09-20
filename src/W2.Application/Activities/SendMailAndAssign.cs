@@ -42,8 +42,8 @@ namespace W2.Activities
         [ActivityInput(Hint = "The reject signal", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
         public string RejectSignal { get; set; }
 
-        [ActivityInput(Hint = "Other action for signal", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
-        public string OtherActionSignal { get; set; }
+        [ActivityInput(Hint = "Other action for signal", UIHint = "multi-text", DefaultSyntax = "Json", SupportedSyntaxes = new string[] { "Json", "JavaScript" })]
+        public List<string> OtherActionSignals { get; set; }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -64,7 +64,7 @@ namespace W2.Activities
                         context.WorkflowInstance.Id,
                         ApproveSignal.Trim(),
                         RejectSignal.Trim(),
-                        OtherActionSignal,
+                        OtherActionSignals,
                         Description);
                 }
             }

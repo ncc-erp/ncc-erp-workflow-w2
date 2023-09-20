@@ -50,14 +50,21 @@ namespace W2.Tasks
         }
 
         //[Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
-        public async Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, string OtherActionSignal, string Description)
+        public async Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, List<string> OtherActionSignals, string Description)
         {
 
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
-            var OtherAction = string.IsNullOrEmpty(OtherActionSignal) ? null : OtherActionSignal.Trim();
+            if (OtherActionSignals.Count > 0)
+            {
+                OtherActionSignals = new List<string>(OtherActionSignals);
+            }
+            else
+            {
+                OtherActionSignals = new List<string>();
+            }
 
             await _taskRepository.InsertAsync(new W2Task
             {
@@ -71,8 +78,8 @@ namespace W2.Tasks
                 Description = Description,
                 ApproveSignal = ApproveSignal, 
                 RejectSignal = RejectSignal,
-                OtherActionSignal = OtherAction
-            });
+                OtherActionSignals = OtherActionSignals
+        });
         }
 
         public async Task createTask(string id)
@@ -90,7 +97,13 @@ namespace W2.Tasks
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
             }
 
-            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, null, myTask.WorkflowInstanceId).ToList();
+            var Inputs = new Dictionary<string, string>
+            {
+                { "Reason", $"{myTask.ApproveSignal}" },
+                { "TriggeredBy", $"{myTask.Email}" }
+            };
+
+            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
             var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
@@ -126,6 +139,28 @@ namespace W2.Tasks
             await _taskRepository.UpdateAsync(myTask);
 
             return "Reject successful";
+        }
+
+        public async Task<string> ActionAsync(ListTaskActions input)
+        {
+            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
+
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
+            {
+                throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            }
+            var Inputs = new Dictionary<string, string>
+            {
+                { "Reason", $"{input.Action}" },
+                { "TriggeredBy", $"{myTask.Email}" }
+            };
+
+            var affectedWorkflows = await _signaler.TriggerSignalAsync(input.Action, Inputs, myTask.WorkflowInstanceId).ToList();
+
+            var signal = new SignalModel(input.Action, myTask.WorkflowInstanceId);
+            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
+
+            return "Send Action successful";
         }
 
         public async Task<string> CancelAsync([Required] string id)
