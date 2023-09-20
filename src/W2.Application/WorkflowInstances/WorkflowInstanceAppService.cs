@@ -51,7 +51,6 @@ namespace W2.WorkflowInstances
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
-        private readonly IRepository<W2Task, Guid> _taskRepository;
         private readonly ISignaler _signaler;
         private readonly IMediator _mediator;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
@@ -68,7 +67,6 @@ namespace W2.WorkflowInstances
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi,
             IConfiguration configuration,
-            IRepository<W2Task, Guid> taskRepository,
             ISignaler signaler,
             IMediator mediator)
         {
@@ -87,7 +85,6 @@ namespace W2.WorkflowInstances
             _antClientApi = antClientApi;
             _configuration = configuration;
             _signaler = signaler;
-            _taskRepository = taskRepository;
             _mediator = mediator;
         }
 

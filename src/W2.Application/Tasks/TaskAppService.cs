@@ -57,15 +57,6 @@ namespace W2.Tasks
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
-            if (OtherActionSignals.Count > 0)
-            {
-                OtherActionSignals = new List<string>(OtherActionSignals);
-            }
-            else
-            {
-                OtherActionSignals = new List<string>();
-            }
-
             await _taskRepository.InsertAsync(new W2Task
             {
                 TenantId = CurrentTenant.Id,
@@ -149,6 +140,12 @@ namespace W2.Tasks
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
             }
+
+            if (!myTask.OtherActionSignals.Contains(input.Action))
+            {
+                throw new UserFriendlyException(L["Exception:Action is not valid for this task."]);
+            }
+
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{input.Action}" },
