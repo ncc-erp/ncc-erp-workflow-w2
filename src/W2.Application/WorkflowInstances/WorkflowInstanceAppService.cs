@@ -92,8 +92,8 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
-            // Only allow workflow has pending status to cancel
-            if (workflowInstance == null || workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
+            // Only allow workflow has pending or failed status to cancel
+            if (workflowInstance == null || workflowInstance.WorkflowStatus != WorkflowStatus.Suspended || workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
             {
                 throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
             }
