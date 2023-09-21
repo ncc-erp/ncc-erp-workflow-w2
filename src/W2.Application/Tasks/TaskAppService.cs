@@ -91,7 +91,7 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{myTask.ApproveSignal}" },
-                { "TriggeredBy", $"{myTask.Email}" }
+                { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
@@ -116,7 +116,7 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{reason}" },
-                { "TriggeredBy", $"{myTask.Email}" }
+                { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
@@ -149,7 +149,7 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{input.Action}" },
-                { "TriggeredBy", $"{myTask.Email}" }
+                { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(input.Action, Inputs, myTask.WorkflowInstanceId).ToList();
