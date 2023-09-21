@@ -1,4 +1,6 @@
 ﻿using Elsa;
+using Elsa.Activities.Http.Events;
+using Elsa.Activities.Signaling.Models;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -47,6 +49,8 @@ namespace W2.WorkflowInstances
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
+        private readonly ISignaler _signaler;
+        private readonly IMediator _mediator;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
@@ -58,7 +62,9 @@ namespace W2.WorkflowInstances
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ISignaler signaler,
+            IMediator mediator)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -72,11 +78,20 @@ namespace W2.WorkflowInstances
             _userRepository = userRepository;
             _antClientApi = antClientApi;
             _configuration = configuration;
-            _taskRepository = taskRepository;
+            _signaler = signaler;
+            _mediator = mediator;
         }
 
         public async Task<string> CancelAsync(string id)
         {
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
+
+            // Only allow workflow has pending or failed status to cancel
+            if (workflowInstance == null || workflowInstance.WorkflowStatus != WorkflowStatus.Suspended || workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
+            {
+                throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
+            }
+
             var tasks =  (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
             {
@@ -136,6 +151,14 @@ namespace W2.WorkflowInstances
 
         public async Task<string> DeleteAsync(string id)
         {
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
+
+            // Only allow workflow has pending or faulted status to deleted
+            if (workflowInstance == null || workflowInstance.WorkflowStatus != WorkflowStatus.Suspended || workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
+            {
+                throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
+            }
+
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
             {
