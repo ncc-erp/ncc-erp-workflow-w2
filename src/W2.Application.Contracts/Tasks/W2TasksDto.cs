@@ -5,7 +5,7 @@ using W2.Tasks;
 
 namespace W2.Tasks
 {
-    public class W2TasksDto 
+    public class W2TasksDto
     {
         public string Id { get; set; }
         public string WorkflowInstanceId { get; set; }
@@ -14,8 +14,11 @@ namespace W2.Tasks
         public W2TaskStatus Status { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public string Reason { get; set; } 
+        public string Reason { get; set; }
         public DateTime CreationTime { get; set; }
         public List<string> OtherActionSignals { get; set; }
+        public Guid Author { get; set; }
+        public string AuthorName { get; set; }
+
     }
 }
