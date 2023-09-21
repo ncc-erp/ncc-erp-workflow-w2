@@ -11,7 +11,7 @@ namespace W2.Tasks
 {
     public interface ITaskAppService : IApplicationService
     {
-        Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, List<string> OtherActionSignals, string Description);
+        Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, string Description, List<string> OtherActionSignals = default);
         Task<string> ApproveAsync(string id);
         Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input);
         Task<string> RejectAsync(string id, string reason);

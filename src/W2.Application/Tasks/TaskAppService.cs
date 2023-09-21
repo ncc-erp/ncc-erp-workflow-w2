@@ -50,7 +50,7 @@ namespace W2.Tasks
         }
 
         //[Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
-        public async Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, List<string> OtherActionSignals, string Description)
+        public async Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, string Description, List<string> OtherActionSignals = default)
         {
 
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
