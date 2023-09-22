@@ -420,6 +420,7 @@ namespace W2.WorkflowInstances
                     joinedEntities.WorkflowInstance,
                     W2task = W2task.FirstOrDefault()
                 })
+                .Where(x => x.WorkflowInstance.FaultedAt == null)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(input?.StakeHolder))
@@ -477,7 +478,7 @@ namespace W2.WorkflowInstances
 
                     workflowInstanceDto.CurrentStates.Add(task.Description);
                     var requestUser = await _userRepository.FindAsync(task.Author);
-                    workflowInstanceDto.UserRequestName = requestUser.Name;
+                    workflowInstanceDto.UserRequestName = requestUser != null ? requestUser.Name : "";
                 }
 
                 workflowInstanceDto.StakeHolders.Add(stakeHolderName);
