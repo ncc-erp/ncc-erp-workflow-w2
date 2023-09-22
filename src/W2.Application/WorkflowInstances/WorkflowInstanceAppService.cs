@@ -44,8 +44,6 @@ namespace W2.WorkflowInstances
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
         private readonly IWorkflowInstanceDeleter _workflowInstanceDeleter;
-        private readonly IEmailSender _emailSender;
-        private readonly ITemplateRenderer _templateRenderer;
         private readonly ILogger<WorkflowInstanceAppService> _logger;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IIdentityUserRepository _userRepository;
@@ -60,8 +58,6 @@ namespace W2.WorkflowInstances
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
             IWorkflowInstanceDeleter workflowInstanceDeleter,
-            IEmailSender emailSender,
-            ITemplateRenderer templateRenderer,
             ILogger<WorkflowInstanceAppService> logger,
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
@@ -77,8 +73,6 @@ namespace W2.WorkflowInstances
             _workflowDefinitionStore = workflowDefinitionStore;
             _canceller = canceller;
             _workflowInstanceDeleter = workflowInstanceDeleter;
-            _emailSender = emailSender;
-            _templateRenderer = templateRenderer;
             _logger = logger;
             _unitOfWorkManager = unitOfWorkManager;
             _userRepository = userRepository;
@@ -385,7 +379,6 @@ namespace W2.WorkflowInstances
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
             )).ToList();
-
             if (specialStatus.Contains(input.Status.ToLower()))
             {
                 instances = instances.Where(instance =>
@@ -398,39 +391,66 @@ namespace W2.WorkflowInstances
             }
 
             var instancesIds = instances.Select(x => x.Id);
+            var tasks = (await _taskRepository.GetListAsync());
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
+            var workflowInstanceStartersQuery = (await _instanceStarterRepository.GetQueryableAsync());
+
+            if (!string.IsNullOrWhiteSpace(input?.RequestUser))
+            {
+                workflowInstanceStartersQuery = workflowInstanceStartersQuery.Where(x => x.CreatorId.ToString().Contains(input.RequestUser));
+            }
+
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
-                workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id));
+                workflowInstanceStartersQuery = workflowInstanceStartersQuery
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id);
             }
             else
             {
-                workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
+                workflowInstanceStartersQuery = workflowInstanceStartersQuery
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId));
             }
 
-            var totalCount = workflowInstanceStarters.Count();
-            instances = await AsyncExecuter.ToListAsync(
-                workflowInstanceStarters.Join(instances, x => x.WorkflowInstanceId, x => x.Id, (WorkflowInstanceStarter, WorkflowInstance) => new
+            workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
+            var instancesQuery = workflowInstanceStarters
+                .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
+                (WorkflowInstanceStarter, WorkflowInstance) => new
                 {
                     WorkflowInstanceStarter,
                     WorkflowInstance
                 })
-                .AsQueryable().OrderBy(NormalizeSortingString(input.Sorting))
-                .Skip(input.SkipCount).Take(input.MaxResultCount)
-                .Select(x => x.WorkflowInstance)
-            );
+                .Join(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
+                (joinedEntities, W2task) => new
+                {
+                    joinedEntities.WorkflowInstanceStarter,
+                    joinedEntities.WorkflowInstance,
+                    W2task
+                })
+                .AsQueryable();
 
-            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
-            var requestUsers = (await _userRepository.GetListAsync())
-                .Where(x => x.Id.IsIn(requestUserIds))
-                .ToList();
-            var result = new List<WorkflowInstanceDto>();
-            var stakeHolderEmails = new Dictionary<string, string>();
-
-            foreach (var instance in instances)
+            if (!string.IsNullOrWhiteSpace(input?.StakeHolder))
             {
+                instancesQuery = instancesQuery.Where(x => x.W2task.Email.ToString().Contains(input.StakeHolder));
+            }
+            var totalCount = instancesQuery.Count();
+            var totalResults = await AsyncExecuter.ToListAsync(
+                instancesQuery
+                .OrderBy(NormalizeSortingString(input.Sorting))
+                .Skip(input.SkipCount).Take(input.MaxResultCount)
+                .Select(x => new
+                {
+                    instance = x.WorkflowInstance,
+                    task = x.W2task
+                })
+            );
+            
+            var result = new List<WorkflowInstanceDto>();
+
+            foreach (var res in totalResults)
+            {
+                var instance = res.instance;
+                var task = res.task;
+
                 var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
                 var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
                 workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
@@ -443,83 +463,26 @@ namespace W2.WorkflowInstances
                     workflowInstanceDto.Status = GetFinalStatus(lastExecutedActivity);
                 }
 
-                var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
-                if (workflowInstanceStarter is not null)
+                string stakeHolderName = string.Empty;
+                switch (task.Email)
                 {
-                    var identityUser = requestUsers.FirstOrDefault(x => x.Id == workflowInstanceStarter.CreatorId.Value);
-
-                    if (identityUser != null && !stakeHolderEmails.ContainsKey(identityUser.Email))
-                    {
-                        stakeHolderEmails.Add(identityUser.Email, identityUser.Name);
-                    }
-
-                    workflowInstanceDto.UserRequestName = stakeHolderEmails[identityUser.Email];
+                    case "it@ncc.asia":
+                        stakeHolderName = "IT Department";
+                        break;
+                    case "sale@ncc.asia":
+                        stakeHolderName = "Sale Department";
+                        break;
+                    default:
+                        var stakeHolder = await _userRepository.FindByNormalizedEmailAsync(task.Email.ToUpper());
+                        stakeHolderName = stakeHolder.Name;
+                        break;
                 }
+                workflowInstanceDto.StakeHolders.Add(stakeHolderName);
 
-                var blockingActivityIds = instance.BlockingActivities.Select(x => x.ActivityId);
-                foreach (var blockingActitvity in instance.BlockingActivities)
-                {
-                    var connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == blockingActitvity.ActivityId);
+                workflowInstanceDto.CurrentStates.Add(task.Description);
 
-                    var parentActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == connection?.SourceActivityId);
-                    if (parentActivity?.Type == "Fork")
-                    {
-                        var childNodes = workflowDefinition.Connections.Where(x => x.SourceActivityId == parentActivity.ActivityId && instance.ActivityData.ContainsKey(x.TargetActivityId))
-                                                                       .Select(x => x.TargetActivityId);
-                        if (!childNodes.All(x => blockingActivityIds.Contains(x)))
-                        {
-                            continue;
-                        }
-
-                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName))
-                        {
-                            workflowInstanceDto.CurrentStates.Add(parentActivity.DisplayName);
-                        }
-
-                        connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == parentActivity.ActivityId);
-
-                        var parentForkActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == connection.SourceActivityId);
-
-                        instance.ActivityData.TryGetValue(parentForkActivity.ActivityId, out var data);
-                        while (data != null && !data.ContainsKey("To") && parentForkActivity != null)
-                        {
-                            connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == parentForkActivity.ActivityId);
-                            parentForkActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == connection.SourceActivityId);
-
-                            instance.ActivityData.TryGetValue(parentForkActivity.ActivityId, out data);
-                        }
-
-                        if (data != null && data.ContainsKey("To"))
-                        {
-                            foreach (var email in (List<string>)data["To"])
-                            {
-                                string stakeHolderName = string.Empty;
-                                switch (email)
-                                {
-                                    case "it@ncc.asia":
-                                        stakeHolderName = "IT Department";
-                                        break;
-                                    case "sale@ncc.asia":
-                                        stakeHolderName = "Sale Department";
-                                        break;
-                                    default:
-                                        if (!stakeHolderEmails.ContainsKey(email))
-                                        {
-                                            var user = await _userRepository.FindByNormalizedEmailAsync(email.ToUpper());
-                                            stakeHolderEmails.Add(email, user?.Name);
-                                        }
-                                        stakeHolderName = stakeHolderEmails[email];
-                                        break;
-                                }
-
-                                if (!workflowInstanceDto.StakeHolders.Contains(stakeHolderName))
-                                {
-                                    workflowInstanceDto.StakeHolders.Add(stakeHolderName);
-                                }
-                            }
-                        }
-                    }
-                }
+                var requestUser = await _userRepository.FindAsync(task.Author);
+                workflowInstanceDto.UserRequestName = requestUser.Name;
 
                 result.Add(workflowInstanceDto);
             }

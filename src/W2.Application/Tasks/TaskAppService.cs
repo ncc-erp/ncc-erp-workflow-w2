@@ -20,6 +20,7 @@ using Elsa.Persistence;
 using W2.Specifications;
 using Elsa;
 using Newtonsoft.Json;
+using Volo.Abp.Identity;
 using W2.WorkflowInstances;
 
 namespace W2.Tasks
@@ -28,6 +29,7 @@ namespace W2.Tasks
     public class TaskAppService : W2AppService, ITaskAppService
     {
         private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly IIdentityUserRepository _userRepository;
         private readonly ISignaler _signaler;
         private readonly IMediator _mediator;
         private readonly ICurrentUser _currentUser;
@@ -39,7 +41,8 @@ namespace W2.Tasks
             IMediator mediator, 
             ICurrentUser currentUser,
             IWorkflowInstanceStore workflowInstanceStore,
-            IWorkflowDefinitionStore workflowDefinitionStore)
+            IWorkflowDefinitionStore workflowDefinitionStore,
+            IIdentityUserRepository userRepository)
         {
             _signaler = signaler;
             _taskRepository = taskRepository;
@@ -47,6 +50,7 @@ namespace W2.Tasks
             _currentUser = currentUser;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
+            _userRepository = userRepository;
         }
 
         //[Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
@@ -206,6 +210,27 @@ namespace W2.Tasks
             var W2TaskList = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(requestTasks);
 
             return new PagedResultDto<W2TasksDto>(totalItemCount, W2TaskList);
+        }
+
+        public async Task<PagedResultDto<W2TasksStakeHoldersDto>> StakeHoldersAsync(ListTaskstInput input)
+        {
+            var query = (await _taskRepository.GetListAsync())
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .Select(x => x.Email).Distinct();
+            var totalItemCount = query.Count();
+            var stakeHolderEmails = query.ToList();
+            var result = new List<W2TasksStakeHoldersDto>();
+            foreach (var email in stakeHolderEmails)
+            {
+                var stakeHolder = new W2TasksStakeHoldersDto();
+                stakeHolder.Name = (await _userRepository.FindByNormalizedEmailAsync(email.ToUpper())).Name;
+                stakeHolder.Email = email;
+
+                result.Add(stakeHolder);
+            }
+
+            return new PagedResultDto<W2TasksStakeHoldersDto>(totalItemCount, result);
         }
 
         public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
