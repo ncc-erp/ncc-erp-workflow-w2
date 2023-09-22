@@ -49,8 +49,6 @@ namespace W2.WorkflowInstances
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
-        private readonly ISignaler _signaler;
-        private readonly IMediator _mediator;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
@@ -62,9 +60,7 @@ namespace W2.WorkflowInstances
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi,
-            IConfiguration configuration,
-            ISignaler signaler,
-            IMediator mediator)
+            IConfiguration configuration)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -77,8 +73,7 @@ namespace W2.WorkflowInstances
             _userRepository = userRepository;
             _antClientApi = antClientApi;
             _configuration = configuration;
-            _signaler = signaler;
-            _mediator = mediator;
+            _taskRepository = taskRepository;
         }
 
         public async Task<string> CancelAsync(string id)
@@ -390,9 +385,8 @@ namespace W2.WorkflowInstances
             }
 
             var instancesIds = instances.Select(x => x.Id);
-            var tasks = (await _taskRepository.GetListAsync());
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
-            var workflowInstanceStartersQuery = (await _instanceStarterRepository.GetQueryableAsync());
+            var workflowInstanceStartersQuery = await _instanceStarterRepository.GetQueryableAsync();
 
             if (!string.IsNullOrWhiteSpace(input?.RequestUser))
             {
@@ -411,6 +405,7 @@ namespace W2.WorkflowInstances
             }
 
             workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
+            var tasks = await _taskRepository.GetListAsync();
             var instancesQuery = workflowInstanceStarters
                 .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
                 (WorkflowInstanceStarter, WorkflowInstance) => new
@@ -427,10 +422,11 @@ namespace W2.WorkflowInstances
                 })
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(input?.StakeHolder))
+            if (tasks != null && !string.IsNullOrWhiteSpace(input?.StakeHolder))
             {
                 instancesQuery = instancesQuery.Where(x => x.W2task.Email.ToString().Contains(input.StakeHolder));
             }
+
             var totalCount = instancesQuery.Count();
             var totalResults = await AsyncExecuter.ToListAsync(
                 instancesQuery
