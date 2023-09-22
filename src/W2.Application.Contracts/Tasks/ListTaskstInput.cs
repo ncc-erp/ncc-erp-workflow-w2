@@ -11,7 +11,7 @@ namespace W2.Tasks
         public int SkipCount { get; set; }
         public string WorkflowDefinitionId { get; set; }
         public W2TaskStatus? Status { get; set; }
-        public string Email { get; set; }
+        public string KeySearch { get; set; }
         // public string Dates { get; set; }
     }
 }
