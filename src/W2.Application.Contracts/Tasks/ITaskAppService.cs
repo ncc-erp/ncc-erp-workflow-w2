@@ -16,7 +16,7 @@ namespace W2.Tasks
         Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input);
         Task<string> RejectAsync(string id, string reason);
         Task<string> ActionAsync(ListTaskActions input);
-        Task<string> CancelAsync(string id);
+        // Task<string> CancelAsync(string id);
         Task<PagedResultDto<W2TasksStakeHoldersDto>> StakeHoldersAsync(ListTaskstInput input);
         Task<TaskDetailDto> GetDetailByIdAsync(string id);
     }

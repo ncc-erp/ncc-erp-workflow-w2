@@ -1,4 +1,4 @@
-﻿using Elsa.Activities.Http.Events;
+﻿﻿using Elsa.Activities.Http.Events;
 using Elsa.Activities.Signaling.Models;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Models;
@@ -22,6 +22,7 @@ using Elsa;
 using Newtonsoft.Json;
 using Volo.Abp.Identity;
 using W2.WorkflowInstances;
+using Volo.Abp.Identity;
 
 namespace W2.Tasks
 {
@@ -36,9 +37,10 @@ namespace W2.Tasks
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
 
-        public TaskAppService(IRepository<W2Task, Guid> taskRepository, 
-            ISignaler signaler, 
-            IMediator mediator, 
+
+        public TaskAppService(IRepository<W2Task, Guid> taskRepository,
+            ISignaler signaler,
+            IMediator mediator,
             ICurrentUser currentUser,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
@@ -71,10 +73,10 @@ namespace W2.Tasks
                 Status = W2TaskStatus.Pending,
                 Name = workflowDefinitions.Name,
                 Description = Description,
-                ApproveSignal = ApproveSignal, 
+                ApproveSignal = ApproveSignal,
                 RejectSignal = RejectSignal,
                 OtherActionSignals = OtherActionSignals
-        });
+            });
         }
 
         public async Task createTask(string id)
@@ -112,7 +114,7 @@ namespace W2.Tasks
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
-            if (myTask == null  || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
             }
@@ -164,52 +166,82 @@ namespace W2.Tasks
             return "Send Action successful";
         }
 
-        public async Task<string> CancelAsync([Required] string id)
-        {
-            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+        // public async Task<string> CancelAsync([Required] string id)
+        // {
+        //     var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
-            if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
-            {
-                throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
-            }
+        //     if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
+        //     {
+        //         throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+        //     }
 
-            myTask.Status = W2TaskStatus.Cancel;
-            await _taskRepository.UpdateAsync(myTask);
+        //     myTask.Status = W2TaskStatus.Cancel;
+        //     await _taskRepository.UpdateAsync(myTask);
 
-            return "Cancel successful";
-        }
+        //     return "Cancel successful";
+        // }
 
         public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
         {
             var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
+            var users = await _userRepository.GetListAsync();
+            var tasks = await _taskRepository.GetListAsync();
             var hasWorkflowDefinitionId = !string.IsNullOrEmpty(input.WorkflowDefinitionId);
-            var query = (await _taskRepository.GetListAsync()).Where(x => x.Email == _currentUser.Email);
-
-            if (hasTaskStatus && hasWorkflowDefinitionId)
+            var query = tasks.Join(users, x => x.Author, x => x.Id, (W2task, W2User) => new
             {
-                query = query.Where(x => x.Status == input.Status && x.WorkflowDefinitionId == input.WorkflowDefinitionId);
+                W2User,
+                W2task
+            });
+
+            List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
+            var isAdmin = _currentUser.IsInRole("admin");
+            if (!isAdmin)
+            {
+                query = query.Where(x => x.W2task.Email == _currentUser.Email);
+            }
+            if (!input.Email.IsNullOrWhiteSpace() && isAdmin)
+            {
+                query = query.Where(x => x.W2task.Email == input.Email);
             }
 
-            if (hasTaskStatus && !hasWorkflowDefinitionId)
+            // if (!input.Dates.IsNullOrWhiteSpace())
+            // {
+            //     query = query.Where(x => new DateTimeOffset(x.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
+            // }
+
+            if (hasTaskStatus)
             {
-                query = query.Where(x => x.Status == input.Status);
+                query = query.Where(x => x.W2task.Status == input.Status);
             }
 
-            if (!hasTaskStatus && hasWorkflowDefinitionId)
+            if (hasWorkflowDefinitionId)
             {
-                query = query.Where(x => x.WorkflowDefinitionId == input.WorkflowDefinitionId);
+                query = query.Where(x => x.W2task.WorkflowDefinitionId == input.WorkflowDefinitionId);
             }
 
             var totalItemCount = query.Count();
 
             var requestTasks = query
+                .OrderByDescending(task => task.W2task.CreationTime)
                 .Skip(input.SkipCount)
-                .Take(input.MaxResultCount)
+                .Take(input.MaxResultCount).Select(x => new W2TasksDto
+                {
+                    Author = x.W2task.Author,
+                    AuthorName = x.W2User.Name,
+                    CreationTime = x.W2task.CreationTime,
+                    Description = x.W2task.Description,
+                    Email = x.W2task.Email,
+                    Id = x.W2task.Id,
+                    Name = x.W2task.Name,
+                    OtherActionSignals = x.W2task.OtherActionSignals,
+                    Reason = x.W2task.Reason,
+                    Status = x.W2task.Status,
+                    WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
+                    WorkflowInstanceId = x.W2task.WorkflowInstanceId
+                })
                 .ToList();
 
-            var W2TaskList = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(requestTasks);
-
-            return new PagedResultDto<W2TasksDto>(totalItemCount, W2TaskList);
+            return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
         }
 
         public async Task<PagedResultDto<W2TasksStakeHoldersDto>> StakeHoldersAsync(ListTaskstInput input)

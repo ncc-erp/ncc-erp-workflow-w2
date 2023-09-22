@@ -68,7 +68,6 @@ namespace W2.WorkflowInstances
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
-            _taskRepository = taskRepository;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
             _canceller = canceller;
