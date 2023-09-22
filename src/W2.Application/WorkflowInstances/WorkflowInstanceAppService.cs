@@ -422,7 +422,7 @@ namespace W2.WorkflowInstances
                 })
                 .AsQueryable();
 
-            if (tasks != null && !string.IsNullOrWhiteSpace(input?.StakeHolder))
+            if (!string.IsNullOrWhiteSpace(input?.StakeHolder))
             {
                 instancesQuery = instancesQuery.Where(x => x.W2task.Email.ToString().Contains(input.StakeHolder));
             }
