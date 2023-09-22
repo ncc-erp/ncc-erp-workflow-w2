@@ -199,9 +199,9 @@ namespace W2.Tasks
             {
                 query = query.Where(x => x.W2task.Email == _currentUser.Email);
             }
-            if (!input.Email.IsNullOrWhiteSpace() && isAdmin)
+            if (!input.KeySearch.IsNullOrWhiteSpace() && isAdmin)
             {
-                query = query.Where(x => x.W2task.Email == input.Email);
+                query = query.Where(x => x.W2task.Email.Contains(input.KeySearch));
             }
 
             // if (!input.Dates.IsNullOrWhiteSpace())
