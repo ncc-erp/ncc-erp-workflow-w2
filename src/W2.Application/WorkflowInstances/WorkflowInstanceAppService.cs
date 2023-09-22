@@ -413,12 +413,12 @@ namespace W2.WorkflowInstances
                     WorkflowInstanceStarter,
                     WorkflowInstance
                 })
-                .Join(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
+                .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
                 (joinedEntities, W2task) => new
                 {
                     joinedEntities.WorkflowInstanceStarter,
                     joinedEntities.WorkflowInstance,
-                    W2task
+                    W2task = W2task.FirstOrDefault()
                 })
                 .AsQueryable();
 
@@ -459,26 +459,28 @@ namespace W2.WorkflowInstances
                 }
 
                 string stakeHolderName = string.Empty;
-                switch (task.Email)
+                if (task!= null && task.Email != null)
                 {
-                    case "it@ncc.asia":
-                        stakeHolderName = "IT Department";
-                        break;
-                    case "sale@ncc.asia":
-                        stakeHolderName = "Sale Department";
-                        break;
-                    default:
-                        var stakeHolder = await _userRepository.FindByNormalizedEmailAsync(task.Email.ToUpper());
-                        stakeHolderName = stakeHolder.Name;
-                        break;
+                    switch (task.Email)
+                    {
+                        case "it@ncc.asia":
+                            stakeHolderName = "IT Department";
+                            break;
+                        case "sale@ncc.asia":
+                            stakeHolderName = "Sale Department";
+                            break;
+                        default:
+                            var stakeHolder = await _userRepository.FindByNormalizedEmailAsync(task.Email.ToUpper());
+                            stakeHolderName = stakeHolder.Name;
+                            break;
+                    }
+
+                    workflowInstanceDto.CurrentStates.Add(task.Description);
+                    var requestUser = await _userRepository.FindAsync(task.Author);
+                    workflowInstanceDto.UserRequestName = requestUser.Name;
                 }
+
                 workflowInstanceDto.StakeHolders.Add(stakeHolderName);
-
-                workflowInstanceDto.CurrentStates.Add(task.Description);
-
-                var requestUser = await _userRepository.FindAsync(task.Author);
-                workflowInstanceDto.UserRequestName = requestUser.Name;
-
                 result.Add(workflowInstanceDto);
             }
 
