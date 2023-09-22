@@ -7,7 +7,7 @@ namespace W2.Tasks
 {
     public class W2TasksDto
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public string WorkflowInstanceId { get; set; }
         public string WorkflowDefinitionId { get; set; }
         public string Email { get; set; }
