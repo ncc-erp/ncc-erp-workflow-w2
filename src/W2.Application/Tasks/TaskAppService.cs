@@ -1,7 +1,6 @@
-﻿﻿using Elsa.Activities.Http.Events;
+﻿using Elsa.Activities.Http.Events;
 using Elsa.Activities.Signaling.Models;
 using Elsa.Activities.Signaling.Services;
-using Elsa.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Open.Linq.AsyncExtensions;
@@ -14,14 +13,10 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
-using Elsa.Persistence.Specifications;
-using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Persistence;
 using W2.Specifications;
 using Elsa;
 using Newtonsoft.Json;
-using Volo.Abp.Identity;
-using W2.WorkflowInstances;
 using Volo.Abp.Identity;
 
 namespace W2.Tasks
@@ -56,26 +51,26 @@ namespace W2.Tasks
         }
 
         //[Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
-        public async Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, string Description, List<string> OtherActionSignals = default)
+        public async Task assignTask(AssignTaskInput input)
         {
 
-            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
             await _taskRepository.InsertAsync(new W2Task
             {
                 TenantId = CurrentTenant.Id,
-                Email = email,
-                Author = userId,
-                WorkflowInstanceId = workflowInstanceId,
+                EmailTo = input.EmailTo,
+                Author = input.UserId,
+                WorkflowInstanceId = input.WorkflowInstanceId,
                 WorkflowDefinitionId = workflowInstance.DefinitionId,
                 Status = W2TaskStatus.Pending,
                 Name = workflowDefinitions.Name,
-                Description = Description,
-                ApproveSignal = ApproveSignal,
-                RejectSignal = RejectSignal,
-                OtherActionSignals = OtherActionSignals
+                Description = input.Description,
+                ApproveSignal = input.ApproveSignal,
+                RejectSignal = input.RejectSignal,
+                OtherActionSignals = input.OtherActionSignals
             });
         }
 
@@ -89,7 +84,13 @@ namespace W2.Tasks
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
-            if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
+            var isAdmin = _currentUser.IsInRole("admin");
+            if (!isAdmin && !myTask.EmailTo.Contains(_currentUser.Email))
+            {
+                throw new UserFriendlyException(L["Exception:No Permission"]);
+            }
+
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending )
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
             }
@@ -105,6 +106,7 @@ namespace W2.Tasks
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             myTask.Status = W2TaskStatus.Approve;
+            myTask.UpdatedBy = _currentUser.Email;
             await _taskRepository.UpdateAsync(myTask);
 
             return "Approval successful";
@@ -114,7 +116,13 @@ namespace W2.Tasks
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
 
-            if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
+            var isAdmin = _currentUser.IsInRole("admin");
+            if (!isAdmin && !myTask.EmailTo.Contains(_currentUser.Email))
+            {
+                throw new UserFriendlyException(L["Exception:No Permission"]);
+            }
+
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
             }
@@ -131,6 +139,7 @@ namespace W2.Tasks
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             myTask.Status = W2TaskStatus.Reject;
+            myTask.UpdatedBy = _currentUser.Email;
             myTask.Reason = reason;
 
             await _taskRepository.UpdateAsync(myTask);
@@ -142,7 +151,13 @@ namespace W2.Tasks
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
 
-            if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
+            var isAdmin = _currentUser.IsInRole("admin");
+            if (!isAdmin && !myTask.EmailTo.Contains(_currentUser.Email))
+            {
+                throw new UserFriendlyException(L["Exception:No Permission"]);
+            }
+
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
             }
@@ -166,21 +181,6 @@ namespace W2.Tasks
             return "Send Action successful";
         }
 
-        // public async Task<string> CancelAsync([Required] string id)
-        // {
-        //     var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
-
-        //     if (myTask == null || myTask.Status != W2TaskStatus.Pending || myTask.Email != _currentUser.Email)
-        //     {
-        //         throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
-        //     }
-
-        //     myTask.Status = W2TaskStatus.Cancel;
-        //     await _taskRepository.UpdateAsync(myTask);
-
-        //     return "Cancel successful";
-        // }
-
         public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
         {
             var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
@@ -197,11 +197,12 @@ namespace W2.Tasks
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
             {
-                query = query.Where(x => x.W2task.Email == _currentUser.Email);
+                query = query.Where(x => x.W2task.EmailTo.Contains(_currentUser.Email));
             }
-            if (!input.KeySearch.IsNullOrWhiteSpace() && isAdmin)
+            if (!string.IsNullOrWhiteSpace(input.KeySearch) && isAdmin)
             {
-                query = query.Where(x => x.W2task.Email.Contains(input.KeySearch));
+                string keySearch = input.KeySearch.Trim();
+                query = query.Where(x => x.W2task.EmailTo.Any(email => email.Contains(keySearch)));
             }
 
             // if (!input.Dates.IsNullOrWhiteSpace())
@@ -231,6 +232,7 @@ namespace W2.Tasks
                     CreationTime = x.W2task.CreationTime,
                     Description = x.W2task.Description,
                     Email = x.W2task.Email,
+                    EmailTo = x.W2task.EmailTo,
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
                     OtherActionSignals = x.W2task.OtherActionSignals,
@@ -242,27 +244,6 @@ namespace W2.Tasks
                 .ToList();
 
             return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
-        }
-
-        public async Task<PagedResultDto<W2TasksStakeHoldersDto>> StakeHoldersAsync(ListTaskstInput input)
-        {
-            var query = (await _taskRepository.GetListAsync())
-                .Skip(input.SkipCount)
-                .Take(input.MaxResultCount)
-                .Select(x => x.Email).Distinct();
-            var totalItemCount = query.Count();
-            var stakeHolderEmails = query.ToList();
-            var result = new List<W2TasksStakeHoldersDto>();
-            foreach (var email in stakeHolderEmails)
-            {
-                var stakeHolder = new W2TasksStakeHoldersDto();
-                stakeHolder.Name = (await _userRepository.FindByNormalizedEmailAsync(email.ToUpper())).Name;
-                stakeHolder.Email = email;
-
-                result.Add(stakeHolder);
-            }
-
-            return new PagedResultDto<W2TasksStakeHoldersDto>(totalItemCount, result);
         }
 
         public async Task<TaskDetailDto> GetDetailByIdAsync(string id)

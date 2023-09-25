@@ -11,13 +11,12 @@ namespace W2.Tasks
 {
     public interface ITaskAppService : IApplicationService
     {
-        Task assignTask(string email, Guid userId, string workflowInstanceId, string ApproveSignal, string RejectSignal, string Description, List<string> OtherActionSignals = default);
+        Task assignTask(AssignTaskInput input);
         Task<string> ApproveAsync(string id);
         Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input);
         Task<string> RejectAsync(string id, string reason);
         Task<string> ActionAsync(ListTaskActions input);
         // Task<string> CancelAsync(string id);
-        Task<PagedResultDto<W2TasksStakeHoldersDto>> StakeHoldersAsync(ListTaskstInput input);
         Task<TaskDetailDto> GetDetailByIdAsync(string id);
     }
 }

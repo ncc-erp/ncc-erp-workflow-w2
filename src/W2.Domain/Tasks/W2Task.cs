@@ -20,5 +20,7 @@ namespace W2.Tasks
         public string ApproveSignal { get; set; } // Task when approving
         public string RejectSignal { get; set; } // Task when rejecting
         public List<string> OtherActionSignals { get; set; } // List of other action signals for Task
+        public List<string> EmailTo { get; set; } // List of emails for Task
+        public string UpdatedBy { get; set; } // Email which updated the task
     }
 }
