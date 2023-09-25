@@ -12,6 +12,6 @@ namespace W2.Tasks
         public string WorkflowDefinitionId { get; set; }
         public W2TaskStatus? Status { get; set; }
         public string KeySearch { get; set; }
-        // public string Dates { get; set; }
+        public string Dates { get; set; }
     }
 }
