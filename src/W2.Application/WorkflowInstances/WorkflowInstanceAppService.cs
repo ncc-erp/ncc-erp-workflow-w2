@@ -395,11 +395,6 @@ namespace W2.WorkflowInstances
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
             var workflowInstanceStartersQuery = await _instanceStarterRepository.GetQueryableAsync();
 
-            if (!string.IsNullOrWhiteSpace(input?.RequestUser))
-            {
-                workflowInstanceStartersQuery = workflowInstanceStartersQuery.Where(x => x.CreatorId.ToString().Contains(input.RequestUser));
-            }
-
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
                 workflowInstanceStartersQuery = workflowInstanceStartersQuery
