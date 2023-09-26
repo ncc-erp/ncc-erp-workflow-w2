@@ -233,7 +233,6 @@ namespace W2.Tasks
 
             if (hasWorkflowDefinitionId)
             {
-                // new
                 query = query.Where(x => x.W2task.WorkflowDefinitionId == input.WorkflowDefinitionId);
             }
 
