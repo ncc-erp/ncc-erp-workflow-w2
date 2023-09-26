@@ -18,13 +18,15 @@ using W2.Specifications;
 using Elsa;
 using Newtonsoft.Json;
 using Volo.Abp.Identity;
+using W2.TaskEmail;
 
 namespace W2.Tasks
 {
     [Authorize]
-    public class TaskAppService : W2AppService, ITaskAppService
+    public class TaskAppService : W2AppService, ITaskAppService, ITaskEmailService
     {
         private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly IRepository<W2TaskEmail, Guid> _taskEmailRepository;
         private readonly IIdentityUserRepository _userRepository;
         private readonly ISignaler _signaler;
         private readonly IMediator _mediator;
@@ -33,7 +35,9 @@ namespace W2.Tasks
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
 
 
-        public TaskAppService(IRepository<W2Task, Guid> taskRepository,
+        public TaskAppService(
+            IRepository<W2Task, Guid> taskRepository,
+            IRepository<W2TaskEmail, Guid> taskEmailRepository,
             ISignaler signaler,
             IMediator mediator,
             ICurrentUser currentUser,
@@ -43,6 +47,7 @@ namespace W2.Tasks
         {
             _signaler = signaler;
             _taskRepository = taskRepository;
+            _taskEmailRepository = taskEmailRepository;
             _mediator = mediator;
             _currentUser = currentUser;
             _workflowInstanceStore = workflowInstanceStore;
@@ -53,15 +58,20 @@ namespace W2.Tasks
         //[Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
         public async Task assignTask(AssignTaskInput input)
         {
-
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
+            var taskEmail = await _taskEmailRepository.InsertAsync(new W2TaskEmail
+            {
+                EmailTo = input.EmailTo,
+                Author = input.UserId,
+            });
+
             await _taskRepository.InsertAsync(new W2Task
             {
                 TenantId = CurrentTenant.Id,
-                EmailTo = input.EmailTo,
+                EmailTo = taskEmail.Id.ToString(),
                 Author = input.UserId,
                 WorkflowInstanceId = input.WorkflowInstanceId,
                 WorkflowDefinitionId = workflowInstance.DefinitionId,
@@ -83,16 +93,17 @@ namespace W2.Tasks
         public async Task<string> ApproveAsync([Required] string id)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
-
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && !myTask.EmailTo.Contains(_currentUser.Email))
-            {
-                throw new UserFriendlyException(L["Exception:No Permission"]);
-            }
-
-            if (myTask == null || myTask.Status != W2TaskStatus.Pending )
+            if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            }
+
+            var taskEmail = await _taskEmailRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(myTask.EmailTo));
+
+            var isAdmin = _currentUser.IsInRole("admin");
+            if (!isAdmin && !taskEmail.EmailTo.Contains(_currentUser.Email))
+            {
+                throw new UserFriendlyException(L["Exception:No Permission"]);
             }
 
             var Inputs = new Dictionary<string, string>
@@ -115,16 +126,17 @@ namespace W2.Tasks
         public async Task<string> RejectAsync([Required] string id, [Required] string reason)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
-
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && !myTask.EmailTo.Contains(_currentUser.Email))
-            {
-                throw new UserFriendlyException(L["Exception:No Permission"]);
-            }
-
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            }
+
+            var taskEmail = await _taskEmailRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(myTask.EmailTo));
+
+            var isAdmin = _currentUser.IsInRole("admin");
+            if (!isAdmin && !taskEmail.EmailTo.Contains(_currentUser.Email))
+            {
+                throw new UserFriendlyException(L["Exception:No Permission"]);
             }
 
             var Inputs = new Dictionary<string, string>
@@ -150,16 +162,17 @@ namespace W2.Tasks
         public async Task<string> ActionAsync(ListTaskActions input)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
-
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && !myTask.EmailTo.Contains(_currentUser.Email))
-            {
-                throw new UserFriendlyException(L["Exception:No Permission"]);
-            }
-
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            }
+
+            var taskEmail = await _taskEmailRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(myTask.EmailTo));
+
+            var isAdmin = _currentUser.IsInRole("admin");
+            if (!isAdmin && !taskEmail.EmailTo.Contains(_currentUser.Email))
+            {
+                throw new UserFriendlyException(L["Exception:No Permission"]);
             }
 
             if (!myTask.OtherActionSignals.Contains(input.Action))
@@ -186,29 +199,32 @@ namespace W2.Tasks
             var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
             var users = await _userRepository.GetListAsync();
             var tasks = await _taskRepository.GetListAsync();
+            var taskEmail = await _taskEmailRepository.GetListAsync();
             var hasWorkflowDefinitionId = !string.IsNullOrEmpty(input.WorkflowDefinitionId);
+
             var query = tasks.Join(users, x => x.Author, x => x.Id, (W2task, W2User) => new
             {
                 W2User,
                 W2task
+            }).GroupJoin(taskEmail, x => Guid.Parse(x.W2task.EmailTo), x => x.Id, (joinedEntities, W2TaskEmail) => new
+            {
+                W2TaskEmail = W2TaskEmail.FirstOrDefault(),
+                joinedEntities.W2User,
+                joinedEntities.W2task,
             });
 
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
             {
-                query = query.Where(x => x.W2task.EmailTo.Contains(_currentUser.Email));
+                query = query.Where(x => x.W2TaskEmail.EmailTo.Contains(_currentUser.Email));
             }
             if (!string.IsNullOrWhiteSpace(input.KeySearch) && isAdmin)
             {
                 string keySearch = input.KeySearch.Trim();
-                query = query.Where(x => x.W2task.EmailTo.Any(email => email.Contains(keySearch)));
+                query = query.Where(x => x.W2TaskEmail.EmailTo.Any(email => email.Contains(keySearch)));
             }
 
-            // if (!input.Dates.IsNullOrWhiteSpace())
-            // {
-            //     query = query.Where(x => new DateTimeOffset(x.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
-            // }
 
             if (hasTaskStatus)
             {
@@ -217,6 +233,7 @@ namespace W2.Tasks
 
             if (hasWorkflowDefinitionId)
             {
+                // new
                 query = query.Where(x => x.W2task.WorkflowDefinitionId == input.WorkflowDefinitionId);
             }
 
@@ -232,7 +249,7 @@ namespace W2.Tasks
                     CreationTime = x.W2task.CreationTime,
                     Description = x.W2task.Description,
                     Email = x.W2task.Email,
-                    EmailTo = x.W2task.EmailTo,
+                    EmailTo = x.W2TaskEmail.EmailTo,
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
                     OtherActionSignals = x.W2task.OtherActionSignals,
