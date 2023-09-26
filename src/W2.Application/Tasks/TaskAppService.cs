@@ -204,10 +204,10 @@ namespace W2.Tasks
                 query = query.Where(x => x.W2task.Email.Contains(input.KeySearch));
             }
 
-            // if (!input.Dates.IsNullOrWhiteSpace())
-            // {
-            //     query = query.Where(x => new DateTimeOffset(x.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
-            // }
+            if (!input.Dates.IsNullOrWhiteSpace())
+            {
+                query = query.Where(x => new DateTimeOffset(x.W2task.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
+            }
 
             if (hasTaskStatus)
             {
