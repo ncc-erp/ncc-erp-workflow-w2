@@ -22,6 +22,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Emailing;
 using Volo.Abp.Identity;
@@ -31,6 +32,7 @@ using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
 using W2.Tasks;
+using static IdentityServer4.Models.IdentityResources;
 
 namespace W2.WorkflowInstances
 {
@@ -49,6 +51,7 @@ namespace W2.WorkflowInstances
         private readonly IIdentityUserRepository _userRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
+        private readonly IDataFilter _dataFilter;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
@@ -60,7 +63,8 @@ namespace W2.WorkflowInstances
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IDataFilter dataFilter)
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -74,6 +78,7 @@ namespace W2.WorkflowInstances
             _antClientApi = antClientApi;
             _configuration = configuration;
             _taskRepository = taskRepository;
+            _dataFilter = dataFilter;
         }
 
         public async Task<string> CancelAsync(string id)
@@ -386,39 +391,62 @@ namespace W2.WorkflowInstances
             }
 
             var instancesIds = instances.Select(x => x.Id);
+            var tasks = (await _taskRepository.GetListAsync());
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
+            var workflowInstanceStartersQuery = await _instanceStarterRepository.GetQueryableAsync();
+
             if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
             {
-                workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id));
+                workflowInstanceStartersQuery = workflowInstanceStartersQuery
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id);
             }
             else
             {
-                workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
+                workflowInstanceStartersQuery = workflowInstanceStartersQuery
+                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId));
             }
 
-            var totalCount = workflowInstanceStarters.Count();
-            instances = await AsyncExecuter.ToListAsync(
-                workflowInstanceStarters.Join(instances, x => x.WorkflowInstanceId, x => x.Id, (WorkflowInstanceStarter, WorkflowInstance) => new
+            workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
+            var instancesQuery = workflowInstanceStarters
+                .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
+                (WorkflowInstanceStarter, WorkflowInstance) => new
                 {
                     WorkflowInstanceStarter,
                     WorkflowInstance
                 })
-                .AsQueryable().OrderBy(NormalizeSortingString(input.Sorting))
+                .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
+                (joinedEntities, W2task) => new
+                {
+                    joinedEntities.WorkflowInstanceStarter,
+                    joinedEntities.WorkflowInstance,
+                    W2task = W2task.FirstOrDefault()
+                })
+                .AsQueryable();
+
+            var totalCount = instancesQuery.Count();
+            var totalResults = await AsyncExecuter.ToListAsync(
+                instancesQuery
+                .OrderBy(NormalizeSortingString(input.Sorting))
                 .Skip(input.SkipCount).Take(input.MaxResultCount)
-                .Select(x => x.WorkflowInstance)
+                .Select(x => new
+                {
+                    instance = x.WorkflowInstance,
+                    task = x.W2task
+                })
             );
 
             var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
             var requestUsers = (await _userRepository.GetListAsync())
                 .Where(x => x.Id.IsIn(requestUserIds))
                 .ToList();
-            var result = new List<WorkflowInstanceDto>();
+            var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
 
-            foreach (var instance in instances)
+            foreach (var res in totalResults)
             {
+                var instance = res.instance;
+                var task = res.task;
+
                 var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
                 var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
                 workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
@@ -434,14 +462,22 @@ namespace W2.WorkflowInstances
                 var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
                 if (workflowInstanceStarter is not null)
                 {
-                    var identityUser = requestUsers.FirstOrDefault(x => x.Id == workflowInstanceStarter.CreatorId.Value);
-
-                    if (identityUser != null && !stakeHolderEmails.ContainsKey(identityUser.Email))
+                    using (_dataFilter.Disable<ISoftDelete>())
                     {
-                        stakeHolderEmails.Add(identityUser.Email, identityUser.Name);
-                    }
+                        var identityUser = requestUsers.FirstOrDefault(x => x.Id == workflowInstanceStarter.CreatorId.Value);
 
-                    workflowInstanceDto.UserRequestName = stakeHolderEmails[identityUser.Email];
+                        if (identityUser != null && !stakeHolderEmails.ContainsKey(identityUser.Email))
+                        {
+                            stakeHolderEmails.Add(identityUser.Email, identityUser.Name);
+                        }
+                        if (identityUser != null)
+                        {
+                            workflowInstanceDto.UserRequestName = stakeHolderEmails[identityUser.Email];
+                        } else
+                        {
+                            workflowInstanceDto.UserRequestName = "[Deleted]";
+                        }                       
+                    } 
                 }
 
                 var blockingActivityIds = instance.BlockingActivities.Select(x => x.ActivityId);
@@ -459,9 +495,14 @@ namespace W2.WorkflowInstances
                             continue;
                         }
 
-                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName))
+                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName) && task == null)
                         {
                             workflowInstanceDto.CurrentStates.Add(parentActivity.DisplayName);
+                        }
+
+                        if (!workflowInstanceDto.CurrentStates.Contains(task.Description) && task != null)
+                        {
+                            workflowInstanceDto.CurrentStates.Add(task.Description);
                         }
 
                         connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == parentActivity.ActivityId);
@@ -509,10 +550,10 @@ namespace W2.WorkflowInstances
                     }
                 }
 
-                result.Add(workflowInstanceDto);
+                totalResultsAfterMapping.Add(workflowInstanceDto);
             }
 
-            return new PagedResultDto<WorkflowInstanceDto>(totalCount, result);
+            return new PagedResultDto<WorkflowInstanceDto>(totalCount, totalResultsAfterMapping);
         }
 
         private string GetFinalStatus(ActivityDefinition activityDefinition)

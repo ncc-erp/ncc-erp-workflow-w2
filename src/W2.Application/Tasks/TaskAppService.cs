@@ -55,7 +55,6 @@ namespace W2.Tasks
             _userRepository = userRepository;
         }
 
-        //[Authorize(W2Permissions.WorkflowManagementSettingsSocialLoginSettings)]
         public async Task assignTask(AssignTaskInput input)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
@@ -84,10 +83,7 @@ namespace W2.Tasks
             });
         }
 
-        public async Task createTask(string id)
-        {
-            //await _taskRepository.InsertAsync(CurrentTenant.Id, W2Settings.SocialLoginSettingsEnableSocialLogin, input.EnableSocialLogin.ToString());
-        }
+        public async Task createTask(string id) { }
 
 
         public async Task<string> ApproveAsync([Required] string id)
@@ -225,6 +221,10 @@ namespace W2.Tasks
                 query = query.Where(x => x.W2TaskEmail.EmailTo.Any(email => email.Contains(keySearch)));
             }
 
+            if (!input.Dates.IsNullOrWhiteSpace())
+            {
+                query = query.Where(x => new DateTimeOffset(x.W2task.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
+            }
 
             if (hasTaskStatus)
             {
