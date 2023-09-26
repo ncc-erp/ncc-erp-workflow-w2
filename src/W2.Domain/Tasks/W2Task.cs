@@ -19,6 +19,6 @@ namespace W2.Tasks
         public string Reason { get; set; } // Task reason
         public string ApproveSignal { get; set; } // Task when approving
         public string RejectSignal { get; set; } // Task when rejecting
-        public List<string> OtherActionSignals { get; set; } // List of other action signals for Task
+        public string OtherActionSignals { get; set; } // List of other action signals for W2TaskActions Entity
     }
 }

@@ -23,6 +23,7 @@ using Newtonsoft.Json;
 using Volo.Abp.Identity;
 using W2.WorkflowInstances;
 using Volo.Abp.Identity;
+using W2.TaskActions;
 
 namespace W2.Tasks
 {
@@ -30,6 +31,7 @@ namespace W2.Tasks
     public class TaskAppService : W2AppService, ITaskAppService
     {
         private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
         private readonly IIdentityUserRepository _userRepository;
         private readonly ISignaler _signaler;
         private readonly IMediator _mediator;
@@ -38,7 +40,9 @@ namespace W2.Tasks
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
 
 
-        public TaskAppService(IRepository<W2Task, Guid> taskRepository,
+        public TaskAppService(
+            IRepository<W2Task, Guid> taskRepository,
+            IRepository<W2TaskActions, Guid> taskActionsRepository,
             ISignaler signaler,
             IMediator mediator,
             ICurrentUser currentUser,
@@ -48,6 +52,7 @@ namespace W2.Tasks
         {
             _signaler = signaler;
             _taskRepository = taskRepository;
+            _taskActionsRepository = taskActionsRepository;
             _mediator = mediator;
             _currentUser = currentUser;
             _workflowInstanceStore = workflowInstanceStore;
@@ -63,6 +68,15 @@ namespace W2.Tasks
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
+            var actions = await _taskActionsRepository.InsertAsync(
+                new W2TaskActions
+                {
+                    Author = userId,
+                    OtherActionSignals = OtherActionSignals,
+                    Status = W2TaskActionsStatus.Pending
+                }
+            );
+
             await _taskRepository.InsertAsync(new W2Task
             {
                 TenantId = CurrentTenant.Id,
@@ -75,7 +89,7 @@ namespace W2.Tasks
                 Description = Description,
                 ApproveSignal = ApproveSignal,
                 RejectSignal = RejectSignal,
-                OtherActionSignals = OtherActionSignals
+                OtherActionSignals = actions.Id.ToString(),
             });
         }
 
@@ -147,7 +161,9 @@ namespace W2.Tasks
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
             }
 
-            if (!myTask.OtherActionSignals.Contains(input.Action))
+            var actions = await _taskActionsRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(myTask.OtherActionSignals));
+
+            if (actions == null || !actions.OtherActionSignals.Contains(input.Action) || actions.Status != W2TaskActionsStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:Action is not valid for this task."]);
             }
@@ -162,6 +178,10 @@ namespace W2.Tasks
 
             var signal = new SignalModel(input.Action, myTask.WorkflowInstanceId);
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
+
+            actions.Status = W2TaskActionsStatus.Approve;
+
+            await _taskActionsRepository.UpdateAsync(actions);
 
             return "Send Action successful";
         }
@@ -186,11 +206,17 @@ namespace W2.Tasks
             var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
             var users = await _userRepository.GetListAsync();
             var tasks = await _taskRepository.GetListAsync();
+            var actions = await _taskActionsRepository.GetListAsync();
             var hasWorkflowDefinitionId = !string.IsNullOrEmpty(input.WorkflowDefinitionId);
             var query = tasks.Join(users, x => x.Author, x => x.Id, (W2task, W2User) => new
             {
                 W2User,
                 W2task
+            }).GroupJoin(actions, x => Guid.Parse(x.W2task.OtherActionSignals), x => x.Id, (joinedEntities, W2TaskActions) => new
+            {
+                W2TaskActions = W2TaskActions.FirstOrDefault(),
+                joinedEntities.W2User,
+                joinedEntities.W2task,
             });
 
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
@@ -199,12 +225,12 @@ namespace W2.Tasks
             {
                 query = query.Where(x => x.W2task.Email == _currentUser.Email);
             }
-            if (!input.KeySearch.IsNullOrWhiteSpace() && isAdmin)
+            if (input.KeySearch != null && !input.KeySearch.IsNullOrWhiteSpace() && isAdmin)
             {
                 query = query.Where(x => x.W2task.Email.Contains(input.KeySearch));
             }
 
-            if (!input.Dates.IsNullOrWhiteSpace())
+            if (input.Dates != null && !input.Dates.IsNullOrWhiteSpace())
             {
                 query = query.Where(x => new DateTimeOffset(x.W2task.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
             }
@@ -221,7 +247,7 @@ namespace W2.Tasks
 
             var totalItemCount = query.Count();
 
-            var requestTasks = query
+                var requestTasks = query
                 .OrderByDescending(task => task.W2task.CreationTime)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount).Select(x => new W2TasksDto
@@ -233,7 +259,12 @@ namespace W2.Tasks
                     Email = x.W2task.Email,
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
-                    OtherActionSignals = x.W2task.OtherActionSignals,
+                    OtherActionSignals = new TaskActionsDto
+                    {
+                        Id = x.W2TaskActions?.Id ?? Guid.Empty, // Use Guid.Empty as a default if Id is not available
+                        OtherActionSignals = x.W2TaskActions?.OtherActionSignals,
+                        Status = x.W2TaskActions.Status,
+                    },
                     Reason = x.W2task.Reason,
                     Status = x.W2task.Status,
                     WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
