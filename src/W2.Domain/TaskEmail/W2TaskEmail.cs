@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
+using Volo.Abp.Domain.Entities;
 
 namespace W2.TaskEmail
 {
-    public class W2TaskEmail : CreationAuditedEntity<Guid>
+    public class W2TaskEmail : BasicAggregateRoot<Guid>
     {
-        public List<string> EmailTo { get; set; } // List of emails for Task
-        public Guid Author { get; set; }
+        public string Email { get; set; } // email for Task
+        public string TaskId { get; set; }
     }
 }

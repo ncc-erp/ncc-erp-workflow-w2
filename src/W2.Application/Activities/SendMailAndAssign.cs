@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Volo.Abp;
 using W2.Signals;
 using W2.Tasks;
 
@@ -49,13 +50,15 @@ namespace W2.Activities
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            List<string> EmailTo = new List<string>();
-            if (To != null)
+            if (To == null)
             {
-                foreach (string email in To)
-                {
-                    EmailTo.Add(email);
-                }
+                throw new UserFriendlyException("Exception:No Email address To send");
+            }
+
+            List<string> EmailTo = new List<string>();
+            foreach (string email in To)
+            {
+                EmailTo.Add(email);
             }
 
             var currentUser = context.GetRequestUserVariable();
