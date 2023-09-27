@@ -6,11 +6,14 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Serialization;
 using Elsa.Services.Models;
+using Humanizer;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Volo.Abp;
 using W2.Signals;
 using W2.Tasks;
 
@@ -49,25 +52,30 @@ namespace W2.Activities
         {
             if (To == null)
             {
-                To = new List<string>();
+                throw new UserFriendlyException("Exception:No Email address To send");
+            }
+
+            List<string> EmailTo = new List<string>();
+            foreach (string email in To)
+            {
+                EmailTo.Add(email);
             }
 
             var currentUser = context.GetRequestUserVariable();
             var Description = context.ActivityBlueprint.DisplayName;
 
-            foreach (var email in To)
+            var input = new AssignTaskInput
             {
-                if (email != null)
-                {
-                    await _taskAppService.assignTask(email,
-                        (Guid)currentUser.Id,
-                        context.WorkflowInstance.Id,
-                        ApproveSignal.Trim(),
-                        RejectSignal.Trim(),
-                        Description,
-                        OtherActionSignals);
-                }
-            }
+                UserId = (Guid)currentUser.Id,
+                WorkflowInstanceId = context.WorkflowInstance.Id,
+                ApproveSignal = ApproveSignal.Trim(),
+                RejectSignal = RejectSignal.Trim(),
+                Description = Description,
+                EmailTo = EmailTo,
+                OtherActionSignals = OtherActionSignals
+            };
+
+            await _taskAppService.assignTask(input);
 
             return await base.OnExecuteAsync(context);
         }

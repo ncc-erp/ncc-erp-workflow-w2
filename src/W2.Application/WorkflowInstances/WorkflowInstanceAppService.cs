@@ -86,7 +86,7 @@ namespace W2.WorkflowInstances
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
             // Only allow workflow has pending or failed status to cancel
-            if (workflowInstance == null || workflowInstance.WorkflowStatus != WorkflowStatus.Suspended || workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
+            if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted))
             {
                 throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
             }
@@ -153,7 +153,7 @@ namespace W2.WorkflowInstances
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
             // Only allow workflow has pending or faulted status to deleted
-            if (workflowInstance == null || workflowInstance.WorkflowStatus != WorkflowStatus.Suspended || workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
+            if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted))
             {
                 throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
             }
