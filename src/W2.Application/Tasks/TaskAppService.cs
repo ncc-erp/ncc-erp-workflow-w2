@@ -211,11 +211,17 @@ namespace W2.Tasks
             var query = from task in tasks
                         join user in users on task.Author equals user.Id
                         join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
+                        let emailList = (
+                            from email in taskEmail
+                            where email.TaskId == task.Id.ToString()
+                            select email.Email
+                        ).ToList()
                         select new
                         {
                             W2TaskEmail = email,
                             W2User = user,
-                            W2task = task
+                            W2task = task,
+                            EmailTo = emailList
                         };
 
 
@@ -246,9 +252,14 @@ namespace W2.Tasks
                 query = query.Where(x => x.W2task.WorkflowDefinitionId == input.WorkflowDefinitionId);
             }
 
-            var totalItemCount = query.Count();
+            var totalItemCount = query
+                .GroupBy(x => x.W2task.Id)
+                .Select(group => group.FirstOrDefault())
+                .Count();
 
             var requestTasks = query
+                .GroupBy(x => x.W2task.Id) 
+                .Select(group => group.FirstOrDefault())
                 .OrderByDescending(task => task.W2task.CreationTime)
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount).Select(x => new W2TasksDto
@@ -260,7 +271,7 @@ namespace W2.Tasks
                     Email = x.W2task.Email,
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
-                    EmailTo = x.W2TaskEmail.Email,
+                    EmailTo = x.EmailTo,
                     OtherActionSignals = x.W2task.OtherActionSignals,
                     Reason = x.W2task.Reason,
                     Status = x.W2task.Status,
