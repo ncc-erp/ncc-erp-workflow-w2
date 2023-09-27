@@ -77,13 +77,14 @@ namespace W2.Tasks
                 OtherActionSignals = input.OtherActionSignals
             });
 
-            var taskEmails = input.EmailTo.Select(email => _taskEmailRepository.InsertAsync(new W2TaskEmail
+            foreach (string email in input.EmailTo)
             {
-                Email = email,
-                TaskId = task.Id.ToString(),
-            }));
-
-            await Task.WhenAll(taskEmails);
+                await _taskEmailRepository.InsertAsync(new W2TaskEmail
+                {
+                    Email = email,
+                    TaskId = task.Id.ToString(),
+                });
+            }
         }
 
         public async Task createTask(string id) { }
@@ -102,7 +103,7 @@ namespace W2.Tasks
                     .ToList().FirstOrDefault();
 
             var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail.Email != _currentUser.Email)
+            if (!isAdmin && taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
@@ -137,7 +138,7 @@ namespace W2.Tasks
                     .ToList().FirstOrDefault();
 
             var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail.Email != _currentUser.Email)
+            if (!isAdmin && taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
@@ -175,7 +176,7 @@ namespace W2.Tasks
                     .ToList().FirstOrDefault();
 
             var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail.Email != _currentUser.Email)
+            if (!isAdmin && taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
