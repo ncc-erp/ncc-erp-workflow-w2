@@ -32,6 +32,7 @@ namespace W2.Tasks
     {
         private readonly IRepository<W2Task, Guid> _taskRepository;
         private readonly IRepository<W2TaskEmail, Guid> _taskEmailRepository;
+        private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
         private readonly IIdentityUserRepository _userRepository;
         private readonly ISignaler _signaler;
         private readonly IMediator _mediator;
@@ -43,6 +44,7 @@ namespace W2.Tasks
         public TaskAppService(
             IRepository<W2Task, Guid> taskRepository,
             IRepository<W2TaskEmail, Guid> taskEmailRepository,
+            IRepository<W2TaskActions, Guid> taskActionsRepository,
             ISignaler signaler,
             IMediator mediator,
             ICurrentUser currentUser,
@@ -53,6 +55,7 @@ namespace W2.Tasks
             _signaler = signaler;
             _taskRepository = taskRepository;
             _taskEmailRepository = taskEmailRepository;
+            _taskActionsRepository = taskActionsRepository;
             _mediator = mediator;
             _currentUser = currentUser;
             _workflowInstanceStore = workflowInstanceStore;
@@ -77,8 +80,23 @@ namespace W2.Tasks
                 Description = input.Description,
                 ApproveSignal = input.ApproveSignal,
                 RejectSignal = input.RejectSignal,
-                OtherActionSignals = input.OtherActionSignals
             });
+
+            if(input.OtherActionSignals != null)
+            {
+                foreach (string action in input.OtherActionSignals)
+                {
+                    await _taskActionsRepository.InsertAsync(
+                         new W2TaskActions
+                         {
+                             OtherActionSignal = action,
+                             Status = W2TaskActionsStatus.Pending,
+                             TaskId = task.Id.ToString(),
+                         }
+                     );
+                }
+            }
+
 
             foreach (string email in input.EmailTo)
             {
@@ -184,7 +202,8 @@ namespace W2.Tasks
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
 
-            if (!myTask.OtherActionSignals.Contains(input.Action))
+            var actions = await _taskActionsRepository.FirstOrDefaultAsync(x => x.TaskId == myTask.Id.ToString() && x.OtherActionSignal == input.Action);
+            if (actions == null || actions.Status != W2TaskActionsStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:Action is not valid for this task."]);
             }
@@ -200,6 +219,9 @@ namespace W2.Tasks
             var signal = new SignalModel(input.Action, myTask.WorkflowInstanceId);
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
+            actions.Status = W2TaskActionsStatus.Approve;
+            await _taskActionsRepository.UpdateAsync(actions);
+
             return "Send Action successful";
         }
 
@@ -209,11 +231,13 @@ namespace W2.Tasks
             var users = await _userRepository.GetListAsync();
             var tasks = await _taskRepository.GetListAsync();
             var taskEmail = await _taskEmailRepository.GetListAsync();
+            var taskAction = await _taskActionsRepository.GetListAsync();
             var hasWorkflowDefinitionId = !string.IsNullOrEmpty(input.WorkflowDefinitionId);
 
             var query = from task in tasks
                         join user in users on task.Author equals user.Id
                         join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
+                        join action in taskAction on new { TaskID = task.Id.ToString() } equals new { TaskID = action.TaskId } into actionGroup
                         let emailList = (
                             from email in taskEmail
                             where email.TaskId == task.Id.ToString()
@@ -232,7 +256,8 @@ namespace W2.Tasks
                             W2TaskEmail = email,
                             W2User = user,
                             W2task = task,
-                            EmailTo = emailList
+                            EmailTo = emailList,
+                            OtherActionSignals = actionList.All(a => a != null) ? actionList : null
                         };
 
 
@@ -283,7 +308,7 @@ namespace W2.Tasks
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
                     EmailTo = x.EmailTo,
-                    OtherActionSignals = x.W2task.OtherActionSignals,
+                    OtherActionSignals = x.OtherActionSignals,
                     Reason = x.W2task.Reason,
                     Status = x.W2task.Status,
                     WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
