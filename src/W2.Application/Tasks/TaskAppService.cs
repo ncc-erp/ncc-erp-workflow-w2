@@ -22,6 +22,8 @@ using W2.TaskEmail;
 using Humanizer;
 using static IdentityServer4.Models.IdentityResources;
 using W2.TaskActions;
+using static Volo.Abp.Identity.IdentityPermissions;
+using Volo.Abp.ObjectMapping;
 
 namespace W2.Tasks
 {
@@ -248,7 +250,7 @@ namespace W2.Tasks
                                 OtherActionSignal = action.OtherActionSignal,
                                 Status = action.Status
                             } : null
-                        ).ToList()
+                        ).OrderBy(action => action?.OtherActionSignal).ToList()
                         select new
                         {
                             W2TaskEmail = email,
@@ -320,14 +322,34 @@ namespace W2.Tasks
         public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+            var taskAction = await _taskActionsRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString());
+            var query = from task in new List<W2Task> { myTask }
+                       join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
+                       let actionList = (
+                            from action in actionGroup.DefaultIfEmpty()
+                            select action != null ? new TaskActionsDto
+                            {
+                                OtherActionSignal = action.OtherActionSignal,
+                                Status = action.Status
+                            } : null
+                        ).OrderBy(action => action?.OtherActionSignal).ToList()
+                        select new
+                        {
+                            W2task = task,
+                            OtherActionSignals = actionList.All(a => a != null) ? actionList : null
+                        };
+
+
             var workflowInstanceId = myTask.WorkflowInstanceId;
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
 
             var data = workflowInstance.Variables.Data;
-            var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(myTask);
+
+            var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(query.FirstOrDefault()?.W2task);
             var taskDetailDto = new TaskDetailDto
             {
                 Tasks = taskDto,
+                OtherActionSignals = query.FirstOrDefault()?.OtherActionSignals,
                 Input = data,
             };
 

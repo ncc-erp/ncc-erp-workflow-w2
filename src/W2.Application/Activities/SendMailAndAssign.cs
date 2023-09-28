@@ -10,6 +10,7 @@ using Humanizer;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -48,17 +49,29 @@ namespace W2.Activities
         [ActivityInput(Hint = "Other action for signal", UIHint = "multi-text", DefaultSyntax = "Json", SupportedSyntaxes = new string[] { "Json", "JavaScript" })]
         public List<string> OtherActionSignals { get; set; }
 
+        [ActivityInput(Hint = "Email to assign", UIHint = "multi-text", DefaultSyntax = "Json", SupportedSyntaxes = new string[] { "Json", "JavaScript" })]
+        public List<string> AssignTo { get; set; }
+
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             if (To == null)
             {
                 throw new UserFriendlyException("Exception:No Email address To send");
             }
-
             List<string> EmailTo = new List<string>();
-            foreach (string email in To)
+
+            if (AssignTo != null)
             {
-                EmailTo.Add(email);
+                foreach (string email in AssignTo)
+                {
+                    EmailTo.Add(email);
+                }
+            } else
+            {
+                foreach (string email in To)
+                {
+                    EmailTo.Add(email);
+                }
             }
 
             var currentUser = context.GetRequestUserVariable();
