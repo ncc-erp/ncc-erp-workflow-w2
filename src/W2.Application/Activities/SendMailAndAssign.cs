@@ -58,7 +58,6 @@ namespace W2.Activities
             {
                 throw new UserFriendlyException("Exception:No Email address To send");
             }
-            Console.WriteLine(Subject);
             List<string> EmailTo = new List<string>();
 
             if (AssignTo != null)
