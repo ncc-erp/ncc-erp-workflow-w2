@@ -54,7 +54,7 @@ namespace W2.Activities
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            if (To == null)
+            if (To == null && AssignTo == null)
             {
                 throw new UserFriendlyException("Exception:No Email address To send");
             }
