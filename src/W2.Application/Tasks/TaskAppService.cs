@@ -82,7 +82,7 @@ namespace W2.Tasks
                 RejectSignal = input.RejectSignal,
             });
 
-            if(input.OtherActionSignals != null)
+            if (input.OtherActionSignals != null)
             {
                 foreach (string action in input.OtherActionSignals)
                 {
@@ -294,7 +294,7 @@ namespace W2.Tasks
                 .Count();
 
             var requestTasks = query
-                .GroupBy(x => x.W2task.Id) 
+                .GroupBy(x => x.W2task.Id)
                 .Select(group => group.FirstOrDefault())
                 .OrderByDescending(task => task.W2task.CreationTime)
                 .Skip(input.SkipCount)
@@ -323,19 +323,27 @@ namespace W2.Tasks
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
             var taskAction = await _taskActionsRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString());
+            var taskEmail = await _taskEmailRepository.GetListAsync();
             var query = from task in new List<W2Task> { myTask }
-                       join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
-                       let actionList = (
-                            from action in actionGroup.DefaultIfEmpty()
-                            select action != null ? new TaskActionsDto
-                            {
-                                OtherActionSignal = action.OtherActionSignal,
-                                Status = action.Status
-                            } : null
-                        ).OrderBy(action => action?.OtherActionSignal).ToList()
+                        join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
+                        join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
+                        let emailList = (
+                             from email in taskEmail
+                             where email.TaskId == task.Id.ToString()
+                             select email.Email
+                         ).ToList()
+                        let actionList = (
+                             from action in actionGroup.DefaultIfEmpty()
+                             select action != null ? new TaskActionsDto
+                             {
+                                 OtherActionSignal = action.OtherActionSignal,
+                                 Status = action.Status
+                             } : null
+                         ).OrderBy(action => action?.OtherActionSignal).ToList()
                         select new
                         {
                             W2task = task,
+                            EmailTo = emailList,
                             OtherActionSignals = actionList.All(a => a != null) ? actionList : null
                         };
 
@@ -350,6 +358,7 @@ namespace W2.Tasks
             {
                 Tasks = taskDto,
                 OtherActionSignals = query.FirstOrDefault()?.OtherActionSignals,
+                EmailTo = query.FirstOrDefault()?.EmailTo,
                 Input = data,
             };
 
