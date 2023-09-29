@@ -24,5 +24,8 @@ namespace W2.ExternalResources
 
         [JsonProperty("date")]
         public string date { get; set; }
+
+        [JsonProperty("link")]
+        public string link { get; set; }
     }
 }

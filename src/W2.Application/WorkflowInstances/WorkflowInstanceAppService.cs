@@ -9,13 +9,16 @@ using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NetBox.Extensions;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
@@ -286,8 +289,7 @@ namespace W2.WorkflowInstances
             var instances = (await _workflowInstanceStore.FindManyAsync(specification));
 
             var instancesIds = instances.Select(x => x.Id);
-            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
-            workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
+            var workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
                                 .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
 
             var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
@@ -305,7 +307,6 @@ namespace W2.WorkflowInstances
             }
 
             var requestUsers = query
-                .OrderBy(NormalizeSortingStringWFH(input.Sorting))
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount)
                 .ToList();
@@ -314,39 +315,100 @@ namespace W2.WorkflowInstances
             foreach (var requestUser in requestUsers)
             {
                 var totalDays = 0;
+                List<string> totalDaysStr = new List<string>();
+                var totalPosts = 0;
+                List<string> totalPostStr = new List<string>();
+                List<object> newPostList = new List<object>();
+
                 var workflowInstanceStarterList = workflowInstanceStarters.Where(x => x.CreatorId == requestUser.Id).ToList();
+                List<WorkflowInstanceStarter> workflowInstanceStarterByTask = new List<WorkflowInstanceStarter>();
+
                 foreach (var workflowInstanceStarter in workflowInstanceStarterList)
                 {
-                    var workflowInstance = instances.FirstOrDefault(x => x.Id == workflowInstanceStarter.WorkflowInstanceId);
-                    var data = workflowInstance.Variables.Data;
-                    foreach (KeyValuePair<string, object> kvp in data)
+                    var taskList = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == workflowInstanceStarter.WorkflowInstanceId && x.Status == W2TaskStatus.Approve).ToList();
+                    foreach (var task in taskList)
                     {
-                        var value = kvp.Value;
-                        if (value is Dictionary<string, string> dateDictionary && dateDictionary.ContainsKey("Dates"))
+                        var workflowInstance = instances.FirstOrDefault(x => x.Id == task.WorkflowInstanceId);
+                        workflowInstanceStarterByTask = workflowInstanceStarters.Where(x => x.WorkflowInstanceId == task.WorkflowInstanceId).ToList();
+
+                        var data = workflowInstance.Variables.Data;
+                        foreach (KeyValuePair<string, object> kvp in data)
                         {
-                            string dateStr = dateDictionary["Dates"];
-                            char[] separator = new char[] { ',' };
-                            string[] dateArray = dateStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-                            totalDays += dateArray.Length;
+                            var value = kvp.Value;
+                            if (value is Dictionary<string, string> dateDictionary && dateDictionary.ContainsKey("Dates"))
+                            {
+                                string dateStr = dateDictionary["Dates"];
+                                char[] separator = new char[] { ',' };
+                                string[] dateArray = dateStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                                if (input.StartDate != DateTime.MinValue && input.EndDate != DateTime.MinValue)
+                                {
+                                    foreach (string dateString in dateArray)
+                                    {
+                                        if (DateTime.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+                                        {
+                                            if (date >= input.StartDate && date <= input.EndDate)
+                                            {
+                                                totalDays++;
+                                                totalDaysStr.Add(date.ToString("dd/MM/yyyy"));
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    totalDays += dateArray.Length;
+                                    totalDaysStr.AddRange(dateArray);
+                                }
+                            }
                         }
                     }
                 }
-                
+
                 var users = await GetUserInfoBySlug(ConvertEmailToSlug(requestUser.Email));
                 List<PostItem> posts = (users.Count > 0) ? await GetPostByAuthor(users[0].id) : new List<PostItem>();
 
+                foreach (var post in posts)
+                {
+                    if (DateTime.TryParseExact(post.date, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date) &&
+                        (input.StartDate == DateTime.MinValue || (date >= input.StartDate && date <= input.EndDate)))
+                    {
+                        totalPosts++;
+                        totalPostStr.Add(date.ToString("dd/MM/yyyy"));
+                        newPostList.Add(post);
+                    }
+                }
+
+                var sortedRequestDates = SortAndRemoveDuplicates(totalDaysStr);
+                var sortedPostsDates = SortAndRemoveDuplicates(totalPostStr);
+
+                int totalMissingPosts = sortedRequestDates.Count;
+                foreach (string request in sortedRequestDates)
+                {
+                    for (int i = 0; i < sortedPostsDates.Count; i++)
+                    {
+                        if (IsDateGreaterOrEqual(sortedPostsDates[i], request))
+                        {
+                            totalMissingPosts--;
+                            sortedPostsDates.RemoveAt(i);
+                            break;
+                        }
+                    }
+                }
+
                 var wfhDto = new WFHDto
                 {
-                    UserRequestName = requestUser.Email,
-                    Posts = posts,
-                    Totalposts = posts.Count,
-                    Requests = workflowInstanceStarterList,
-                    Totaldays = totalDays
+                    email = requestUser.Email,
+                    posts = newPostList,
+                    totalPosts = totalPosts,
+                    requests = workflowInstanceStarterByTask,
+                    totalDays = sortedRequestDates.Count,
+                    totalMissingPosts = totalMissingPosts,
                 };
                 WFHList.Add(wfhDto);
             }
 
-            return new PagedResultDto<WFHDto>(totalCount, WFHList);
+            List<WFHDto> sortedList = SortWFHDtos(WFHList, input.Sorting);
+            return new PagedResultDto<WFHDto>(totalCount, sortedList);
         }
 
 
@@ -561,6 +623,19 @@ namespace W2.WorkflowInstances
             return activityDefinition == null ? "Finished" : (activityDefinition.DisplayName.ToLower().Contains("reject") ? "Rejected" : "Approved");
         }
 
+        private bool IsDateGreaterOrEqual(string dateA, string dateB)
+        {
+            DateTime dateTimeA = DateTime.ParseExact(dateA, "dd/MM/yyyy", null);
+            DateTime dateTimeB = DateTime.ParseExact(dateB, "dd/MM/yyyy", null);
+            return dateTimeA >= dateTimeB;
+        }
+
+        private List<string> SortAndRemoveDuplicates(List<string> dates)
+        {
+            HashSet<string> uniqueDates = new HashSet<string>(dates);
+            return uniqueDates.OrderBy(date => DateTime.ParseExact(date, "dd/MM/yyyy", CultureInfo.InvariantCulture)).ToList();
+        }
+
         private string NormalizeSortingString(string sorting)
         {
             if (sorting.IsNullOrEmpty())
@@ -590,20 +665,46 @@ namespace W2.WorkflowInstances
             return "WorkflowInstance.CreatedAt DESC";
         }
 
-        private string NormalizeSortingStringWFH(string sorting)
+        public List<WFHDto> SortWFHDtos(List<WFHDto> wfhList, string sortExpression)
         {
-            if (sorting.IsNullOrEmpty())
+            if (string.IsNullOrWhiteSpace(sortExpression))
             {
-                return "Email DESC";
+                return wfhList;
             }
 
-            var sortingPart = sorting.Trim().Split(' ');
-            var direction = sortingPart[1].ToLower();
-            if (direction == "asc")
+            string[] parts = sortExpression.Split(' ');
+            string fieldName = parts[0];
+            string sortOrder = parts.Length > 1 ? parts[1] : "asc";
+
+            IOrderedEnumerable<WFHDto> sortedList = null;
+
+            switch (fieldName)
             {
-                return "Email ASC";
+                case "email":
+                    sortedList = sortOrder.ToLower() == "asc"
+                        ? wfhList.OrderBy(dto => dto.email)
+                        : wfhList.OrderByDescending(dto => dto.email);
+                    break;
+                case "totalPosts":
+                    sortedList = sortOrder.ToLower() == "asc"
+                        ? wfhList.OrderBy(dto => dto.totalPosts)
+                        : wfhList.OrderByDescending(dto => dto.totalPosts);
+                    break;
+                case "totalDays":
+                    sortedList = sortOrder.ToLower() == "asc"
+                        ? wfhList.OrderBy(dto => dto.totalDays)
+                        : wfhList.OrderByDescending(dto => dto.totalDays);
+                    break;
+                case "totalMissingPosts":
+                    sortedList = sortOrder.ToLower() == "asc"
+                        ? wfhList.OrderBy(dto => dto.totalMissingPosts)
+                        : wfhList.OrderByDescending(dto => dto.totalMissingPosts);
+                    break;
+                default:
+                    return wfhList;
             }
-            return "Email DESC";
+
+            return sortedList.ToList();
         }
 
         private string ConvertEmailToSlug(string email)
