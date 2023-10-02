@@ -265,13 +265,21 @@ namespace W2.Tasks
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
             {
-                query = query.Where(x => x.W2TaskEmail.Email == _currentUser.Email);
+                query = query.Where(x => x.W2TaskEmail.Email.Contains(_currentUser.Email));
             }
-            if (!string.IsNullOrWhiteSpace(input.KeySearch) && isAdmin)
+
+            if (!string.IsNullOrWhiteSpace(input.EmailRequest))
             {
-                string keySearch = input.KeySearch.Trim();
-                query = query.Where(x => x.W2TaskEmail.Email.Contains(keySearch));
+                string emailRequest = input.EmailRequest.Trim();
+                query = query.Where(x => x.W2User.Email.Contains(emailRequest));
             }
+
+            if (!string.IsNullOrWhiteSpace(input.EmailAssign) && isAdmin)
+            {
+                string emailAssign = input.EmailAssign.Trim();
+                query = query.Where(x => x.W2TaskEmail.Email.Contains(emailAssign));
+            }
+
 
             if (!input.Dates.IsNullOrWhiteSpace())
             {
