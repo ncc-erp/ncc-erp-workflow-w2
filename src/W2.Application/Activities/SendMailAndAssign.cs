@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -45,6 +46,9 @@ namespace W2.Activities
 
         [ActivityInput(Hint = "The reject signal", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
         public string RejectSignal { get; set; }
+
+        [ActivityInput(Hint = "The dynamic form data", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
+        public string DynamicActionData { get; set; }
 
         [ActivityInput(Hint = "Other action for signal", UIHint = "multi-text", DefaultSyntax = "Json", SupportedSyntaxes = new string[] { "Json", "JavaScript" })]
         public List<string> OtherActionSignals { get; set; }
@@ -83,6 +87,7 @@ namespace W2.Activities
                 WorkflowInstanceId = context.WorkflowInstance.Id,
                 ApproveSignal = ApproveSignal.Trim(),
                 RejectSignal = RejectSignal.Trim(),
+                DynamicActionData = DynamicActionData,
                 Description = Description,
                 EmailTo = EmailTo,
                 OtherActionSignals = OtherActionSignals

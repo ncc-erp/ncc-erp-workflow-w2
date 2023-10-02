@@ -19,6 +19,7 @@ namespace W2.Tasks
         public string Reason { get; set; } // Task reason
         public string ApproveSignal { get; set; } // Task when approving
         public string RejectSignal { get; set; } // Task when rejecting
+        public string DynamicActionData { get; set; } // Dynamic action data for task
         public List<string> OtherActionSignals { get; set; } // List of other action signals for Task
         public string UpdatedBy { get; set; } // Email which updated the task
     }
