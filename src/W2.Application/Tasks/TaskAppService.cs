@@ -270,7 +270,7 @@ namespace W2.Tasks
             if (!string.IsNullOrWhiteSpace(input.KeySearch) && isAdmin)
             {
                 string keySearch = input.KeySearch.Trim();
-                query = query.Where(x => x.W2TaskEmail.Email.Contains(keySearch));
+                query = query.Where(x => x.W2User.Email.Contains(keySearch));
             }
 
             if (!input.Dates.IsNullOrWhiteSpace())
