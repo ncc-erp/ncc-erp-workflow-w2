@@ -12,6 +12,7 @@ namespace W2.WorkflowInstances
         public int totalPosts { get; set; }
         public int totalMissingPosts { get; set; }
         public object requests { get; set; }
+        public List<string> requestDates { get; set; }
         public object posts { get; set; }
     }
 }
