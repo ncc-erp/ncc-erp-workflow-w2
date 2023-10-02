@@ -19,11 +19,7 @@ using Elsa;
 using Newtonsoft.Json;
 using Volo.Abp.Identity;
 using W2.TaskEmail;
-using Humanizer;
-using static IdentityServer4.Models.IdentityResources;
 using W2.TaskActions;
-using static Volo.Abp.Identity.IdentityPermissions;
-using Volo.Abp.ObjectMapping;
 
 namespace W2.Tasks
 {
@@ -75,6 +71,7 @@ namespace W2.Tasks
                 Author = input.UserId,
                 WorkflowInstanceId = input.WorkflowInstanceId,
                 WorkflowDefinitionId = workflowInstance.DefinitionId,
+                DynamicActionData = input.DynamicActionData,
                 Status = W2TaskStatus.Pending,
                 Name = workflowDefinitions.Name,
                 Description = input.Description,
@@ -87,13 +84,13 @@ namespace W2.Tasks
                 foreach (string action in input.OtherActionSignals)
                 {
                     await _taskActionsRepository.InsertAsync(
-                         new W2TaskActions
-                         {
-                             OtherActionSignal = action,
-                             Status = W2TaskActionsStatus.Pending,
-                             TaskId = task.Id.ToString(),
-                         }
-                     );
+                        new W2TaskActions
+                        {
+                            OtherActionSignal = action,
+                            Status = W2TaskActionsStatus.Pending,
+                            TaskId = task.Id.ToString(),
+                        }
+                    );
                 }
             }
 
@@ -111,9 +108,9 @@ namespace W2.Tasks
         public async Task createTask(string id) { }
 
 
-        public async Task<string> ApproveAsync([Required] string id)
+        public async Task<string> ApproveAsync(ApproveTasksInput input)
         {
-            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
                 throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
@@ -138,6 +135,11 @@ namespace W2.Tasks
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
             var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
+
+            if (!string.IsNullOrEmpty(input.DynamicActionData))
+            {
+                myTask.DynamicActionData = input.DynamicActionData;
+            }
 
             myTask.Status = W2TaskStatus.Approve;
             myTask.UpdatedBy = _currentUser.Email;
@@ -308,6 +310,7 @@ namespace W2.Tasks
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
                     EmailTo = x.EmailTo,
+                    DynamicActionData = x.W2task.DynamicActionData,
                     OtherActionSignals = x.OtherActionSignals,
                     Reason = x.W2task.Reason,
                     Status = x.W2task.Status,

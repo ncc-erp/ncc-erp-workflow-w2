@@ -15,6 +15,7 @@ namespace W2.Tasks
         public W2TaskStatus Status { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string DynamicActionData { get; set; }
         public string Reason { get; set; }
         public DateTime CreationTime { get; set; }
         public List<TaskActionsDto>? OtherActionSignals { get; set; }
