@@ -290,13 +290,45 @@ namespace W2.WorkflowInstances
             string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
 
             var specification = Specification<WorkflowInstance>.Identity;
-            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId);
+            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId)
+                .WithStatus(WorkflowStatus.Finished);
 
             var instances = (await _workflowInstanceStore.FindManyAsync(specification));
+            var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
+            )).ToList();
+
+            instances = instances.Where(instance =>
+            {
+                var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
+                var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+
+                return GetFinalStatus(lastExecutedActivity) == "Approved";
+            });
 
             var instancesIds = instances.Select(x => x.Id);
-            var workflowInstanceStarters = await AsyncExecuter.ToListAsync((await _instanceStarterRepository.GetQueryableAsync())
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId)));
+            var tasks = (await _taskRepository.GetListAsync());
+            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
+            var workflowInstanceStartersQuery = await _instanceStarterRepository.GetQueryableAsync();
+            workflowInstanceStartersQuery = workflowInstanceStartersQuery
+                .Where(x => instancesIds.Contains(x.WorkflowInstanceId));
+            workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
+
+            var instancesQuery = workflowInstanceStarters
+                .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
+                (WorkflowInstanceStarter, WorkflowInstance) => new
+                {
+                    WorkflowInstanceStarter,
+                    WorkflowInstance
+                })
+                .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
+                (joinedEntities, W2task) => new
+                {
+                    joinedEntities.WorkflowInstanceStarter,
+                    joinedEntities.WorkflowInstance,
+                    W2task = W2task.FirstOrDefault()
+                })
+                .AsQueryable();
 
             var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
             var totalCount = (await _userRepository.GetListAsync())
@@ -327,44 +359,38 @@ namespace W2.WorkflowInstances
                 List<object> newPostList = new List<object>();
 
                 var workflowInstanceStarterList = workflowInstanceStarters.Where(x => x.CreatorId == requestUser.Id).ToList();
-                List<WorkflowInstanceStarter> workflowInstanceStarterByTask = new List<WorkflowInstanceStarter>();
 
                 foreach (var workflowInstanceStarter in workflowInstanceStarterList)
                 {
-                    var taskList = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == workflowInstanceStarter.WorkflowInstanceId && x.Status == W2TaskStatus.Approve).ToList();
-                    foreach (var task in taskList)
-                    {
-                        var workflowInstance = instances.FirstOrDefault(x => x.Id == task.WorkflowInstanceId);
-                        workflowInstanceStarterByTask = workflowInstanceStarters.Where(x => x.WorkflowInstanceId == task.WorkflowInstanceId).ToList();
+                    var workflowInstance = instances.FirstOrDefault(x => x.Id == workflowInstanceStarter.WorkflowInstanceId);
 
-                        var data = workflowInstance.Variables.Data;
-                        foreach (KeyValuePair<string, object> kvp in data)
+                    var data = workflowInstance.Variables.Data;
+                    foreach (KeyValuePair<string, object> kvp in data)
+                    {
+                        var value = kvp.Value;
+                        if (value is Dictionary<string, string> dateDictionary && dateDictionary.ContainsKey("Dates"))
                         {
-                            var value = kvp.Value;
-                            if (value is Dictionary<string, string> dateDictionary && dateDictionary.ContainsKey("Dates"))
+                            string dateStr = dateDictionary["Dates"];
+                            char[] separator = new char[] { ',' };
+                            string[] dateArray = dateStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                            if (input.StartDate != DateTime.MinValue && input.EndDate != DateTime.MinValue)
                             {
-                                string dateStr = dateDictionary["Dates"];
-                                char[] separator = new char[] { ',' };
-                                string[] dateArray = dateStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-                                if (input.StartDate != DateTime.MinValue && input.EndDate != DateTime.MinValue)
+                                foreach (string dateString in dateArray)
                                 {
-                                    foreach (string dateString in dateArray)
+                                    if (DateTime.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
                                     {
-                                        if (DateTime.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+                                        if (date >= input.StartDate && date <= input.EndDate)
                                         {
-                                            if (date >= input.StartDate && date <= input.EndDate)
-                                            {
-                                                totalDays++;
-                                                totalDaysStr.Add(date.ToString("dd/MM/yyyy"));
-                                            }
+                                            totalDays++;
+                                            totalDaysStr.Add(date.ToString("dd/MM/yyyy"));
                                         }
                                     }
                                 }
-                                else
-                                {
-                                    totalDays += dateArray.Length;
-                                    totalDaysStr.AddRange(dateArray);
-                                }
+                            }
+                            else
+                            {
+                                totalDays += dateArray.Length;
+                                totalDaysStr.AddRange(dateArray);
                             }
                         }
                     }
@@ -385,7 +411,7 @@ namespace W2.WorkflowInstances
                 }
 
                 var sortedRequestDates = SortAndRemoveDuplicates(totalDaysStr);
-                var sortedPostsDates = SortAndRemoveDuplicates(totalPostStr);
+                var sortedPostsDates = Sort(totalPostStr);
 
                 int totalMissingPosts = sortedRequestDates.Count;
                 foreach (string request in sortedRequestDates)
@@ -406,7 +432,8 @@ namespace W2.WorkflowInstances
                     email = requestUser.Email,
                     posts = newPostList,
                     totalPosts = totalPosts,
-                    requests = workflowInstanceStarterByTask,
+                    requests = workflowInstanceStarterList,
+                    requestDates = sortedRequestDates,
                     totalDays = sortedRequestDates.Count,
                     totalMissingPosts = totalMissingPosts,
                 };
@@ -652,6 +679,11 @@ namespace W2.WorkflowInstances
         {
             HashSet<string> uniqueDates = new HashSet<string>(dates);
             return uniqueDates.OrderBy(date => DateTime.ParseExact(date, "dd/MM/yyyy", CultureInfo.InvariantCulture)).ToList();
+        }
+
+        private List<string> Sort(List<string> dates)
+        {
+            return dates.OrderBy(date => DateTime.ParseExact(date, "dd/MM/yyyy", CultureInfo.InvariantCulture)).ToList();
         }
 
         private string NormalizeSortingString(string sorting)
