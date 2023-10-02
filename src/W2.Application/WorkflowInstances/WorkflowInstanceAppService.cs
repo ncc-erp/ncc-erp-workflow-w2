@@ -31,6 +31,7 @@ using Volo.Abp.Emailing;
 using Volo.Abp.Identity;
 using Volo.Abp.TextTemplating;
 using Volo.Abp.Uow;
+using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
@@ -55,6 +56,8 @@ namespace W2.WorkflowInstances
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
         private readonly IDataFilter _dataFilter;
+        private readonly ICurrentUser _currentUser;
+
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
@@ -67,7 +70,9 @@ namespace W2.WorkflowInstances
             IIdentityUserRepository userRepository,
             IAntClientApi antClientApi,
             IConfiguration configuration,
-            IDataFilter dataFilter)
+            IDataFilter dataFilter,
+            ICurrentUser currentUser
+            )
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
@@ -82,6 +87,7 @@ namespace W2.WorkflowInstances
             _configuration = configuration;
             _taskRepository = taskRepository;
             _dataFilter = dataFilter;
+            _currentUser = currentUser;
         }
 
         public async Task<string> CancelAsync(string id)
@@ -94,7 +100,7 @@ namespace W2.WorkflowInstances
                 throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
             }
 
-            var tasks =  (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
+            var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
             {
                 foreach (var task in tasks)
@@ -166,7 +172,7 @@ namespace W2.WorkflowInstances
             {
                 await _taskRepository.DeleteManyAsync(tasks);
             }
-            
+
             var result = await _workflowInstanceDeleter.DeleteAsync(id);
             if (result.Status == DeleteWorkflowInstanceResultStatus.NotFound)
             {
@@ -202,7 +208,7 @@ namespace W2.WorkflowInstances
 
         // todo refactor/ new logic
         [AllowAnonymous]
-        public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email, 
+        public async Task<WorkflowStatusDto> GetWfhStatusAsync([Required] string email,
             [Required]
             [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
             string date)
@@ -415,6 +421,7 @@ namespace W2.WorkflowInstances
         public async Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input)
         {
             var specialStatus = new string[] { "approved", "rejected" };
+            var isAdmin = _currentUser.IsInRole("admin");
             var specification = Specification<WorkflowInstance>.Identity;
             if (CurrentTenant.IsAvailable)
             {
@@ -485,6 +492,16 @@ namespace W2.WorkflowInstances
                 })
                 .AsQueryable();
 
+            if (!isAdmin)
+            {
+                instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == _currentUser.Id);
+            }
+
+            if (!string.IsNullOrWhiteSpace(input?.RequestUser) && isAdmin)
+            {
+                instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == Guid.Parse(input.RequestUser));
+            }
+
             var totalCount = instancesQuery.Count();
             var totalResults = await AsyncExecuter.ToListAsync(
                 instancesQuery
@@ -535,11 +552,12 @@ namespace W2.WorkflowInstances
                         if (identityUser != null)
                         {
                             workflowInstanceDto.UserRequestName = stakeHolderEmails[identityUser.Email];
-                        } else
+                        }
+                        else
                         {
                             workflowInstanceDto.UserRequestName = "[Deleted]";
-                        }                       
-                    } 
+                        }
+                    }
                 }
 
                 var blockingActivityIds = instance.BlockingActivities.Select(x => x.ActivityId);
