@@ -10,5 +10,7 @@ namespace W2.WorkflowInstances
         public int SkipCount { get; set; }
         public string Sorting { get; set; }
         public string KeySearch { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
     }
 }

@@ -15,8 +15,12 @@ namespace W2.Tasks
         public Guid Author { get; set; }
         public W2TaskStatus Status { get; set; }
         public string Name { get; set; } // Task name
+        public string Description { get; set; } // Task description
         public string Reason { get; set; } // Task reason
         public string ApproveSignal { get; set; } // Task when approving
         public string RejectSignal { get; set; } // Task when rejecting
+        public string DynamicActionData { get; set; } // Dynamic action data for task
+        public List<string> OtherActionSignals { get; set; } // List of other action signals for Task
+        public string UpdatedBy { get; set; } // Email which updated the task
     }
 }

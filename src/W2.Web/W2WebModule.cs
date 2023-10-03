@@ -290,7 +290,7 @@ public class W2WebModule : AbpModule
         Configure<AbpAntiForgeryOptions>(options =>
         {
             // skip todo change
-            options.AutoValidateIgnoredHttpMethods = new HashSet<string> { "GET", "POST", "HEAD", "TRACE", "OPTIONS" };
+            options.AutoValidateIgnoredHttpMethods = new HashSet<string> { "GET", "POST", "DELETE", "HEAD", "TRACE", "OPTIONS" };
             options.AutoValidateFilter = type => type.Assembly != typeof(Elsa.Server.Api.Endpoints.WorkflowRegistry.Get).Assembly;
         });
     }
