@@ -3,6 +3,7 @@ using Elsa.Activities.Signaling.Extensions;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 using System.Threading;
@@ -18,17 +19,22 @@ namespace W2.Scripting
     {
         private readonly IExternalResourceAppService _externalResourceAppService;
         private readonly ICurrentUser _currentUser;
+        private readonly IConfiguration _configuration;
 
-        public CustomSignalJavaScriptHandler(IExternalResourceAppService externalResourceAppService, 
-            ICurrentUser currentUser)
+        public CustomSignalJavaScriptHandler(
+            IExternalResourceAppService externalResourceAppService,
+            ICurrentUser currentUser,
+            IConfiguration configuration)
         {
             _externalResourceAppService = externalResourceAppService;
             _currentUser = currentUser;
+            _configuration = configuration;
         }
 
         public async Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var absoluteUrlProvider = notification.ActivityExecutionContext.GetService<IAbsoluteUrlProvider>();
+            string UrlWeb = _configuration.GetValue<string>("URLWeb");
 
             var engine = notification.Engine;
             engine.SetValue("workflowSignals", new WorkflowSignals());
@@ -37,15 +43,15 @@ namespace W2.Scripting
             Func<string, string> getCustomSignalUrl = signal =>
             {
                 var url = $"/Signals?token={notification.ActivityExecutionContext.GenerateSignalToken(signal)}";
-                return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
+                return absoluteUrlProvider.ToAbsoluteUrl(UrlWeb).ToString();
             };
             engine.SetValue("getCustomSignalUrl", getCustomSignalUrl);
-            
+
             // gen token or something
             Func<string, string[], string> getCustomSignalUrlWithForm = (signal, requiredInputs) =>
             {
                 var url = $"/Signals/Form?token={notification.ActivityExecutionContext.GenerateSignalTokenWithForm(signal, requiredInputs)}";
-                return absoluteUrlProvider.ToAbsoluteUrl(url).ToString();
+                return absoluteUrlProvider.ToAbsoluteUrl(UrlWeb).ToString();
             };
             engine.SetValue("getCustomSignalUrlWithForm", getCustomSignalUrlWithForm);
 
