@@ -16,6 +16,7 @@ using NetBox.Extensions;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -503,12 +504,30 @@ namespace W2.WorkflowInstances
             }
 
             workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
+
+            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
+            var users = await _userRepository.GetListAsync();
+            if (!string.IsNullOrWhiteSpace(input.EmailRequest))
+            {
+                string emailRequest = input.EmailRequest.Trim().ToLowerInvariant();
+                users = users.Where(x => x.Email.ToLowerInvariant().Contains(emailRequest) && !x.IsDeleted).ToList();
+            }
+            var requestUsers = users
+                            .Where(x => x.Id.IsIn(requestUserIds))
+                            .ToList();
+
             var instancesQuery = workflowInstanceStarters
                 .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
                 (WorkflowInstanceStarter, WorkflowInstance) => new
                 {
                     WorkflowInstanceStarter,
                     WorkflowInstance
+                })
+                .Join(requestUsers, x => x.WorkflowInstanceStarter.CreatorId, x => x.Id, 
+                (joinedEntities, W2User) => new
+                {
+                    joinedEntities.WorkflowInstanceStarter,
+                    joinedEntities.WorkflowInstance,
                 })
                 .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
                 (joinedEntities, W2task) => new
@@ -541,10 +560,6 @@ namespace W2.WorkflowInstances
                 })
             );
 
-            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
-            var requestUsers = (await _userRepository.GetListAsync())
-                .Where(x => x.Id.IsIn(requestUserIds))
-                .ToList();
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
 
