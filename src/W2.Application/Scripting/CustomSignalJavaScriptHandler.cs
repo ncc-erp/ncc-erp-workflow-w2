@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
@@ -34,6 +35,11 @@ namespace W2.Scripting
         public async Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var absoluteUrlProvider = notification.ActivityExecutionContext.GetService<IAbsoluteUrlProvider>();
+
+            if(_configuration.GetValue<string>("URLWeb") == "")
+            {
+                throw new UserFriendlyException("Exception:URL Web not exist");
+            }
             string UrlTask = _configuration.GetValue<string>("URLWeb") + "/tasks?id=${taskId}&action=";
             string UrlApproveTask = UrlTask + "approve&input=${input}";
             string UrlRejectTask = UrlTask + "reject";
