@@ -618,14 +618,9 @@ namespace W2.WorkflowInstances
                             continue;
                         }
 
-                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName) && task == null)
+                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName) && task != null)
                         {
                             workflowInstanceDto.CurrentStates.Add(parentActivity.DisplayName);
-                        }
-
-                        if (!workflowInstanceDto.CurrentStates.Contains(task.Description) && task != null)
-                        {
-                            workflowInstanceDto.CurrentStates.Add(task.Description);
                         }
 
                         connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == parentActivity.ActivityId);
