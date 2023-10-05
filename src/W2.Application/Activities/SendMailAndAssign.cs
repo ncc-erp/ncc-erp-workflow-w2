@@ -93,7 +93,9 @@ namespace W2.Activities
                 OtherActionSignals = OtherActionSignals
             };
 
-            await _taskAppService.assignTask(input);
+            var taskId = await _taskAppService.assignTask(input);
+            this.Body = this.Body.Replace("${taskId}", taskId);
+            this.Body = this.Body.Replace("${input}", input.DynamicActionData ?? "");
 
             return await base.OnExecuteAsync(context);
         }

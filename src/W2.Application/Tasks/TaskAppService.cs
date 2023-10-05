@@ -59,7 +59,7 @@ namespace W2.Tasks
             _userRepository = userRepository;
         }
 
-        public async Task assignTask(AssignTaskInput input)
+        public async Task<string> assignTask(AssignTaskInput input)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
@@ -103,6 +103,8 @@ namespace W2.Tasks
                     TaskId = task.Id.ToString(),
                 });
             }
+
+            return task.Id.ToString();
         }
 
         public async Task createTask(string id) { }
