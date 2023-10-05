@@ -122,8 +122,7 @@ namespace W2.Tasks
                     .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail == null)
+            if (taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
@@ -162,8 +161,7 @@ namespace W2.Tasks
                     .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail == null)
+            if (taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
@@ -200,8 +198,7 @@ namespace W2.Tasks
                     .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail == null)
+            if (taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
