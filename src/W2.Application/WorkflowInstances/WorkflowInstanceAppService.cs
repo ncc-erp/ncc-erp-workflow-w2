@@ -183,6 +183,7 @@ namespace W2.WorkflowInstances
             return "Delete Request workflow successful";
         }
 
+        [AllowAnonymous]
         public async Task<WorkflowInstanceDto> GetByIdAsync(string id)
         {
             var specification = new WorkflowInstanceIdsSpecification(new[] { id });
