@@ -636,9 +636,10 @@ namespace W2.WorkflowInstances
                             instance.ActivityData.TryGetValue(parentForkActivity.ActivityId, out data);
                         }
 
-                        if (data != null && data.ContainsKey("To"))
+                        string key = data.ContainsKey("AssignTo") && data["AssignTo"] is List<string> dataList && dataList.Count > 0 ? "AssignTo" : data.ContainsKey("To") ? "To" : null;
+                        if (data != null && key != null)
                         {
-                            foreach (var email in (List<string>)data["To"])
+                            foreach (var email in (List<string>)data[key])
                             {
                                 string stakeHolderName = string.Empty;
                                 switch (email)
