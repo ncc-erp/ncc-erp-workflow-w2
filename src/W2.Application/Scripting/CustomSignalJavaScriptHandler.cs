@@ -47,7 +47,6 @@ namespace W2.Scripting
             var engine = notification.Engine;
             engine.SetValue("workflowSignals", new WorkflowSignals());
 
-            // gen token or something
             Func<string, string> getCustomSignalUrl = signal =>
             {
                 var url = $"/Signals?token={notification.ActivityExecutionContext.GenerateSignalToken(signal)}";
@@ -55,7 +54,6 @@ namespace W2.Scripting
             };
             engine.SetValue("getCustomSignalUrl", getCustomSignalUrl);
 
-                        // gen token or something
             Func<string, string> getOtherActionSignalUrl = signal =>
             {
                 string UrlActionTask = UrlTask + "other&input=" + signal;
@@ -64,7 +62,6 @@ namespace W2.Scripting
             };
             engine.SetValue("getOtherActionSignalUrl", getOtherActionSignalUrl);
 
-            // gen token or something
             Func<string, string[], string> getCustomSignalUrlWithForm = (signal, requiredInputs) =>
             {
                 var url = $"/Signals/Form?token={notification.ActivityExecutionContext.GenerateSignalTokenWithForm(signal, requiredInputs)}";
