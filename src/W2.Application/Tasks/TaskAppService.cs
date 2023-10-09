@@ -272,7 +272,7 @@ namespace W2.Tasks
             if (!string.IsNullOrWhiteSpace(input.EmailRequest))
             {
                 string emailRequest = input.EmailRequest.Trim();
-                query = query.Where(x => x.W2User.Email.Contains(emailRequest));
+                query = query.Where(x => x.EmailTo.Any(email => email.Contains(emailRequest)));
             }
 
             if (!string.IsNullOrWhiteSpace(input.EmailAssign) && isAdmin)
