@@ -398,6 +398,10 @@ namespace W2.WorkflowInstances
                     }
                 }
 
+                if (totalDays == 0) {
+                    continue;
+                }
+
                 var users = await GetUserInfoBySlug(ConvertEmailToSlug(requestUser.Email));
                 List<PostItem> posts = (users.Count > 0) ? await GetPostByAuthor(users[0].id) : new List<PostItem>();
 
