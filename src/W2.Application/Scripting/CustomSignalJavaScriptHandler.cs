@@ -55,6 +55,15 @@ namespace W2.Scripting
             };
             engine.SetValue("getCustomSignalUrl", getCustomSignalUrl);
 
+                        // gen token or something
+            Func<string, string> getOtherActionSignalUrl = signal =>
+            {
+                string UrlActionTask = UrlTask + "other&input=" + signal;
+                var url = $"/Signals?token={notification.ActivityExecutionContext.GenerateSignalToken(signal)}";
+                return absoluteUrlProvider.ToAbsoluteUrl(UrlActionTask).ToString();
+            };
+            engine.SetValue("getOtherActionSignalUrl", getOtherActionSignalUrl);
+
             // gen token or something
             Func<string, string[], string> getCustomSignalUrlWithForm = (signal, requiredInputs) =>
             {
@@ -96,6 +105,7 @@ namespace W2.Scripting
             var output = notification.Output;
 
             output.AppendLine("declare function getCustomSignalUrl(signal: string): string");
+            output.AppendLine("declare function getOtherActionSignalUrl(signal: string): string");
             output.AppendLine("declare const workflowSignals: WorkflowSignals");
             output.AppendLine("declare function getOfficeInfo(officeCode: string): OfficeInfo");
             output.AppendLine("declare const currentUser: ICurrentUser");
