@@ -10,5 +10,6 @@ namespace W2.WorkflowInstances
         public string WorkflowInstanceId { get; set; } = default!;
         public Dictionary<string, string> Input { get; set; }
         public Guid? TenantId { get; set; }
+        public WorkflowInstancesStatus Status { get; set; }
     }
 }
