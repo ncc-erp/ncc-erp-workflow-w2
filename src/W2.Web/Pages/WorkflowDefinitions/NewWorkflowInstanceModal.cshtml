@@ -49,7 +49,19 @@
                                         {
                                             $('#@inputId').datepicker({
                                                 format: 'dd/mm/yyyy',
-                                                multidate: "@propertyDefinition.Name" == "Dates"
+                                            });
+                                        }
+                                    </script>
+                                    break;
+                                case WorkflowInputDefinitionProperyType.MultiDatetime:
+                                    <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
+                                           type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]"
+                                           readonly style="cursor: pointer" />
+                                    <script>
+                                        {
+                                            $('#@inputId').datepicker({
+                                                format: 'dd/mm/yyyy',
+                                                multidate: true
                                             });
                                         }
                                     </script>

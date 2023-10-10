@@ -19,6 +19,8 @@ namespace W2.WorkflowDefinitions
         [Display(Name = "My PM Project")]
         MyPMProject,
         [Display(Name = "Office List")]
-        OfficeList
+        OfficeList,
+        [Display(Name = "Multiple Date Time")]
+        MultiDatetime,
     }
 }

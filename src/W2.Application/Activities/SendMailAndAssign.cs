@@ -2,19 +2,20 @@
 using Elsa.Activities.Email;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
-using Elsa.Activities.Signaling.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Serialization;
-using Elsa.Services;
 using Elsa.Services.Models;
+using Humanizer;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Volo.Abp;
 using W2.Signals;
 using W2.Tasks;
 
@@ -28,42 +29,73 @@ namespace W2.Activities
     public class SendMailAndAssign : SendEmail
     {
         private ITaskAppService _taskAppService;
-        private readonly ITokenService _tokenService;
         public SendMailAndAssign(ISmtpService smtpService, 
             IOptions<SmtpOptions> options, 
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
-            IContentSerializer contentSerializer,
-            ITokenService tokenService) 
+            IContentSerializer contentSerializer) 
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
-            _tokenService = tokenService;
         }
 
         public new string From => string.Empty;
+
         [ActivityInput(Hint = "The approved signal", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
         public string ApproveSignal { get; set; }
 
         [ActivityInput(Hint = "The reject signal", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
         public string RejectSignal { get; set; }
 
+        [ActivityInput(Hint = "The dynamic form data", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
+        public string DynamicActionData { get; set; }
+
+        [ActivityInput(Hint = "Other action for signal", UIHint = "multi-text", DefaultSyntax = "Json", SupportedSyntaxes = new string[] { "Json", "JavaScript" })]
+        public List<string> OtherActionSignals { get; set; }
+
+        [ActivityInput(Hint = "Email to assign", UIHint = "multi-text", DefaultSyntax = "Json", SupportedSyntaxes = new string[] { "Json", "JavaScript" })]
+        public List<string> AssignTo { get; set; }
+
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             if (To == null)
             {
-                To = new List<string>();
+                throw new UserFriendlyException("Exception:No Email address To send");
+            }
+            List<string> EmailTo = new List<string>();
+
+            if (AssignTo != null)
+            {
+                foreach (string email in AssignTo)
+                {
+                    EmailTo.Add(email);
+                }
+            } else
+            {
+                foreach (string email in To)
+                {
+                    EmailTo.Add(email);
+                }
             }
 
             var currentUser = context.GetRequestUserVariable();
+            var Description = context.ActivityBlueprint.DisplayName;
 
-            foreach(var email in To)
+            var input = new AssignTaskInput
             {
-                if (email != null)
-                {
-                    await _taskAppService.assignTask(email, (Guid)currentUser.Id, context.WorkflowInstance.Id, ApproveSignal.Trim(), RejectSignal.Trim());
-                }
-            }
+                UserId = (Guid)currentUser.Id,
+                WorkflowInstanceId = context.WorkflowInstance.Id,
+                ApproveSignal = ApproveSignal.Trim(),
+                RejectSignal = RejectSignal.Trim(),
+                DynamicActionData = DynamicActionData,
+                Description = Description,
+                EmailTo = EmailTo,
+                OtherActionSignals = OtherActionSignals
+            };
+
+            var taskId = await _taskAppService.assignTask(input);
+            this.Body = this.Body.Replace("${taskId}", taskId);
+            this.Body = this.Body.Replace("${input}", input.DynamicActionData ?? "");
 
             return await base.OnExecuteAsync(context);
         }

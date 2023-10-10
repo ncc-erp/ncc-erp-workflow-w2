@@ -57,6 +57,7 @@
                             <option value="MyProject">My Project</option>
                             <option value="MyPMProject">My PM Project</option>
                             <option value="OfficeList">Office List</option>
+                            <option value="MultiDatetime">Multiple Date Time</option>
                         </select>
                         <span class="text-danger field-validation-valid"
                             data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].Type" data-valmsg-replace="true"></span>
