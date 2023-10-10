@@ -77,6 +77,7 @@ jobs:
         DB_PORT: ${{ secrets.DB_PORT_prod }}
         PASSPHRASE: ${{ secrets.PASSPHRASE_prod }}
         SES_HOST: ${{ secrets.SES_HOST_prod }}
+        SES_SENDER: ${{ secrets.SES_SENDER_prod }}
         SES_USER: ${{ secrets.SES_USER_prod }}
         SES_PASS: ${{ secrets.SES_PASS_prod }}
         GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
