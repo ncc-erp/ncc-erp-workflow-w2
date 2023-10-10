@@ -95,10 +95,16 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
+            var hasAnyApproved = await _taskRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id && x.Status != W2TaskStatus.Pending);
+            if (hasAnyApproved != null)
+            {
+                throw new UserFriendlyException(L["Cancel Failed: No Permission!"]);
+            }
+
             // Only allow workflow has pending or failed status to cancel
             if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted))
             {
-                throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
+                throw new UserFriendlyException(L["Cancel Failed: Workflow Is Not Valid!"]);
             }
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
@@ -162,10 +168,16 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
+            var hasAnyApproved = await _taskRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id && x.Status != W2TaskStatus.Pending);
+            if (hasAnyApproved != null)
+            {
+                throw new UserFriendlyException(L["Delete Failed: No Permission!"]);
+            }
+
             // Only allow workflow has pending or faulted status to deleted
             if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted))
             {
-                throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
+                throw new UserFriendlyException(L["Delete Failed: Workflow Is Not Valid!"]);
             }
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
