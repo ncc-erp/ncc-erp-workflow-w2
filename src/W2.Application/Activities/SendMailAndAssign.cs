@@ -16,8 +16,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Domain.Repositories;
 using W2.Signals;
 using W2.Tasks;
+using W2.WorkflowInstances;
 
 namespace W2.Activities
 {
@@ -64,7 +66,7 @@ namespace W2.Activities
             }
             List<string> EmailTo = new List<string>();
 
-            if (AssignTo != null)
+            if (AssignTo != null && AssignTo.Count > 0)
             {
                 foreach (string email in AssignTo)
                 {
