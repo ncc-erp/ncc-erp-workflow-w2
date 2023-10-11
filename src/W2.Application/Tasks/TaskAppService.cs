@@ -292,6 +292,11 @@ namespace W2.Tasks
                 query = query.Where(x => x.W2task.Status == input.Status);
             }
 
+            if(input.isTaskListPage.HasValue)
+            {
+                query = query.Where(x => x.W2task.Status != W2TaskStatus.Cancel);
+            }
+
             if (hasWorkflowDefinitionId)
             {
                 query = query.Where(x => x.W2task.WorkflowDefinitionId == input.WorkflowDefinitionId);
