@@ -36,6 +36,7 @@ using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
+using W2.TaskActions;
 using W2.Tasks;
 using static IdentityServer4.Models.IdentityResources;
 
@@ -47,6 +48,7 @@ namespace W2.WorkflowInstances
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
         private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
@@ -62,6 +64,7 @@ namespace W2.WorkflowInstances
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
+                        IRepository<W2TaskActions, Guid> taskActionsRepository,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
@@ -87,6 +90,7 @@ namespace W2.WorkflowInstances
             _antClientApi = antClientApi;
             _configuration = configuration;
             _taskRepository = taskRepository;
+            _taskActionsRepository = taskActionsRepository;
             _dataFilter = dataFilter;
             _currentUser = currentUser;
         }
@@ -95,8 +99,12 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
-            var hasAnyApproved = await _taskRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id && x.Status != W2TaskStatus.Pending);
-            if (hasAnyApproved != null)
+            var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
+            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending);
+
+            var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
+
+            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
             {
                 throw new UserFriendlyException(L["Cancel Failed: No Permission!"]);
             }
@@ -168,8 +176,12 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
-            var hasAnyApproved = await _taskRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id && x.Status != W2TaskStatus.Pending);
-            if (hasAnyApproved != null)
+            var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
+            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending);
+
+            var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
+
+            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
             {
                 throw new UserFriendlyException(L["Delete Failed: No Permission!"]);
             }
