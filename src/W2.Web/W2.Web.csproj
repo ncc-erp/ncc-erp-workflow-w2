@@ -33,6 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="Pages\Shared\_ViewDesigner.cshtml" />
     <Content Remove="Pages\ViewDesigner\Index.cshtml" />
   </ItemGroup>
 
@@ -84,11 +85,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <_ContentIncludedByDefault Remove="Pages\Shared\_ViewDesigner.cshtml" />
     <_ContentIncludedByDefault Remove="Pages\ViewDesigner\Index.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Pages\Shared\_ViewDesigner.cshtml" />
     <None Include="Pages\ViewDesigner\Index.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Pages\Shared\_ViewDesigner.cshtml" />
   </ItemGroup>
 
 </Project>
