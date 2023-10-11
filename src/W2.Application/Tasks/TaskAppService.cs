@@ -228,7 +228,6 @@ namespace W2.Tasks
 
         public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
         {
-            var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
             var users = await _userRepository.GetListAsync();
             var tasks = await _taskRepository.GetListAsync();
             var taskEmail = await _taskEmailRepository.GetListAsync();
@@ -287,14 +286,9 @@ namespace W2.Tasks
                 query = query.Where(x => new DateTimeOffset(x.W2task.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
             }
 
-            if (hasTaskStatus)
+            if (input.Status != null)
             {
-                query = query.Where(x => x.W2task.Status == input.Status);
-            }
-
-            if(input.isTaskListPage.HasValue)
-            {
-                query = query.Where(x => x.W2task.Status != W2TaskStatus.Cancel);
+                query = query.Where(x => input.Status.Contains(x.W2task.Status));
             }
 
             if (hasWorkflowDefinitionId)
