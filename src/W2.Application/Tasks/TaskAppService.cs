@@ -59,6 +59,8 @@ namespace W2.Tasks
             _userRepository = userRepository;
         }
 
+        [AllowAnonymous]
+        [RemoteService(IsEnabled = false)]
         public async Task<string> assignTask(AssignTaskInput input)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
