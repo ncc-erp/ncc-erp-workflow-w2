@@ -16,6 +16,7 @@ using NetBox.Extensions;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -35,6 +36,7 @@ using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
+using W2.TaskActions;
 using W2.Tasks;
 using static IdentityServer4.Models.IdentityResources;
 
@@ -46,6 +48,7 @@ namespace W2.WorkflowInstances
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
         private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
@@ -61,6 +64,7 @@ namespace W2.WorkflowInstances
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
+                        IRepository<W2TaskActions, Guid> taskActionsRepository,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
@@ -86,6 +90,7 @@ namespace W2.WorkflowInstances
             _antClientApi = antClientApi;
             _configuration = configuration;
             _taskRepository = taskRepository;
+            _taskActionsRepository = taskActionsRepository;
             _dataFilter = dataFilter;
             _currentUser = currentUser;
         }
@@ -94,10 +99,20 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
+            var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
+            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending);
+
+            var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
+
+            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
+            {
+                throw new UserFriendlyException(L["Cancel Failed: No Permission!"]);
+            }
+
             // Only allow workflow has pending or failed status to cancel
             if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted))
             {
-                throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
+                throw new UserFriendlyException(L["Cancel Failed: Workflow Is Not Valid!"]);
             }
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
@@ -161,10 +176,20 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
+            var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
+            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending);
+
+            var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
+
+            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
+            {
+                throw new UserFriendlyException(L["Delete Failed: No Permission!"]);
+            }
+
             // Only allow workflow has pending or faulted status to deleted
             if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted))
             {
-                throw new UserFriendlyException(L["Exception:WorkflowNotValid"]);
+                throw new UserFriendlyException(L["Delete Failed: Workflow Is Not Valid!"]);
             }
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
@@ -397,6 +422,10 @@ namespace W2.WorkflowInstances
                     }
                 }
 
+                if (totalDays == 0) {
+                    continue;
+                }
+
                 var users = await GetUserInfoBySlug(ConvertEmailToSlug(requestUser.Email));
                 List<PostItem> posts = (users.Count > 0) ? await GetPostByAuthor(users[0].id) : new List<PostItem>();
 
@@ -504,12 +533,30 @@ namespace W2.WorkflowInstances
             }
 
             workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
+
+            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
+            var users = await _userRepository.GetListAsync();
+            if (!string.IsNullOrWhiteSpace(input.EmailRequest))
+            {
+                string emailRequest = input.EmailRequest.Trim().ToLowerInvariant();
+                users = users.Where(x => x.Email.ToLowerInvariant().Contains(emailRequest) && !x.IsDeleted).ToList();
+            }
+            var requestUsers = users
+                            .Where(x => x.Id.IsIn(requestUserIds))
+                            .ToList();
+
             var instancesQuery = workflowInstanceStarters
                 .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
                 (WorkflowInstanceStarter, WorkflowInstance) => new
                 {
                     WorkflowInstanceStarter,
                     WorkflowInstance
+                })
+                .Join(requestUsers, x => x.WorkflowInstanceStarter.CreatorId, x => x.Id, 
+                (joinedEntities, W2User) => new
+                {
+                    joinedEntities.WorkflowInstanceStarter,
+                    joinedEntities.WorkflowInstance,
                 })
                 .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
                 (joinedEntities, W2task) => new
@@ -542,10 +589,6 @@ namespace W2.WorkflowInstances
                 })
             );
 
-            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
-            var requestUsers = (await _userRepository.GetListAsync())
-                .Where(x => x.Id.IsIn(requestUserIds))
-                .ToList();
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
 
@@ -603,14 +646,9 @@ namespace W2.WorkflowInstances
                             continue;
                         }
 
-                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName) && task == null)
+                        if (!workflowInstanceDto.CurrentStates.Contains(parentActivity.DisplayName) && task != null)
                         {
                             workflowInstanceDto.CurrentStates.Add(parentActivity.DisplayName);
-                        }
-
-                        if (!workflowInstanceDto.CurrentStates.Contains(task.Description) && task != null)
-                        {
-                            workflowInstanceDto.CurrentStates.Add(task.Description);
                         }
 
                         connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == parentActivity.ActivityId);
@@ -626,9 +664,10 @@ namespace W2.WorkflowInstances
                             instance.ActivityData.TryGetValue(parentForkActivity.ActivityId, out data);
                         }
 
-                        if (data != null && data.ContainsKey("To"))
+                        string key = data.ContainsKey("AssignTo") && data["AssignTo"] is List<string> dataList && dataList.Count > 0 ? "AssignTo" : data.ContainsKey("To") ? "To" : null;
+                        if (data != null && key != null)
                         {
-                            foreach (var email in (List<string>)data["To"])
+                            foreach (var email in (List<string>)data[key])
                             {
                                 string stakeHolderName = string.Empty;
                                 switch (email)

@@ -335,6 +335,7 @@ public class W2WebModule : AbpModule
         {
             options.Conventions.AuthorizeFolder("/WorkflowDefinitions", W2Permissions.WorkflowManagementWorkflowDefinitions);
             options.Conventions.AuthorizeFolder("/WorkflowInstances", W2Permissions.WorkflowManagementWorkflowInstances);
+            options.Conventions.AllowAnonymousToFolder("/ViewDesigner");
         });
     }
 

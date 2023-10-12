@@ -59,7 +59,9 @@ namespace W2.Tasks
             _userRepository = userRepository;
         }
 
-        public async Task assignTask(AssignTaskInput input)
+        [AllowAnonymous]
+        [RemoteService(IsEnabled = false)]
+        public async Task<string> assignTask(AssignTaskInput input)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
@@ -103,6 +105,8 @@ namespace W2.Tasks
                     TaskId = task.Id.ToString(),
                 });
             }
+
+            return task.Id.ToString();
         }
 
         public async Task createTask(string id) { }
@@ -120,8 +124,7 @@ namespace W2.Tasks
                     .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail == null)
+            if (taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
@@ -160,8 +163,7 @@ namespace W2.Tasks
                     .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail == null)
+            if (taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
@@ -198,8 +200,7 @@ namespace W2.Tasks
                     .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
-            var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin && taskEmail == null)
+            if (taskEmail == null)
             {
                 throw new UserFriendlyException(L["Exception:No Permission"]);
             }
@@ -229,7 +230,6 @@ namespace W2.Tasks
 
         public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
         {
-            var hasTaskStatus = input.Status != null && Enum.IsDefined(typeof(W2TaskStatus), input.Status);
             var users = await _userRepository.GetListAsync();
             var tasks = await _taskRepository.GetListAsync();
             var taskEmail = await _taskEmailRepository.GetListAsync();
@@ -288,9 +288,9 @@ namespace W2.Tasks
                 query = query.Where(x => new DateTimeOffset(x.W2task.CreationTime).ToUnixTimeSeconds() >= DateTimeOffset.Parse(input.Dates).ToUnixTimeSeconds());
             }
 
-            if (hasTaskStatus)
+            if (input.Status != null)
             {
-                query = query.Where(x => x.W2task.Status == input.Status);
+                query = query.Where(x => input.Status.Contains(x.W2task.Status));
             }
 
             if (hasWorkflowDefinitionId)
