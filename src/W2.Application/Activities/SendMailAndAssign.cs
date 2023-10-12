@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using W2.Signals;
@@ -97,7 +98,11 @@ namespace W2.Activities
 
             var taskId = await _taskAppService.assignTask(input);
             this.Body = this.Body.Replace("${taskId}", taskId);
-            this.Body = this.Body.Replace("${input}", input.DynamicActionData ?? "");
+            if (DynamicActionData != null)
+            {
+                this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
+
+            }
 
             return await base.OnExecuteAsync(context);
         }
