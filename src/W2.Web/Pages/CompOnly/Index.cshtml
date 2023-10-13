@@ -1,0 +1,26 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Configuration
+@using W2.Localization
+
+@inject IConfiguration Configuration;
+@inject IStringLocalizer<W2Resource> L
+
+@model W2.Web.Pages.CompOnly.IndexModel
+
+@{
+    var elsaServerUrl = Configuration["ElsaConfiguration:Server:BaseUrl"];
+}
+
+@{
+    Layout = null;
+}
+
+@await Html.PartialAsync("_ViewDesigner")
+
+<elsa-studio-root server-url="@elsaServerUrl" monaco-lib-path="_content/Elsa.Designer.Components.Web/monaco-editor/min" config="designer.config.json">
+    <elsa-workflow-instance-viewer-screen id="workflowInstanceViewer" workflow-instance-id="@Model.WorkflowInstanceId"></elsa-workflow-instance-viewer-screen>
+</elsa-studio-root>
+
+
+@await Html.PartialAsync("_ElsaScripts")
