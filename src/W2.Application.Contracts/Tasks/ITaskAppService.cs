@@ -18,5 +18,6 @@ namespace W2.Tasks
         Task<string> ActionAsync(ListTaskActions input);
         // Task<string> CancelAsync(string id);
         Task<TaskDetailDto> GetDetailByIdAsync(string id);
+        Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input);
     }
 }

@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 using Volo.Abp.Identity;
 using W2.TaskEmail;
 using W2.TaskActions;
+using System.Collections;
 
 namespace W2.Tasks
 {
@@ -110,7 +111,6 @@ namespace W2.Tasks
         }
 
         public async Task createTask(string id) { }
-
 
         public async Task<string> ApproveAsync(ApproveTasksInput input)
         {
@@ -374,6 +374,38 @@ namespace W2.Tasks
             };
 
             return taskDetailDto;
+        }
+
+        public async Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input)
+        {
+            var query = await _taskRepository.GetListAsync(x => x.Id != Guid.Parse(input.Id) && x.WorkflowInstanceId == input.WorkflowInstanceId);
+            var totalItemCount = query
+                .GroupBy(x => x.Id)
+                .Select(group => group.FirstOrDefault())
+                .Count();
+
+            var tasks = query
+                .GroupBy(x => x.Id)
+                .Select(group => group.FirstOrDefault())
+                .OrderByDescending(task => task.CreationTime)
+                .Select(x => new W2TasksDto
+                {
+                    Author = x.Author,
+                    CreationTime = x.CreationTime,
+                    Description = x.Description,
+                    Email = x.Email,
+                    Id = x.Id,   
+                    Name = x.Name,
+                    DynamicActionData = x.DynamicActionData,
+                    Reason = x.Reason,
+                    Status = x.Status,
+                    WorkflowDefinitionId = x.WorkflowDefinitionId,
+                    WorkflowInstanceId = x.WorkflowInstanceId
+                })
+                .ToList();
+
+
+            return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
         }
     }
 }
