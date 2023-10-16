@@ -135,14 +135,14 @@ namespace W2.Tasks
                 { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
-            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
-            var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
-            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
             if (!string.IsNullOrEmpty(input.DynamicActionData))
             {
                 myTask.DynamicActionData = input.DynamicActionData;
             }
+
+            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
+            var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
+            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             myTask.Status = W2TaskStatus.Approve;
             myTask.UpdatedBy = _currentUser.Email;
@@ -378,6 +378,63 @@ namespace W2.Tasks
 
         public async Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input)
         {
+            dynamic result = await handleDynamicData(input);
+            int totalItemCount = result.TotalItemCount;
+            List<W2TasksDto> tasks = result.Tasks;
+            return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
+        }
+
+        public async Task<object>getAllDynamicData(TaskDynamicDataInput input)
+        {
+            dynamic result = await handleDynamicData(input);
+            List<W2TasksDto> tasks = result.Tasks;
+            string strengthPoints = "<p>- ";
+            string weaknessPoints = "<p>- ";
+            int index = 0;
+            int count = tasks.Count;
+
+            foreach (var task in tasks)
+            {
+                var dynamicActionData = task.DynamicActionData;
+
+                if (dynamicActionData != null)
+                {
+                    List<Dictionary<string, object>> dynamicData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
+                    foreach(var data in dynamicData)
+                    {
+                        dynamic dataObject = data;
+
+                        if(dataObject["name"] == "StrengthPoints")
+                        {
+                            strengthPoints += dataObject["data"];
+                        }
+
+                        if (dataObject["name"] == "WeaknessPoints")
+                        {
+                            weaknessPoints += dataObject["data"];
+                        }
+                    }
+                }
+                
+                if(++index != count)
+                {
+                    strengthPoints += "\n";
+                    weaknessPoints += "\n";
+                }
+            }
+
+            strengthPoints = strengthPoints.Replace("\n", "</p><p>- ") + "</p>";
+            weaknessPoints = weaknessPoints.Replace("\n", "</p><p>- ") + "</p>";
+
+            return new
+            {
+                StrengthPoints = strengthPoints,
+                WeaknessPoints = weaknessPoints,
+            };
+        }
+
+        protected async Task<object> handleDynamicData(TaskDynamicDataInput input)
+        {
             var query = await _taskRepository.GetListAsync(x => x.Id != Guid.Parse(input.Id) && x.WorkflowInstanceId == input.WorkflowInstanceId);
             var totalItemCount = query
                 .GroupBy(x => x.Id)
@@ -394,7 +451,7 @@ namespace W2.Tasks
                     CreationTime = x.CreationTime,
                     Description = x.Description,
                     Email = x.Email,
-                    Id = x.Id,   
+                    Id = x.Id,
                     Name = x.Name,
                     DynamicActionData = x.DynamicActionData,
                     Reason = x.Reason,
@@ -404,8 +461,10 @@ namespace W2.Tasks
                 })
                 .ToList();
 
-
-            return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
+            return new { 
+                TotalItemCount = totalItemCount, 
+                Tasks = tasks 
+            };
         }
     }
 }

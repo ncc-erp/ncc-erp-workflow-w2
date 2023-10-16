@@ -100,8 +100,26 @@ namespace W2.Activities
             this.Body = this.Body.Replace("${taskId}", taskId);
             if (DynamicActionData != null)
             {
-                this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
+                List<Dictionary<string, object>> dynamicData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(DynamicActionData);
+                if(
+                    dynamicData.Count > 0 &&
+                    dynamicData[0].ContainsKey("isFinalApprove") &&
+                    dynamicData[0]["isFinalApprove"].ToString().ToLower() == "true"
+                )
+                {
+                    dynamic listDynamicData = await _taskAppService.getAllDynamicData(new TaskDynamicDataInput
+                    {
+                        Id = taskId,
+                        WorkflowInstanceId = context.WorkflowInstance.Id,
+                    });
 
+                    this.Body = this.Body.Replace("{StrengthPoints}", listDynamicData.StrengthPoints);
+                    this.Body = this.Body.Replace("{WeaknessPoints}", listDynamicData.WeaknessPoints);
+                }
+                else
+                {
+                    this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
+                }
             }
 
             return await base.OnExecuteAsync(context);
