@@ -10,6 +10,6 @@ namespace W2.WorkflowInstances
         public string typeRequest { get; set; }
         public object input { get; set; }
         public string workInstanceId { get; set; }
-        public W2TasksDto tasks { get; set; }
+        public List<W2TasksDto> tasks { get; set; }
     }
 }

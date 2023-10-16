@@ -829,8 +829,8 @@ namespace W2.WorkflowInstances
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
                  new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
 
-            var tasks = (await _taskRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == workflowInstance.Id));
-            var requestTasks = ObjectMapper.Map<W2Task, W2TasksDto>(tasks);
+            var tasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == workflowInstance.Id);
+            var requestTasks = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(tasks);
 
             var workflowInstanceDetailDto = new WorkflowInstanceDetailDto
             {
