@@ -201,6 +201,10 @@ namespace W2.ExternalResources
                 throw new UserFriendlyException("Invalid External Authentication.");
             var info = new UserLoginInfo(externalAuth.Provider, payload.Subject, externalAuth.Provider);
             var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            if (user != null && !user.IsActive)
+            {
+                throw new UserFriendlyException("User is disabled!");
+            }
             if (user == null)
             {
                 user = await _userManager.FindByEmailAsync(payload.Email);

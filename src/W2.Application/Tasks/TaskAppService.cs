@@ -331,6 +331,7 @@ namespace W2.Tasks
             return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
         }
 
+        [AllowAnonymous]
         public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
