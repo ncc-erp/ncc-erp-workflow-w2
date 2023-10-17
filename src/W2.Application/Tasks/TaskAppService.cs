@@ -21,6 +21,7 @@ using Volo.Abp.Identity;
 using W2.TaskEmail;
 using W2.TaskActions;
 using System.Collections;
+using Elsa.Models;
 
 namespace W2.Tasks
 {
@@ -378,69 +379,11 @@ namespace W2.Tasks
 
         public async Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input)
         {
-            dynamic result = await handleDynamicData(input);
-            int totalItemCount = result.TotalItemCount;
-            List<W2TasksDto> tasks = result.Tasks;
-            return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
-        }
-
-        public async Task<object>getAllDynamicData(TaskDynamicDataInput input)
-        {
-            dynamic result = await handleDynamicData(input);
-            List<W2TasksDto> tasks = result.Tasks;
-            string strengthPoints = "<p>- ";
-            string weaknessPoints = "<p>- ";
-            int index = 0;
-            int count = tasks.Count;
-
-            foreach (var task in tasks)
-            {
-                var dynamicActionData = task.DynamicActionData;
-
-                if (dynamicActionData != null)
-                {
-                    List<Dictionary<string, object>> dynamicData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
-                    foreach(var data in dynamicData)
-                    {
-                        dynamic dataObject = data;
-
-                        if(dataObject["name"] == "StrengthPoints")
-                        {
-                            strengthPoints += dataObject["data"];
-                        }
-
-                        if (dataObject["name"] == "WeaknessPoints")
-                        {
-                            weaknessPoints += dataObject["data"];
-                        }
-                    }
-                }
-                
-                if(++index != count)
-                {
-                    strengthPoints += "\n";
-                    weaknessPoints += "\n";
-                }
-            }
-
-            strengthPoints = strengthPoints.Replace("\n", "</p><p>- ") + "</p>";
-            weaknessPoints = weaknessPoints.Replace("\n", "</p><p>- ") + "</p>";
-
-            return new
-            {
-                StrengthPoints = strengthPoints,
-                WeaknessPoints = weaknessPoints,
-            };
-        }
-
-        protected async Task<object> handleDynamicData(TaskDynamicDataInput input)
-        {
-            var query = await _taskRepository.GetListAsync(x => x.Id != Guid.Parse(input.Id) && x.WorkflowInstanceId == input.WorkflowInstanceId);
+            var query = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == input.WorkflowInstanceId);
             var totalItemCount = query
                 .GroupBy(x => x.Id)
                 .Select(group => group.FirstOrDefault())
                 .Count();
-
             var tasks = query
                 .GroupBy(x => x.Id)
                 .Select(group => group.FirstOrDefault())
@@ -460,11 +403,48 @@ namespace W2.Tasks
                     WorkflowInstanceId = x.WorkflowInstanceId
                 })
                 .ToList();
+            return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
+        }
 
-            return new { 
-                TotalItemCount = totalItemCount, 
-                Tasks = tasks 
-            };
+        public async Task<Dictionary<string, string>> handleDynamicData(TaskDynamicDataInput input)
+        {
+            List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
+            Dictionary<string, string> dynamicData = new Dictionary<string, string>();
+            int index = 0;
+            int count = tasks.Count;
+
+            foreach (var task in tasks)
+            {
+                var dynamicActionData = task.DynamicActionData;
+                index++;
+
+                if(!dynamicActionData.IsNullOrEmpty())
+                {
+                    List<Dictionary<string, object>> data = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
+                    foreach (var item in data)
+                    {
+                        if(dynamicData.ContainsKey(item["name"].ToString()))
+                        {
+                            dynamicData[item["name"].ToString()] += item["data"].ToString();
+                        }
+                        else
+                        {
+                            dynamicData[item["name"].ToString()] = "<p>" + item["data"].ToString();
+                        }             
+
+                        if(index != count)
+                        {
+                            dynamicData[item["name"].ToString()] += "\n";
+                        }
+                        else
+                        {
+                            dynamicData[item["name"].ToString()] = dynamicData[item["name"].ToString()].Replace("\n", "</p><p>") + "</p>";
+                        }
+                    }
+                }
+            }
+
+            return dynamicData;
         }
     }
 }

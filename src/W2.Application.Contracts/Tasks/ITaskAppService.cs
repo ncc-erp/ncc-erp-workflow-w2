@@ -19,6 +19,6 @@ namespace W2.Tasks
         // Task<string> CancelAsync(string id);
         Task<TaskDetailDto> GetDetailByIdAsync(string id);
         Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input);
-        Task<object> getAllDynamicData(TaskDynamicDataInput input);
+        Task<Dictionary<string, string>> handleDynamicData(TaskDynamicDataInput input);
     }
 }

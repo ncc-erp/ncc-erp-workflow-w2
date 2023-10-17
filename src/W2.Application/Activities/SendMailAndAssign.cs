@@ -84,6 +84,19 @@ namespace W2.Activities
             var currentUser = context.GetRequestUserVariable();
             var Description = context.ActivityBlueprint.DisplayName;
 
+            Dictionary<string, string> listDynamicData = await _taskAppService.handleDynamicData(new TaskDynamicDataInput
+            {
+                WorkflowInstanceId = context.WorkflowInstance.Id,
+            });
+
+            if(listDynamicData.Count > 0)
+            {
+                foreach(var key in listDynamicData.Keys)
+                {
+                    this.Body = this.Body.Replace("{" + key + "}", listDynamicData[key]);
+                }
+            }
+
             var input = new AssignTaskInput
             {
                 UserId = (Guid)currentUser.Id,
@@ -100,26 +113,7 @@ namespace W2.Activities
             this.Body = this.Body.Replace("${taskId}", taskId);
             if (DynamicActionData != null)
             {
-                List<Dictionary<string, object>> dynamicData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(DynamicActionData);
-                if(
-                    dynamicData.Count > 0 &&
-                    dynamicData[0].ContainsKey("isFinalApprove") &&
-                    dynamicData[0]["isFinalApprove"].ToString().ToLower() == "true"
-                )
-                {
-                    dynamic listDynamicData = await _taskAppService.getAllDynamicData(new TaskDynamicDataInput
-                    {
-                        Id = taskId,
-                        WorkflowInstanceId = context.WorkflowInstance.Id,
-                    });
-
-                    this.Body = this.Body.Replace("{StrengthPoints}", listDynamicData.StrengthPoints);
-                    this.Body = this.Body.Replace("{WeaknessPoints}", listDynamicData.WeaknessPoints);
-                }
-                else
-                {
-                    this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
-                }
+                this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
             }
 
             return await base.OnExecuteAsync(context);
