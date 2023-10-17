@@ -410,41 +410,44 @@ namespace W2.Tasks
         {
             List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
             Dictionary<string, string> dynamicData = new Dictionary<string, string>();
-            int index = 0;
-            int count = tasks.Count;
 
             foreach (var task in tasks)
             {
                 var dynamicActionData = task.DynamicActionData;
-                index++;
 
-                if(!dynamicActionData.IsNullOrEmpty())
+                if(dynamicActionData.IsNullOrEmpty())
                 {
-                    List<Dictionary<string, object>> data = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
-                    foreach (var item in data)
-                    {
-                        if(dynamicData.ContainsKey(item["name"].ToString()))
-                        {
-                            dynamicData[item["name"].ToString()] += item["data"].ToString();
-                        }
-                        else
-                        {
-                            dynamicData[item["name"].ToString()] = "<p>" + item["data"].ToString();
-                        }             
-
-                        if(index != count)
-                        {
-                            dynamicData[item["name"].ToString()] += "\n";
-                        }
-                        else
-                        {
-                            dynamicData[item["name"].ToString()] = dynamicData[item["name"].ToString()].Replace("\n", "</p><p>") + "</p>";
-                        }
-                    }
+                    continue;
                 }
+
+                List<Dictionary<string, object>> data = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
+                UpdateDynamicData(dynamicData, data);
             }
 
+            dynamicData = dynamicData.ToDictionary(
+                item => item.Key, 
+                item => item.Value.Replace("\n", "</p><p>") + "</p>"
+            );
+
             return dynamicData;
+        }
+
+        private void UpdateDynamicData(Dictionary<string, string> dynamicData, List<Dictionary<string, object>> data)
+        {
+            foreach (var item in data)
+            {
+                string name = item["name"].ToString();
+                string itemData = item["data"].ToString();
+
+                if (dynamicData.ContainsKey(name))
+                {
+                    dynamicData[name] += itemData;
+                }
+                else
+                {
+                    dynamicData[name] = "<p>" + itemData + "\n";
+                }
+            }
         }
     }
 }
