@@ -406,6 +406,8 @@ namespace W2.Tasks
             return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
         }
 
+        [AllowAnonymous]
+        [RemoteService(IsEnabled = false)]
         public async Task<Dictionary<string, string>> handleDynamicData(TaskDynamicDataInput input)
         {
             List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
