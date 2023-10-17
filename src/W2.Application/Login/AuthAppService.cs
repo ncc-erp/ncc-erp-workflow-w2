@@ -35,6 +35,11 @@ namespace W2.Login
         {
             var user = await _userManager.FindByNameAsync(authDto.userNameOrEmailAddress);
 
+            if (user != null && !user.IsActive)
+            {
+                throw new UserFriendlyException("User is disabled!");
+            }
+
             if (user != null && await _userManager.CheckPasswordAsync(user, authDto.password))
             {
                 var token = GenerateJwtTokenForUser(user);
