@@ -21,6 +21,7 @@ using Volo.Abp.Identity;
 using W2.TaskEmail;
 using W2.TaskActions;
 using System.Collections;
+using Elsa.Models;
 
 namespace W2.Tasks
 {
@@ -135,14 +136,14 @@ namespace W2.Tasks
                 { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
-            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
-            var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
-            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
             if (!string.IsNullOrEmpty(input.DynamicActionData))
             {
                 myTask.DynamicActionData = input.DynamicActionData;
             }
+
+            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
+            var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
+            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             myTask.Status = W2TaskStatus.Approve;
             myTask.UpdatedBy = _currentUser.Email;
@@ -383,7 +384,6 @@ namespace W2.Tasks
                 .GroupBy(x => x.Id)
                 .Select(group => group.FirstOrDefault())
                 .Count();
-
             var tasks = query
                 .GroupBy(x => x.Id)
                 .Select(group => group.FirstOrDefault())
@@ -394,7 +394,7 @@ namespace W2.Tasks
                     CreationTime = x.CreationTime,
                     Description = x.Description,
                     Email = x.Email,
-                    Id = x.Id,   
+                    Id = x.Id,
                     Name = x.Name,
                     DynamicActionData = x.DynamicActionData,
                     Reason = x.Reason,
@@ -403,9 +403,51 @@ namespace W2.Tasks
                     WorkflowInstanceId = x.WorkflowInstanceId
                 })
                 .ToList();
-
-
             return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
+        }
+
+        public async Task<Dictionary<string, string>> handleDynamicData(TaskDynamicDataInput input)
+        {
+            List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
+            Dictionary<string, string> dynamicData = new Dictionary<string, string>();
+
+            foreach (var task in tasks)
+            {
+                var dynamicActionData = task.DynamicActionData;
+
+                if(dynamicActionData.IsNullOrEmpty())
+                {
+                    continue;
+                }
+
+                List<Dictionary<string, object>> data = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
+                UpdateDynamicData(dynamicData, data);
+            }
+
+            dynamicData = dynamicData.ToDictionary(
+                item => item.Key, 
+                item => item.Value.Replace("\n", "</p><p>") + "</p>"
+            );
+
+            return dynamicData;
+        }
+
+        private void UpdateDynamicData(Dictionary<string, string> dynamicData, List<Dictionary<string, object>> data)
+        {
+            foreach (var item in data)
+            {
+                string name = item["name"].ToString();
+                string itemData = item["data"].ToString();
+
+                if (dynamicData.ContainsKey(name))
+                {
+                    dynamicData[name] += itemData;
+                }
+                else
+                {
+                    dynamicData[name] = "<p>" + itemData + "\n";
+                }
+            }
         }
     }
 }

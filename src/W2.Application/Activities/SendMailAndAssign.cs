@@ -84,6 +84,19 @@ namespace W2.Activities
             var currentUser = context.GetRequestUserVariable();
             var Description = context.ActivityBlueprint.DisplayName;
 
+            Dictionary<string, string> listDynamicData = await _taskAppService.handleDynamicData(new TaskDynamicDataInput
+            {
+                WorkflowInstanceId = context.WorkflowInstance.Id,
+            });
+
+            if(listDynamicData.Count > 0)
+            {
+                foreach(var key in listDynamicData.Keys)
+                {
+                    this.Body = this.Body.Replace("{" + key + "}", listDynamicData[key]);
+                }
+            }
+
             var input = new AssignTaskInput
             {
                 UserId = (Guid)currentUser.Id,
@@ -101,7 +114,6 @@ namespace W2.Activities
             if (DynamicActionData != null)
             {
                 this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
-
             }
 
             return await base.OnExecuteAsync(context);
