@@ -378,7 +378,7 @@ namespace W2.Tasks
 
         public async Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input)
         {
-            var query = await _taskRepository.GetListAsync(x => x.Id != Guid.Parse(input.Id) && x.WorkflowInstanceId == input.WorkflowInstanceId);
+            var query = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == input.WorkflowInstanceId);
             var totalItemCount = query
                 .GroupBy(x => x.Id)
                 .Select(group => group.FirstOrDefault())
