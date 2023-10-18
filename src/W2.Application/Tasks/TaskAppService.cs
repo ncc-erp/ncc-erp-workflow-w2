@@ -422,8 +422,14 @@ namespace W2.Tasks
                     continue;
                 }
 
-                List<Dictionary<string, object>> data = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
-                UpdateDynamicData(dynamicData, data);
+                try
+                {
+                    List<Dictionary<string, object>> data = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
+                    UpdateDynamicData(dynamicData, data);
+                } catch (Exception)
+                {
+                    continue;
+                }
             }
 
             dynamicData = dynamicData.ToDictionary(
