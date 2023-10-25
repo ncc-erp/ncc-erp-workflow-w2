@@ -17,6 +17,7 @@ using Volo.Abp.Guids;
 using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
 using W2.Identity;
+using W2.WorkflowDefinitions;
 
 namespace W2.ExternalResources
 {
@@ -186,6 +187,20 @@ namespace W2.ExternalResources
             };
             var payload = await GoogleJsonWebSignature.ValidateAsync(externalAuth.IdToken, settings);
             return payload;
+        }
+
+        public Task<List<InputDefinitionTypeItemDto>> GetWorkflowInputDefinitionPropertyTypes()
+        {
+            var enumValues = Enum.GetValues(typeof(WorkflowInputDefinitionProperyType))
+                                 .Cast<WorkflowInputDefinitionProperyType>()
+                                 .Select(e => new InputDefinitionTypeItemDto
+                                 {
+                                     Value = e.ToString(),
+                                     Label = e.ToString()
+                                 })
+                                 .ToList();
+
+            return Task.FromResult(enumValues);
         }
 
         [AllowAnonymous]

@@ -14,6 +14,7 @@ namespace W2.ExternalResources
         Task<List<TimesheetProjectItem>> GetUserProjectsWithRolePMFromApiAsync();
         Task<List<OfficeInfo>> GetListOfOfficeAsync();
         Task<OfficeInfo> GetUserBranchInfoAsync(string userEmail);
+        Task<List<InputDefinitionTypeItemDto>> GetWorkflowInputDefinitionPropertyTypes();
         Task<ProjectProjectItem> GetCurrentUserWorkingProjectAsync();
         Task<TimesheetUserInfo> GetUserInfoByEmailAsync(string userEmail);
         Task<ExternalAuthUser> ExternalLogin(ExternalAuthDto externalAuth);
