@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Parlot.Fluent;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,7 +11,6 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
-using W2.ExternalResources;
 using W2.Identity;
 
 namespace W2.Login
@@ -21,6 +19,7 @@ namespace W2.Login
     {
         private readonly IdentityUserManager _userManager;
         private readonly IConfiguration _configuration;
+        private readonly CustomUserManager _customUserManager;
 
         public AuthAppService(
             IdentityUserManager userManager,
@@ -40,10 +39,23 @@ namespace W2.Login
                 throw new UserFriendlyException("User is disabled!");
             }
 
+            if(user != null && await _userManager.IsLockedOutAsync(user))
+            {
+                throw new UserFriendlyException("User is locked out!");
+            }
+
             if (user != null && await _userManager.CheckPasswordAsync(user, authDto.password))
             {
-                var token = GenerateJwtTokenForUser(user);
-                return new AuthUser { Token = token };
+                    await _userManager.ResetAccessFailedCountAsync(user);
+                    await _userManager.UpdateAsync(user);
+                    var token = GenerateJwtTokenForUser(user);
+                    return new AuthUser { Token = token };
+            }
+
+            if(user != null && await _userManager.GetLockoutEnabledAsync(user))
+            {
+                (await _userManager.AccessFailedAsync(user)).CheckErrors();
+                await _userManager.UpdateAsync(user);
             }
 
             throw new UserFriendlyException("Invalid username or password.");
