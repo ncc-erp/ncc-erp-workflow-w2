@@ -10,6 +10,6 @@ namespace W2.CustomIdentityManager
 {
     public interface ICustomIdentityManagerAppService: IApplicationService
     {
-        Task<PagedResultDto<CustomUserManageDto>> ListAsync();
+        Task<PagedResultDto<CustomUserManageDto>> GetListAsync(ListUsersInput input);
     }
 }
