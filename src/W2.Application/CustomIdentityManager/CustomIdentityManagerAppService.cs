@@ -1,50 +1,35 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
-using W2.Tasks;
-using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace W2.CustomIdentityManager
 {
     [Authorize]
     public class CustomIdentityManagerAppService: W2AppService, ICustomIdentityManagerAppService
     {
-        private readonly IIdentityRoleRepository _roleRepository;
         private readonly IIdentityUserRepository _userRepository;
-        //private readonly IRepository<IdentityUserRole> _userRoleRepository;
         private readonly IdentityUserManager _userManager;
 
-        private readonly IOptions<IdentityOptions> _identityOptions;
-
         public CustomIdentityManagerAppService(
-                IIdentityRoleRepository roleRepository,
                 IIdentityUserRepository userRepository,
-                IdentityUserManager userManager,
-                IOptions<IdentityOptions> identityOptions
+                IdentityUserManager userManager
             )
         {
-            _roleRepository = roleRepository;
             _userRepository = userRepository;
             _userManager = userManager;
-            _identityOptions = identityOptions;
         }
 
         public async Task<PagedResultDto<CustomUserManageDto>> GetListAsync(ListUsersInput input)
         {
-            List<Volo.Abp.Identity.IdentityUser> users;
+            List<IdentityUser> users;
 
             if (!string.IsNullOrWhiteSpace(input.Roles))
             {
-                IList<Volo.Abp.Identity.IdentityUser> temp = await _userManager.GetUsersInRoleAsync(input.Roles);
+                IList<IdentityUser> temp = await _userManager.GetUsersInRoleAsync(input.Roles);
                 users = temp.ToList();
             } else
             {
@@ -70,7 +55,7 @@ namespace W2.CustomIdentityManager
             return new PagedResultDto<CustomUserManageDto>(users.Count(), userDtos);
         }
 
-        private CustomUserManageDto MapUserToDto(Volo.Abp.Identity.IdentityUser user)
+        private CustomUserManageDto MapUserToDto(IdentityUser user)
         {
             return new CustomUserManageDto
             {
@@ -96,7 +81,7 @@ namespace W2.CustomIdentityManager
             };
         }
 
-        private List<Volo.Abp.Identity.IdentityUser> ApplySorting(List<Volo.Abp.Identity.IdentityUser> users, string sorting)
+        private List<IdentityUser> ApplySorting(List<IdentityUser> users, string sorting)
         {
             if (string.IsNullOrEmpty(sorting))
             {
@@ -122,7 +107,7 @@ namespace W2.CustomIdentityManager
             return users.OrderByDescending(CreateSortingExpression(property)).ToList();
         }
 
-        private Func<Volo.Abp.Identity.IdentityUser, object> CreateSortingExpression(string property)
+        private Func<IdentityUser, object> CreateSortingExpression(string property)
         {
             switch (property)
             {
