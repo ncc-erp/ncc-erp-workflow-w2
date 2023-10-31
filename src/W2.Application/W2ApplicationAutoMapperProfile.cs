@@ -36,6 +36,24 @@ public class W2ApplicationAutoMapperProfile : Profile
                     IsRequired = i.IsRequired
                 })
                 .ToList()));
+        // setting
+        CreateMap<WorkflowCustomDefinitionPropertySetting, WorkflowCustomDefinitionPropertySettingDto>();
+        CreateMap<WorkflowCustomDefinitionSetting, WorkflowCustomDefinitionSettingDto>()
+            .ForMember(d => d.PropertyDefinitions, options =>
+                options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomDefinitionPropertySettingDto
+                {
+                    Key = i.Key,
+                    Value = i.Value
+                })
+                .ToList()));
+        CreateMap<WorkflowCustomDefinitionSettingDto, WorkflowCustomDefinitionSetting>()
+            .ForMember(d => d.PropertyDefinitions, options =>
+                options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinition
+                {
+                    Name = i.Key,
+                    Type = i.Value,
+                })
+                .ToList()));
         CreateMap<CreateWorkflowDefinitionDto, WorkflowDefinition>();
         CreateMap<WorkflowInstance, WorkflowInstanceDto>()
             .ForMember(d => d.WorkflowDefinitionId, options => options.MapFrom(s => s.DefinitionId))

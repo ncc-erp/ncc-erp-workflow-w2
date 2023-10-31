@@ -12,9 +12,15 @@ public class W2WebAutoMapperProfile : Profile
         //Define your AutoMapper configuration here for the Web project.
         CreateMap<WorkflowCustomInputPropertyDefinitionViewModel, WorkflowCustomInputPropertyDefinitionDto>();
         CreateMap<WorkflowCustomInputPropertyDefinitionDto, WorkflowCustomInputPropertyDefinitionViewModel>();
+        CreateMap<WorkflowCustomDefinitionPropertySettingViewModel, WorkflowCustomDefinitionPropertySettingDto>();
+        CreateMap<WorkflowCustomDefinitionPropertySettingDto, WorkflowCustomDefinitionPropertySettingViewModel>();
         CreateMap<DefineWorkflowInputViewModel, WorkflowCustomInputDefinitionDto>()
             .ForMember(d => d.PropertyDefinitions, options => options.MapFrom(s => s.PropertyDefinitionViewModels));
         CreateMap<WorkflowCustomInputDefinitionDto, DefineWorkflowInputViewModel > ()
+            .ForMember(d => d.PropertyDefinitionViewModels, options => options.MapFrom(s => s.PropertyDefinitions));
+        CreateMap<DefineWorkflowSettingViewModel, WorkflowCustomDefinitionSettingDto>()
+            .ForMember(d => d.PropertyDefinitions, options => options.MapFrom(s => s.PropertyDefinitionViewModels));
+        CreateMap<WorkflowCustomDefinitionSettingDto, DefineWorkflowSettingViewModel > ()
             .ForMember(d => d.PropertyDefinitionViewModels, options => options.MapFrom(s => s.PropertyDefinitions));
         CreateMap<SocialLoginSettingsDto, Pages.SettingManagement.Components.SocialLoginSettingGroup.SocialLoginSettingGroupViewComponent.UpdateSocialLoginSettingsViewModel>();
         CreateMap<CreateWorkflowDefinitionViewModel, CreateWorkflowDefinitionDto>();
