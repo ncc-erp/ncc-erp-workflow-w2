@@ -4,6 +4,7 @@ using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Services.Models;
 using Humanizer;
@@ -18,6 +19,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using W2.ExternalResources;
 using W2.Signals;
 using W2.Tasks;
 using W2.WorkflowInstances;
@@ -97,12 +99,20 @@ namespace W2.Activities
                 }
             }
 
+            var instanceInput = context.Input.GetType().GetProperty("Body").GetValue(context.Input);
+            string taskName = null;
+            if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Title"))
+            {
+                taskName = valueDictionary["Title"];
+            }
+
             var input = new AssignTaskInput
             {
                 UserId = (Guid)currentUser.Id,
                 WorkflowInstanceId = context.WorkflowInstance.Id,
                 ApproveSignal = ApproveSignal.Trim(),
                 RejectSignal = RejectSignal.Trim(),
+                TaskName = taskName,
                 DynamicActionData = DynamicActionData,
                 Description = Description,
                 EmailTo = EmailTo,

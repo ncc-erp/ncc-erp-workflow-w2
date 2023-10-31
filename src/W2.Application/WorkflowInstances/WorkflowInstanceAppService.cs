@@ -617,7 +617,7 @@ namespace W2.WorkflowInstances
 
                     if (!string.IsNullOrEmpty(title))
                     {
-                        workflowInstanceDto.WorkflowDefinitionDisplayName = title;
+                        workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName + ": " + title;
                     }
                 }
 
