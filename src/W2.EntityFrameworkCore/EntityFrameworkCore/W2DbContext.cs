@@ -133,7 +133,7 @@ public class W2DbContext :
         builder.Entity<WorkflowCustomDefinitionSetting>(b =>
         {
             b.ToTable("WorkflowCustomDefinitionsSettings");
-            b.Property(x => x.PropertyDefinitions).HasConversion(new ElsaEFJsonValueConverter<ICollection<WorkflowCustomDefinitionPropertySetting>>(), ValueComparer.CreateDefault(typeof(ICollection<WorkflowCustomDefinitionPropertySetting>), false));
+            b.Property(x => x.PropertyDefinitions).HasConversion(new ElsaEFJsonValueConverter<Dictionary<string, string>>(), ValueComparer.CreateDefault(typeof(Dictionary<string, string>), false));
             b.Property(x => x.WorkflowDefinitionId).IsRequired();
             b.HasIndex(x => x.WorkflowDefinitionId);
         });
