@@ -76,7 +76,11 @@ namespace W2.WorkflowDefinitions
                 {
                     continue;
                 }
-                summary.SettingDefinition = ObjectMapper.Map<WorkflowCustomDefinitionSetting, WorkflowCustomDefinitionSettingDto>(settingDefinition);
+                summary.SettingDefinition = new WorkflowCustomDefinitionSettingDto
+                {
+                    WorkflowDefinitionId = settingDefinition.WorkflowDefinitionId,
+                    PropertyDefinitions = settingDefinition.PropertyDefinitions
+                } ;
             }
 
             return new PagedResultDto<WorkflowDefinitionSummaryDto>(workflowDefinitionSummaries.Count, workflowDefinitionSummaries);

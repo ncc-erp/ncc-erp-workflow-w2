@@ -12,8 +12,6 @@ public class W2WebAutoMapperProfile : Profile
         //Define your AutoMapper configuration here for the Web project.
         CreateMap<WorkflowCustomInputPropertyDefinitionViewModel, WorkflowCustomInputPropertyDefinitionDto>();
         CreateMap<WorkflowCustomInputPropertyDefinitionDto, WorkflowCustomInputPropertyDefinitionViewModel>();
-        CreateMap<WorkflowCustomDefinitionPropertySettingViewModel, WorkflowCustomDefinitionPropertySettingDto>();
-        CreateMap<WorkflowCustomDefinitionPropertySettingDto, WorkflowCustomDefinitionPropertySettingViewModel>();
         CreateMap<DefineWorkflowInputViewModel, WorkflowCustomInputDefinitionDto>()
             .ForMember(d => d.PropertyDefinitions, options => options.MapFrom(s => s.PropertyDefinitionViewModels));
         CreateMap<WorkflowCustomInputDefinitionDto, DefineWorkflowInputViewModel > ()

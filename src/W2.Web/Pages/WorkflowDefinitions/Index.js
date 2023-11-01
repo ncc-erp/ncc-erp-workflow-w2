@@ -332,11 +332,6 @@ $(function () {
         modalClass: 'DefineWorkflowInputModal'
     });
 
-    var defineWorkflowSettingModal = new abp.ModalManager({
-        viewUrl: abp.appPath + 'WorkflowDefinitions/DefineWorkflowSettingModal',
-        scriptUrl: '/Pages/WorkflowDefinitions/DefineWorkflowSettingModal.js',
-        modalClass: 'DefineWorkflowSettingModal'
-    })
 
     var createWorkflowDefinitionModal = new abp.ModalManager(abp.appPath + 'WorkflowDefinitions/CreateModal');
 

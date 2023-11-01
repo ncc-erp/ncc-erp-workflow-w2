@@ -8,7 +8,7 @@ namespace W2.WorkflowDefinitions
     public class WorkflowCustomDefinitionSetting : CreationAuditedEntity<Guid>, IMultiTenant
     {
         public string WorkflowDefinitionId { get; set; }
-        public ICollection<WorkflowCustomDefinitionPropertySetting> PropertyDefinitions { get; set; } = new List<WorkflowCustomDefinitionPropertySetting>();
+        public Dictionary<string,string> PropertyDefinitions { get; set; }
         public Guid? TenantId { get; set; }
     }
 }

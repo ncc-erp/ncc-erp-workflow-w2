@@ -37,23 +37,9 @@ public class W2ApplicationAutoMapperProfile : Profile
                 })
                 .ToList()));
         // setting
-        CreateMap<WorkflowCustomDefinitionPropertySetting, WorkflowCustomDefinitionPropertySettingDto>();
-        CreateMap<WorkflowCustomDefinitionSetting, WorkflowCustomDefinitionSettingDto>()
-            .ForMember(d => d.PropertyDefinitions, options =>
-                options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomDefinitionPropertySettingDto
-                {
-                    Key = i.Key,
-                    Value = i.Value
-                })
-                .ToList()));
-        CreateMap<WorkflowCustomDefinitionSettingDto, WorkflowCustomDefinitionSetting>()
-            .ForMember(d => d.PropertyDefinitions, options =>
-                options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinition
-                {
-                    Name = i.Key,
-                    Type = i.Value,
-                })
-                .ToList()));
+        CreateMap<WorkflowCustomDefinitionSetting,WorkflowCustomDefinitionSetting>()
+            .ForMember(d => d.WorkflowDefinitionId, options => options.MapFrom(s => s.WorkflowDefinitionId))
+            .ForMember(d => d.CreationTime, options => options.MapFrom(s => s.CreationTime.ToLocalTime()));
         CreateMap<CreateWorkflowDefinitionDto, WorkflowDefinition>();
         CreateMap<WorkflowInstance, WorkflowInstanceDto>()
             .ForMember(d => d.WorkflowDefinitionId, options => options.MapFrom(s => s.DefinitionId))
