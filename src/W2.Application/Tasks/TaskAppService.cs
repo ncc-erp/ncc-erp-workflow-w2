@@ -315,7 +315,7 @@ namespace W2.Tasks
                     AuthorName = x.W2User.Name,
                     CreationTime = x.W2task.CreationTime,
                     Description = x.W2task.Description,
-                    Email = x.W2task.Email,
+                    Email = x.W2User.Email,
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
                     EmailTo = x.EmailTo,

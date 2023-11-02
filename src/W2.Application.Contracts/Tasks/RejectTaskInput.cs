@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
-using W2.Tasks;
 
 namespace W2.Tasks
 {
-    public class ApproveTasksInput
+    public class RejectTaskInput
     {
-        public string DynamicActionData { get; set; }
+        [Required]
         public string Id { get; set; }
+
+        [Required]
+        public string Reason { get; set; }
+
+        [Required]
         public string Email { get; set; }
     }
 }
