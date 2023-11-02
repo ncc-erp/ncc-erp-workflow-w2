@@ -99,7 +99,7 @@ namespace W2.Activities
                 }
             }
 
-            string taskName = null;
+            string taskTitle = null;
 
             try
             {
@@ -115,13 +115,13 @@ namespace W2.Activities
 
                         if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Title"))
                         {
-                            taskName = valueDictionary["Title"];
+                            taskTitle = valueDictionary["Title"];
                         }
                     }
                 }
-            } catch(Exception)
+            } catch (Exception)
             {
-                taskName = null;
+                taskTitle = null;
             }
 
             var input = new AssignTaskInput
@@ -130,7 +130,7 @@ namespace W2.Activities
                 WorkflowInstanceId = context.WorkflowInstance.Id,
                 ApproveSignal = ApproveSignal.Trim(),
                 RejectSignal = RejectSignal.Trim(),
-                TaskName = taskName,
+                TaskTitle = taskTitle,
                 DynamicActionData = DynamicActionData,
                 Description = Description,
                 EmailTo = EmailTo,

@@ -71,9 +71,9 @@ namespace W2.Tasks
                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
             string taskTitle = null;
 
-            if (!string.IsNullOrEmpty(input.TaskName))
+            if (!string.IsNullOrEmpty(input.TaskTitle))
             {
-                taskTitle = input.TaskName;
+                taskTitle = input.TaskTitle;
             }
 
             var task = await _taskRepository.InsertAsync(new W2Task
