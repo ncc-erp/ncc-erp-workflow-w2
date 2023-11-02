@@ -99,11 +99,29 @@ namespace W2.Activities
                 }
             }
 
-            var instanceInput = context.Input.GetType().GetProperty("Body").GetValue(context.Input);
             string taskName = null;
-            if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Title"))
+
+            try
             {
-                taskName = valueDictionary["Title"];
+                // Check if context and context.Input are not null
+                if (context != null && context.Input != null)
+                {
+                    var bodyProperty = context.Input.GetType().GetProperty("Body");
+
+                    // Check if the 'Body' property exists and is not null
+                    if (bodyProperty != null)
+                    {
+                        var instanceInput = bodyProperty.GetValue(context.Input);
+
+                        if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Title"))
+                        {
+                            taskName = valueDictionary["Title"];
+                        }
+                    }
+                }
+            } catch(Exception)
+            {
+                taskName = null;
             }
 
             var input = new AssignTaskInput
