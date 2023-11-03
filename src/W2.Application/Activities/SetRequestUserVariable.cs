@@ -36,7 +36,7 @@ namespace W2.Activities
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            string userEmail = _currentUser.Email;
+            string targetStaffEmail = null;
 
             try
             {
@@ -52,22 +52,22 @@ namespace W2.Activities
 
                         if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Staff"))
                         {
-                            userEmail = valueDictionary["Staff"];
+                            targetStaffEmail = valueDictionary["Staff"];
                         }
                     }
                 }
             }
             catch (Exception)
             {
-                userEmail = _currentUser.Email;
+                targetStaffEmail = null;
             }
 
             // set project
             // set branch info
-            var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(userEmail);
+            var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(_currentUser.Email);
             //To.Add(branchResult.HeadOfOfficeEmail);
             // set PM
-            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(userEmail);
+            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(_currentUser.Email);
             ProjectProjectItem project = null;
             if (userProjectsResult?.Result != null && userProjectsResult?.Result.Count > 0)
             {
@@ -78,6 +78,7 @@ namespace W2.Activities
                 Id = _currentUser.Id,
                 Email = _currentUser.Email,
                 Name = _currentUser.Name,
+                TargetStaffEmail = targetStaffEmail,
                 Project = _currentUser.FindClaimValue(CustomClaim.ProjectName),
                 HeadOfOfficeEmail = branchResult?.HeadOfOfficeEmail,
                 BranchCode = branchResult?.Code,
