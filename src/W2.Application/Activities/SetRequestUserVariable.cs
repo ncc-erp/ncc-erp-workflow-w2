@@ -3,6 +3,8 @@ using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Humanizer;
+using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Users;
@@ -34,12 +36,38 @@ namespace W2.Activities
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
+            string userEmail = _currentUser.Email;
+
+            try
+            {
+                // Check if context and context.Input are not null
+                if (context != null && context.Input != null)
+                {
+                    var bodyProperty = context.Input.GetType().GetProperty("Body");
+
+                    // Check if the 'Body' property exists and is not null
+                    if (bodyProperty != null)
+                    {
+                        var instanceInput = bodyProperty.GetValue(context.Input);
+
+                        if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Staff"))
+                        {
+                            userEmail = valueDictionary["Staff"];
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                userEmail = _currentUser.Email;
+            }
+
             // set project
             // set branch info
-            var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(_currentUser.Email);
+            var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(userEmail);
             //To.Add(branchResult.HeadOfOfficeEmail);
             // set PM
-            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(_currentUser?.Email);
+            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(userEmail);
             ProjectProjectItem project = null;
             if (userProjectsResult?.Result != null && userProjectsResult?.Result.Count > 0)
             {
