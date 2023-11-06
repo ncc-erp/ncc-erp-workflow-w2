@@ -22,6 +22,7 @@ namespace W2.Tasks
         public List<string> EmailTo { get; set; }
         public Guid Author { get; set; }
         public string AuthorName { get; set; }
+        public string UpdatedBy { get; set; }
 
     }
 }
