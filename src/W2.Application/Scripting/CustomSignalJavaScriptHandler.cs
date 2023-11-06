@@ -85,8 +85,7 @@ namespace W2.Scripting
 
             Func<string, TimesheetProjectItem> getProjectInfo = projectCode =>
             {
-                var temp = listOfProjects.FirstOrDefault(x => x.Code == projectCode) ?? new TimesheetProjectItem();
-                return listOfProjects.FirstOrDefault(x => x.Code == projectCode) ?? new TimesheetProjectItem();
+                return listOfProjects.FirstOrDefault(x => x.Code.ToLower() == projectCode.ToLower()) ?? new TimesheetProjectItem();
             };
 
             engine.SetValue("getProjectInfo", getProjectInfo);
