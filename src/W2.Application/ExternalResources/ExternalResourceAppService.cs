@@ -108,10 +108,15 @@ namespace W2.ExternalResources
             );
         }
 
-        public async Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync()
+        public async Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync(string email)
         {
-            var email = CurrentUser.Email;
-            return await GetUserProjectsFromApiAsync(email);
+            var userEmail = CurrentUser.Email;
+            if(!string.IsNullOrEmpty(email))
+            {
+                userEmail = email;
+            }
+
+            return await GetUserProjectsFromApiAsync(userEmail);
         }
 
         public async Task RefreshAllUsersInfoAsync()
@@ -165,9 +170,15 @@ namespace W2.ExternalResources
             return office;
         }
 
-        public async Task<ProjectProjectItem> GetCurrentUserWorkingProjectAsync()
+        public async Task<ProjectProjectItem> GetCurrentUserWorkingProjectAsync(string email)
         {
-            var response = await _projectClient.GetUserProjectsAsync(CurrentUser.Email);
+            var userEmail = CurrentUser.Email;
+            if (!string.IsNullOrEmpty(email))
+            {
+                userEmail = email;
+            }
+
+            var response = await _projectClient.GetUserProjectsAsync(userEmail);
             return response.Result?.FirstOrDefault();
         }
 

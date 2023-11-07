@@ -400,7 +400,8 @@ namespace W2.Tasks
                     Reason = x.Reason,
                     Status = x.Status,
                     WorkflowDefinitionId = x.WorkflowDefinitionId,
-                    WorkflowInstanceId = x.WorkflowInstanceId
+                    WorkflowInstanceId = x.WorkflowInstanceId,
+                    UpdatedBy = x.UpdatedBy
                 })
                 .ToList();
             return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
