@@ -5,6 +5,7 @@ namespace W2.Scripting
     public class RequestUser
     {
         public string Email { get; set; }
+        public string TargetStaffEmail { get; set; }
         public string Name { get; set; }
         public string Project { get; set; }
         public string PM { get; set; }
