@@ -115,6 +115,13 @@ namespace W2.Tasks
 
         public async Task<string> ApproveAsync(ApproveTasksInput input)
         {
+            var emailApprove = _currentUser.Email;
+
+            if(!string.IsNullOrEmpty(input.Email))
+            {
+                emailApprove = input.Email;
+            }
+
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
@@ -122,7 +129,7 @@ namespace W2.Tasks
             }
 
             var taskEmail = (await _taskEmailRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString()))
-                    .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
+                    .Where(x => x.Email == emailApprove && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
             if (taskEmail == null)
@@ -133,7 +140,7 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{myTask.ApproveSignal}" },
-                { "TriggeredBy", $"{_currentUser.Email}" }
+                { "TriggeredBy", $"{emailApprove}" }
             };
 
             if (!string.IsNullOrEmpty(input.DynamicActionData))
@@ -146,14 +153,21 @@ namespace W2.Tasks
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             myTask.Status = W2TaskStatus.Approve;
-            myTask.UpdatedBy = _currentUser.Email;
+            myTask.UpdatedBy = emailApprove;
             await _taskRepository.UpdateAsync(myTask);
 
             return "Approval successful";
         }
 
-        public async Task<string> RejectAsync([Required] string id, [Required] string reason)
+        public async Task<string> RejectAsync([Required] string id, [Required] string reason, string email = "")
         {
+            var emailReject = _currentUser.Email;
+
+            if(!string.IsNullOrEmpty(email))
+            {
+                emailReject = email;
+            }
+
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
             {
@@ -161,7 +175,7 @@ namespace W2.Tasks
             }
 
             var taskEmail = (await _taskEmailRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString()))
-                    .Where(x => x.Email == _currentUser.Email && x.TaskId == myTask.Id.ToString())
+                    .Where(x => x.Email == emailReject && x.TaskId == myTask.Id.ToString())
                     .ToList().FirstOrDefault();
 
             if (taskEmail == null)
@@ -172,7 +186,7 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{reason}" },
-                { "TriggeredBy", $"{_currentUser.Email}" }
+                { "TriggeredBy", $"{emailReject}" }
             };
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
@@ -181,7 +195,7 @@ namespace W2.Tasks
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             myTask.Status = W2TaskStatus.Reject;
-            myTask.UpdatedBy = _currentUser.Email;
+            myTask.UpdatedBy = emailReject;
             myTask.Reason = reason;
 
             await _taskRepository.UpdateAsync(myTask);
@@ -266,7 +280,8 @@ namespace W2.Tasks
 
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
-            if (!isAdmin)
+
+            if (!isAdmin && string.IsNullOrEmpty(input.EmailAssignExternal))
             {
                 query = query.Where(x => x.W2TaskEmail.Email.Contains(_currentUser.Email));
             }
@@ -297,6 +312,17 @@ namespace W2.Tasks
             if (hasWorkflowDefinitionId)
             {
                 query = query.Where(x => x.W2task.WorkflowDefinitionId == input.WorkflowDefinitionId);
+            }
+
+            if (input.RequestName != null)
+            {
+                query = query.Where(x => input.RequestName.Contains(x.W2task.Name));
+            }
+
+            if(!string.IsNullOrEmpty(input.EmailAssignExternal))
+            {
+                string emailAssignExternal = input.EmailAssignExternal.Trim();
+                query = query.Where(x => x.W2TaskEmail.Email.Contains(emailAssignExternal));
             }
 
             var totalItemCount = query
