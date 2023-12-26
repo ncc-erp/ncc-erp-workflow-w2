@@ -77,11 +77,13 @@ jobs:
         DB_PORT: ${{ secrets.DB_PORT_prod }}
         PASSPHRASE: ${{ secrets.PASSPHRASE_prod }}
         SES_HOST: ${{ secrets.SES_HOST_prod }}
+        SES_SENDER: ${{ secrets.SES_SENDER_prod }}
         SES_USER: ${{ secrets.SES_USER_prod }}
         SES_PASS: ${{ secrets.SES_PASS_prod }}
         GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
         GG_SECRET: ${{ secrets.GG_SECRET_prod }}
         TALENT_DF: ${{ secrets.TALENT_DF_prod }}
+        WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
             
     - name: Download Migrator & Host from S3
       run: |

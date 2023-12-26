@@ -53,6 +53,10 @@ using Volo.Abp.Timing;
 using Volo.Abp.IdentityServer;
 using Parlot.Fluent;
 using System.Linq;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Collections.Generic;
+using W2.Web.Workflows;
 
 namespace W2.Web;
 
@@ -173,9 +177,18 @@ public class W2WebModule : AbpModule
         context.Services.AddAuthentication()
             .AddJwtBearer(options =>
             {
-                options.Authority = configuration["AuthServer:Authority"];
-                options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
-                options.Audience = "W2";
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidAudience = configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey
+       (Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = true,
+                    AuthenticationType = "Identity.Application"
+                };
             });
     }
 
@@ -254,15 +267,17 @@ public class W2WebModule : AbpModule
 
         context.Services.AddElsa(options => options
             .UseEntityFrameworkPersistence(
-                ef => ef.UsePostgreSql(elsaConfigurationSection.GetValue<string>(nameof(ElsaConfiguration.ConnectionString))))
+                ef => ef.UsePostgreSql(elsaConfigurationSection.GetValue<string>(nameof(ElsaConfiguration.ConnectionString))), true)
             .AddConsoleActivities()
             .AddUserTaskActivities()
             .AddHttpActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Server)).Bind)
+            .AddWorkflow<HelloWorkflow>()
             .AddEmailActivities(elsaConfigurationSection.GetSection(nameof(ElsaConfiguration.Smtp)).Bind)
             .AddQuartzTemporalActivities()
             .AddJavaScriptActivities()
             .AddActivitiesFrom<W2ApplicationModule>()
-            .AddWorkflowsFrom<ElsaConfiguration>());
+            .AddWorkflowsFrom<ElsaConfiguration>()
+         );
 
         context.Services
             .AddElsaApiEndpoints()
@@ -274,6 +289,8 @@ public class W2WebModule : AbpModule
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
+            // skip todo change
+            options.AutoValidateIgnoredHttpMethods = new HashSet<string> { "PUT", "GET", "POST", "DELETE", "HEAD", "TRACE", "OPTIONS" };
             options.AutoValidateFilter = type => type.Assembly != typeof(Elsa.Server.Api.Endpoints.WorkflowRegistry.Get).Assembly;
         });
     }
@@ -318,6 +335,7 @@ public class W2WebModule : AbpModule
         {
             options.Conventions.AuthorizeFolder("/WorkflowDefinitions", W2Permissions.WorkflowManagementWorkflowDefinitions);
             options.Conventions.AuthorizeFolder("/WorkflowInstances", W2Permissions.WorkflowManagementWorkflowInstances);
+            options.Conventions.AllowAnonymousToFolder("/ViewDesigner");
         });
     }
 

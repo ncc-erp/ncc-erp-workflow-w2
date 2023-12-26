@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - dev
-    tags:
-      - '*'
 
 jobs:
   build:
@@ -67,11 +65,13 @@ jobs:
         DB_PORT: ${{ secrets.DB_PORT_DEV }}
         PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
         SES_HOST: ${{ secrets.SES_HOST_DEV }}
+        SES_SENDER: ${{ secrets.SES_SENDER_DEV }}
         SES_USER: ${{ secrets.SES_USER_DEV }}
         SES_PASS: ${{ secrets.SES_PASS_DEV }}
         GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
         GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
         TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
+        WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
 
     - name: Migrate Database
       run: |

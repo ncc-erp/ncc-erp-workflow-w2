@@ -14,6 +14,9 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.TaskActions;
+using W2.TaskEmail;
+using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 
@@ -55,8 +58,12 @@ public class W2DbContext :
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
+    // tasks
+    public DbSet<W2Task> Tasks { get; set; }
 
     #endregion
+    public DbSet<W2TaskEmail> W2TaskEmail { get; set; }
+    public DbSet<W2TaskActions> W2TaskActions { get; set; }
 
     public W2DbContext(DbContextOptions<W2DbContext> options)
         : base(options)
@@ -87,6 +94,24 @@ public class W2DbContext :
         //    b.ConfigureByConvention(); //auto configure for the base class props
         //    //...
         //});
+
+        builder.Entity<W2Task>(b =>
+        {
+            b.ToTable("W2Tasks");
+            b.Property(x => x.WorkflowInstanceId).IsRequired();
+            b.Property(x => x.Data).HasConversion(new ElsaEFJsonValueConverter<Dictionary<string, string>>(), ValueComparer.CreateDefault(typeof(Dictionary<string, string>), false));
+            b.HasIndex(x => x.WorkflowInstanceId);
+        });
+
+        builder.Entity<W2TaskEmail>(b =>
+        {
+            b.ToTable("W2TaskEmail");
+        });
+
+        builder.Entity<W2TaskActions>(b =>
+        {
+            b.ToTable("W2TaskActions");
+        });
 
         builder.Entity<WorkflowInstanceStarter>(b =>
         {
