@@ -262,7 +262,7 @@ namespace W2.WorkflowInstances
 
             var allWorkflowInstanceStarters = await AsyncExecuter.ToListAsync(await _instanceStarterRepository.GetQueryableAsync());
             workflowInstanceStarters = allWorkflowInstanceStarters
-                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.GetValueOrDefault("Dates").Contains(dateDb) && x.CreatorId == requestUser.Id)
+                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.GetValueOrDefault("Dates") != null && x.Input.GetValueOrDefault("Dates").Contains(dateDb) && x.CreatorId == requestUser.Id)
                 .ToList();
 
             instances = await AsyncExecuter.ToListAsync(
