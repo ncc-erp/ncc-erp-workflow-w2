@@ -294,6 +294,7 @@ namespace W2.WorkflowInstances
                 }
 
                 workflowInstanceDto.Email = email;
+                workflowInstanceDto.Status = (int)workflowInstanceStarter.Status;
                 workflowInstanceDto.Date = date; //  workflowInstanceStarter.Input.GetValue("Dates");
                 result = workflowInstanceDto;
             }
