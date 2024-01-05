@@ -143,7 +143,7 @@ namespace W2.Tasks
 
             myTask.Status = W2TaskStatus.Approve;
             myTask.UpdatedBy = _currentUser.Email;
-            await _taskRepository.UpdateAsync(myTask);// avoid conflict with approve signal
+            await _taskRepository.UpdateAsync(myTask, true);// avoid conflict with approve signal
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
             var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
@@ -178,7 +178,7 @@ namespace W2.Tasks
             myTask.Status = W2TaskStatus.Reject;
             myTask.UpdatedBy = _currentUser.Email;
             myTask.Reason = reason;
-            await _taskRepository.UpdateAsync(myTask);// avoid conflict with approve signal
+            await _taskRepository.UpdateAsync(myTask, true);// avoid conflict with approve signal
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
 
@@ -218,7 +218,7 @@ namespace W2.Tasks
             };
 
             actions.Status = W2TaskActionsStatus.Approve;
-            await _taskActionsRepository.UpdateAsync(actions);// avoid config in signal
+            await _taskActionsRepository.UpdateAsync(actions, true);// avoid config in signal
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(input.Action, Inputs, myTask.WorkflowInstanceId).ToList();
 
