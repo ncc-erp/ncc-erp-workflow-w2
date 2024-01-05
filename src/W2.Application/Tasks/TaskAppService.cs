@@ -141,13 +141,13 @@ namespace W2.Tasks
                 myTask.DynamicActionData = input.DynamicActionData;
             }
 
+            myTask.Status = W2TaskStatus.Approve;
+            myTask.UpdatedBy = _currentUser.Email;
+            await _taskRepository.UpdateAsync(myTask);// avoid conflict with approve signal
+
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
             var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
-            myTask.Status = W2TaskStatus.Approve;
-            myTask.UpdatedBy = _currentUser.Email;
-            await _taskRepository.UpdateAsync(myTask);
 
             return "Approval successful";
         }
@@ -175,16 +175,15 @@ namespace W2.Tasks
                 { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
+            myTask.Status = W2TaskStatus.Reject;
+            myTask.UpdatedBy = _currentUser.Email;
+            myTask.Reason = reason;
+            await _taskRepository.UpdateAsync(myTask);// avoid conflict with approve signal
+
             var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
 
             var signal = new SignalModel(myTask.RejectSignal, myTask.WorkflowInstanceId);
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
-            myTask.Status = W2TaskStatus.Reject;
-            myTask.UpdatedBy = _currentUser.Email;
-            myTask.Reason = reason;
-
-            await _taskRepository.UpdateAsync(myTask);
 
             return "Reject successful";
         }
@@ -218,13 +217,13 @@ namespace W2.Tasks
                 { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
+            actions.Status = W2TaskActionsStatus.Approve;
+            await _taskActionsRepository.UpdateAsync(actions);// avoid config in signal
+
             var affectedWorkflows = await _signaler.TriggerSignalAsync(input.Action, Inputs, myTask.WorkflowInstanceId).ToList();
 
             var signal = new SignalModel(input.Action, myTask.WorkflowInstanceId);
             await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
-            actions.Status = W2TaskActionsStatus.Approve;
-            await _taskActionsRepository.UpdateAsync(actions);
 
             return "Send Action successful";
         }

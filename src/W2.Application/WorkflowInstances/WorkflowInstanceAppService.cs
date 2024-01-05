@@ -262,7 +262,7 @@ namespace W2.WorkflowInstances
 
             var allWorkflowInstanceStarters = await AsyncExecuter.ToListAsync(await _instanceStarterRepository.GetQueryableAsync());
             workflowInstanceStarters = allWorkflowInstanceStarters
-                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.GetValueOrDefault("Dates").Contains(dateDb) && x.CreatorId == requestUser.Id)
+                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.Input != null && x.Input.GetValueOrDefault("Dates") != null && x.Input.GetValueOrDefault("Dates").Contains(dateDb) && x.CreatorId == requestUser.Id)
                 .ToList();
 
             instances = await AsyncExecuter.ToListAsync(
@@ -294,6 +294,7 @@ namespace W2.WorkflowInstances
                 }
 
                 workflowInstanceDto.Email = email;
+                workflowInstanceDto.Status = (int)workflowInstanceStarter.Status;
                 workflowInstanceDto.Date = date; //  workflowInstanceStarter.Input.GetValue("Dates");
                 result = workflowInstanceDto;
             }
@@ -663,34 +664,38 @@ namespace W2.WorkflowInstances
 
                             instance.ActivityData.TryGetValue(parentForkActivity.ActivityId, out data);
                         }
-
-                        string key = data.ContainsKey("AssignTo") && data["AssignTo"] is List<string> dataList && dataList.Count > 0 ? "AssignTo" : data.ContainsKey("To") ? "To" : null;
-                        if (data != null && key != null)
+                        if (data != null)
                         {
-                            foreach (var email in (List<string>)data[key])
-                            {
-                                string stakeHolderName = string.Empty;
-                                switch (email)
-                                {
-                                    case "it@ncc.asia":
-                                        stakeHolderName = "IT Department";
-                                        break;
-                                    case "sale@ncc.asia":
-                                        stakeHolderName = "Sale Department";
-                                        break;
-                                    default:
-                                        if (!stakeHolderEmails.ContainsKey(email))
-                                        {
-                                            var user = await _userRepository.FindByNormalizedEmailAsync(email.ToUpper());
-                                            stakeHolderEmails.Add(email, user?.Name);
-                                        }
-                                        stakeHolderName = stakeHolderEmails[email];
-                                        break;
-                                }
 
-                                if (!workflowInstanceDto.StakeHolders.Contains(stakeHolderName))
+                            string key = data.ContainsKey("AssignTo") && data["AssignTo"] is List<string> dataList && dataList.Count > 0 ? "AssignTo" : data.ContainsKey("To") ? "To" : null;
+
+                            if (key != null)
+                            {
+                                foreach (var email in (List<string>)data[key])
                                 {
-                                    workflowInstanceDto.StakeHolders.Add(stakeHolderName);
+                                    string stakeHolderName = string.Empty;
+                                    switch (email)
+                                    {
+                                        case "it@ncc.asia":
+                                            stakeHolderName = "IT Department";
+                                            break;
+                                        case "sale@ncc.asia":
+                                            stakeHolderName = "Sale Department";
+                                            break;
+                                        default:
+                                            if (!stakeHolderEmails.ContainsKey(email))
+                                            {
+                                                var user = await _userRepository.FindByNormalizedEmailAsync(email.ToUpper());
+                                                stakeHolderEmails.Add(email, user?.Name);
+                                            }
+                                            stakeHolderName = stakeHolderEmails[email];
+                                            break;
+                                    }
+
+                                    if (!workflowInstanceDto.StakeHolders.Contains(stakeHolderName))
+                                    {
+                                        workflowInstanceDto.StakeHolders.Add(stakeHolderName);
+                                    }
                                 }
                             }
                         }
