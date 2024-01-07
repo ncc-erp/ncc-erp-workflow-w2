@@ -482,58 +482,102 @@ namespace W2.WorkflowInstances
         {
             var specialStatus = new string[] { "approved", "rejected" };
             var isAdmin = _currentUser.IsInRole("admin");
-            var specification = Specification<WorkflowInstance>.Identity;
-            if (CurrentTenant.IsAvailable)
-            {
-                specification = specification.WithTenant(CurrentTenantStrId);
-            }
+            // hot fix load 
+            var workflowInstanceStartersOptQuery = await _instanceStarterRepository.GetQueryableAsync();
             if (!string.IsNullOrWhiteSpace(input?.WorkflowDefinitionId))
             {
-                specification = specification.WithWorkflowDefinition(input.WorkflowDefinitionId);
+                workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.WorkflowDefinitionId == input.WorkflowDefinitionId);
             }
+            if (!isAdmin)
+            {
+                workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.CreatorId == _currentUser.Id);
+            }
+
+            if (!string.IsNullOrWhiteSpace(input?.RequestUser) && isAdmin)
+            {
+                workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.CreatorId == Guid.Parse(input.RequestUser));
+            }
+
             if (!string.IsNullOrWhiteSpace(input?.Status))
             {
-                if (!specialStatus.Contains(input.Status.ToLower()))
+                WorkflowInstancesStatus status = WorkflowInstancesStatus.Pending;
+                switch(input.Status)
                 {
-                    specification = specification.WithStatus((WorkflowStatus)Enum.Parse(typeof(WorkflowStatus), input.Status, true));
-                }
-                else
-                {
-                    specification = specification.WithStatus(WorkflowStatus.Finished);
-                }
-            }
+                    case "Approved":
+                        status = WorkflowInstancesStatus.Approved;
+                        break;
+                    case "Rejected":
+                        status = WorkflowInstancesStatus.Rejected; 
+                        break;
+                    case "Pending":
+                        status = WorkflowInstancesStatus.Pending;
+                        break;
+                    default:
+                        status = WorkflowInstancesStatus.Canceled;
+                        break;
 
-            var instances = (await _workflowInstanceStore.FindManyAsync(specification));
+                }
+                workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.Status == status);
+            }
+            var workflowInstanceStartersOptQueryLimit = workflowInstanceStartersOptQuery
+                .OrderBy(input.Sorting.ReplaceFirst("createdAt", "CreationTime").ToLower()) // todo apply sort options
+                .Skip(input.SkipCount).Take(input.MaxResultCount);
+            var instanceIds = workflowInstanceStartersOptQueryLimit.Select(x => x.WorkflowInstanceId).ToArray();
+
+            var specification = Specification<WorkflowInstance>.Identity;
+            specification.And(new ListAllWorkflowInstancesSpecification(CurrentTenantStrId, instanceIds));
+            //if (CurrentTenant.IsAvailable)
+            //{
+            //    specification = specification.WithTenant(CurrentTenantStrId);
+            //}
+            //if (!string.IsNullOrWhiteSpace(input?.WorkflowDefinitionId))
+            //{
+            //    specification = specification.WithWorkflowDefinition(input.WorkflowDefinitionId);
+            //}
+            //if (!string.IsNullOrWhiteSpace(input?.Status))
+            //{
+            //    if (!specialStatus.Contains(input.Status.ToLower()))
+            //    {
+            //        specification = specification.WithStatus((WorkflowStatus)Enum.Parse(typeof(WorkflowStatus), input.Status, true));
+            //    }
+            //    else
+            //    {
+            //        specification = specification.WithStatus(WorkflowStatus.Finished);
+            //    }
+            //}
+
+            var instances = (await _workflowInstanceStore.FindManyAsync(new WorkflowInstanceIdsSpecification(instanceIds)));
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
-                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, workflowInstanceStartersOptQueryLimit.Select(i => i.WorkflowDefinitionId).ToArray())
             )).ToList();
 
-            if (specialStatus.Contains(input.Status.ToLower()))
-            {
-                instances = instances.Where(instance =>
-                {
-                    var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
-                    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+            //if (specialStatus.Contains(input.Status.ToLower()))
+            //{
+            //    instances = instances.Where(instance =>
+            //    {
+            //        var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
+            //        var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
 
-                    return GetFinalStatus(lastExecutedActivity) == input.Status;
-                });
-            }
+            //        return GetFinalStatus(lastExecutedActivity) == input.Status;
+            //    });
+            //}
 
-            var instancesIds = instances.Select(x => x.Id);
-            var tasks = (await _taskRepository.GetListAsync());
+            //var instancesIds = instances.Select(x => x.Id);
+            var tasks = await _taskRepository.GetQueryableAsync();
+            tasks = tasks.Where(x => instanceIds.Contains(x.WorkflowInstanceId));
             var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
-            var workflowInstanceStartersQuery = await _instanceStarterRepository.GetQueryableAsync();
+            var workflowInstanceStartersQuery = workflowInstanceStartersOptQueryLimit; //  await _instanceStarterRepository.GetQueryableAsync();
 
-            if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
-            {
-                workflowInstanceStartersQuery = workflowInstanceStartersQuery
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id);
-            }
-            else
-            {
-                workflowInstanceStartersQuery = workflowInstanceStartersQuery
-                                .Where(x => instancesIds.Contains(x.WorkflowInstanceId));
-            }
+            //if (!await AuthorizationService.IsGrantedAsync(W2Permissions.WorkflowManagementWorkflowInstancesViewAll))
+            //{
+            //    workflowInstanceStartersQuery = workflowInstanceStartersQuery
+            //                    .Where(x => instancesIds.Contains(x.WorkflowInstanceId) && x.CreatorId == CurrentUser.Id);
+            //}
+            //else
+            //{
+            //    workflowInstanceStartersQuery = workflowInstanceStartersQuery
+            //                    .Where(x => instancesIds.Contains(x.WorkflowInstanceId));
+            //}
 
             workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
 
@@ -548,49 +592,69 @@ namespace W2.WorkflowInstances
                             .Where(x => x.Id.IsIn(requestUserIds))
                             .ToList();
 
-            var instancesQuery = workflowInstanceStarters
-                .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
-                (WorkflowInstanceStarter, WorkflowInstance) => new
-                {
-                    WorkflowInstanceStarter,
-                    WorkflowInstance
-                })
-                .Join(requestUsers, x => x.WorkflowInstanceStarter.CreatorId, x => x.Id, 
-                (joinedEntities, W2User) => new
-                {
-                    joinedEntities.WorkflowInstanceStarter,
-                    joinedEntities.WorkflowInstance,
-                })
-                .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
-                (joinedEntities, W2task) => new
-                {
-                    joinedEntities.WorkflowInstanceStarter,
-                    joinedEntities.WorkflowInstance,
-                    W2task = W2task.FirstOrDefault()
-                })
-                .AsQueryable();
+            var instancesQuery = (from w in workflowInstanceStartersQuery.ToList()
+                                  from i in instances.Where(i => i.Id == w.WorkflowInstanceId).DefaultIfEmpty()
+                                  from t in tasks.Where(t => w.WorkflowInstanceId == t.WorkflowInstanceId).DefaultIfEmpty()
+                                  from d in workflowDefinitions.Where(d => w.WorkflowDefinitionId == d.DefinitionId).DefaultIfEmpty()
+                                  from u in requestUsers.Where(u => u.Id == w.CreatorId).DefaultIfEmpty()
+                                  select new
+                                  {
+                                      WorkflowInstanceStarter = w,
+                                      WorkflowInstance = i,
+                                      W2task = t,
+                                      Definition = d,
+                                      User = u
+                                  })
+                //.GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
+                //(joinedEntities, W2task) => new
+                //{
+                //    joinedEntities.WorkflowInstanceStarter,
+                //    joinedEntities.WorkflowInstance,
+                //    W2task = W2task.FirstOrDefault()
+                //})
+                .ToList();
+            //var instancesQuery = workflowInstanceStartersQuery.ToList()
+            //    .Join(instances.DefaultIfEmpty(), x => x.WorkflowInstanceId, x => x.Id,
+            //    (WorkflowInstanceStarter, WorkflowInstance) => new
+            //    {
+            //        WorkflowInstanceStarter,
+            //        WorkflowInstance
+            //    })
+            //    //.Join(requestUsers, x => x.WorkflowInstanceStarter.CreatorId, x => x.Id, 
+            //    //(joinedEntities, W2User) => new
+            //    //{
+            //    //    joinedEntities.WorkflowInstanceStarter,
+            //    //    joinedEntities.WorkflowInstance,
+            //    //})
+            //    .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
+            //    (joinedEntities, W2task) => new
+            //    {
+            //        joinedEntities.WorkflowInstanceStarter,
+            //        joinedEntities.WorkflowInstance,
+            //        W2task = W2task.FirstOrDefault()
+            //    })
+            //    .ToList();
 
-            if (!isAdmin)
-            {
-                instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == _currentUser.Id);
-            }
+            //if (!isAdmin)
+            //{
+            //    instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == _currentUser.Id);
+            //}
 
-            if (!string.IsNullOrWhiteSpace(input?.RequestUser) && isAdmin)
-            {
-                instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == Guid.Parse(input.RequestUser));
-            }
+            //if (!string.IsNullOrWhiteSpace(input?.RequestUser) && isAdmin)
+            //{
+            //    instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == Guid.Parse(input.RequestUser));
+            //}
 
-            var totalCount = instancesQuery.Count();
-            var totalResults = await AsyncExecuter.ToListAsync(
-                instancesQuery
-                .OrderBy(NormalizeSortingString(input.Sorting))
-                .Skip(input.SkipCount).Take(input.MaxResultCount)
+            var totalCount = workflowInstanceStartersOptQuery.Count();
+            var totalResults = instancesQuery
                 .Select(x => new
                 {
                     instance = x.WorkflowInstance,
-                    task = x.W2task
-                })
-            );
+                    task = x.W2task,
+                    instanceStarter = x.WorkflowInstanceStarter,
+                    definition = x.Definition,
+                    user = x.User
+                }).ToList();
 
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
@@ -598,6 +662,23 @@ namespace W2.WorkflowInstances
             foreach (var res in totalResults)
             {
                 var instance = res.instance;
+                if (instance == null)
+                {
+                    totalResultsAfterMapping.Add(new WorkflowInstanceDto
+                    {
+                        WorkflowDefinitionId = res.instanceStarter.WorkflowDefinitionId,
+                        CreatedAt = res.instanceStarter.CreationTime,
+                        CreatorId = res.instanceStarter.CreatorId,
+                        Status = res.instanceStarter.Status.ToString(),
+                        WorkflowDefinitionDisplayName = res.definition == null ? "NotFound" : res.definition.Name,
+                        Id = res.instanceStarter.WorkflowInstanceId,
+                        UserRequestName = res.user.Name,
+                        CurrentStates = new List<string>(),
+                        StakeHolders = new List<string>(),
+                        LastExecutedAt = res.instanceStarter.CreationTime
+                    });
+                    continue;
+                }
                 var task = res.task;
 
                 var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
@@ -606,11 +687,12 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.StakeHolders = new List<string>();
                 workflowInstanceDto.CurrentStates = new List<string>();
 
-                if (instance.WorkflowStatus == WorkflowStatus.Finished)
-                {
-                    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
-                    workflowInstanceDto.Status = GetFinalStatus(lastExecutedActivity);
-                }
+                workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
+                //if (instance.WorkflowStatus == WorkflowStatus.Finished)
+                //{
+                //    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+                //    workflowInstanceDto.Status = GetFinalStatus(lastExecutedActivity);
+                //}
 
                 var workflowInstanceStarter = workflowInstanceStarters.FirstOrDefault(x => x.WorkflowInstanceId == instance.Id);
                 if (workflowInstanceStarter is not null)
