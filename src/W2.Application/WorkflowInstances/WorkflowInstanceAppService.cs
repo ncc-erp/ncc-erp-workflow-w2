@@ -160,6 +160,8 @@ namespace W2.WorkflowInstances
                 var workflowInstanceStarter = new WorkflowInstanceStarter
                 {
                     WorkflowInstanceId = instance.Id,
+                    WorkflowDefinitionId = instance.DefinitionId,
+                    WorkflowDefinitionVersionId = instance.DefinitionVersionId,
                     Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
                 };
 
