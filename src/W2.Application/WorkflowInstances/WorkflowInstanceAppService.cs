@@ -605,49 +605,11 @@ namespace W2.WorkflowInstances
                                       Definition = d,
                                       User = u
                                   })
-                //.GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
-                //(joinedEntities, W2task) => new
-                //{
-                //    joinedEntities.WorkflowInstanceStarter,
-                //    joinedEntities.WorkflowInstance,
-                //    W2task = W2task.FirstOrDefault()
-                //})
+                                  .GroupBy(p => p.WorkflowInstanceStarter.Id)
+                                  .Select(g => g.First())
                 .ToList();
-            //var instancesQuery = workflowInstanceStartersQuery.ToList()
-            //    .Join(instances.DefaultIfEmpty(), x => x.WorkflowInstanceId, x => x.Id,
-            //    (WorkflowInstanceStarter, WorkflowInstance) => new
-            //    {
-            //        WorkflowInstanceStarter,
-            //        WorkflowInstance
-            //    })
-            //    //.Join(requestUsers, x => x.WorkflowInstanceStarter.CreatorId, x => x.Id, 
-            //    //(joinedEntities, W2User) => new
-            //    //{
-            //    //    joinedEntities.WorkflowInstanceStarter,
-            //    //    joinedEntities.WorkflowInstance,
-            //    //})
-            //    .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
-            //    (joinedEntities, W2task) => new
-            //    {
-            //        joinedEntities.WorkflowInstanceStarter,
-            //        joinedEntities.WorkflowInstance,
-            //        W2task = W2task.FirstOrDefault()
-            //    })
-            //    .ToList();
-
-            //if (!isAdmin)
-            //{
-            //    instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == _currentUser.Id);
-            //}
-
-            //if (!string.IsNullOrWhiteSpace(input?.RequestUser) && isAdmin)
-            //{
-            //    instancesQuery = instancesQuery.Where(x => x.WorkflowInstanceStarter.CreatorId == Guid.Parse(input.RequestUser));
-            //}
-
             var totalCount = workflowInstanceStartersOptQuery.Count();
-            var totalResults = instancesQuery
-                .Select(x => new
+            var totalResults = instancesQuery.Select(x => new
                 {
                     instance = x.WorkflowInstance,
                     task = x.W2task,
