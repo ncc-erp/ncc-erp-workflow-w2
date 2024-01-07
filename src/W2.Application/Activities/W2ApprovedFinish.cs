@@ -56,7 +56,7 @@ namespace W2.Activities
 
             // update status for workflow instance stater 
             var myWorkflow = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == workflowInstanceId);
-            myWorkflow.Status = WorkflowInstancesStatus.Approve;
+            myWorkflow.Status = WorkflowInstancesStatus.Approved;
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
             _logger.LogInformation("OnExecuteAsync finished done _instanceStarterRepository UpdateManyAsync: " + myWorkflow.Id.ToString());
 
