@@ -63,16 +63,16 @@ namespace W2.ExternalResources
                 },
                 new OfficeInfo
                 {
-                    Code = "SG1",
-                    DisplayName = "Sài Gòn 1",
+                    Code = "SG",
+                    DisplayName = "Sài Gòn",
                     HeadOfOfficeEmail = "linh.nguyen@ncc.asia"
                 },
-                new OfficeInfo
-                {
-                    Code = "SG2",
-                    DisplayName = "Sài Gòn 2",
-                    HeadOfOfficeEmail = "linh.nguyen@ncc.asia"
-                },
+                //new OfficeInfo
+                //{
+                //    Code = "SG2",
+                //    DisplayName = "Sài Gòn 2",
+                //    HeadOfOfficeEmail = "linh.nguyen@ncc.asia"
+                //},
                 new OfficeInfo
                 {
                     Code = "QN",
