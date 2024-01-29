@@ -7,8 +7,8 @@ namespace W2.WorkflowInstances
     public enum WorkflowInstancesStatus
     {
         Pending,
-        Approve,
-        Reject,
+        Approved,
+        Rejected,
         Canceled
     }
 }

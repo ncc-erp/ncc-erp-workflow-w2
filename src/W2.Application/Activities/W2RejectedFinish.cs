@@ -46,7 +46,7 @@ namespace W2.Activities
 
             // update status for workflow instance stater 
             var myWorkflow = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == context.WorkflowInstance.Id.ToString());
-            myWorkflow.Status = WorkflowInstancesStatus.Reject;
+            myWorkflow.Status = WorkflowInstancesStatus.Rejected;
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
 
             // Handler Blocking Activities

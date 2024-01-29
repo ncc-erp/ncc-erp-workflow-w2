@@ -3,6 +3,8 @@ using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Humanizer;
+using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Users;
@@ -34,12 +36,38 @@ namespace W2.Activities
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
+            string targetStaffEmail = null;
+
+            try
+            {
+                // Check if context and context.Input are not null
+                if (context != null && context.Input != null)
+                {
+                    var bodyProperty = context.Input.GetType().GetProperty("Body");
+
+                    // Check if the 'Body' property exists and is not null
+                    if (bodyProperty != null)
+                    {
+                        var instanceInput = bodyProperty.GetValue(context.Input);
+
+                        if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Staff"))
+                        {
+                            targetStaffEmail = valueDictionary["Staff"];
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                targetStaffEmail = null;
+            }
+
             // set project
             // set branch info
             var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(_currentUser.Email);
             //To.Add(branchResult.HeadOfOfficeEmail);
             // set PM
-            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(_currentUser?.Email);
+            var userProjectsResult = await _projectClientApi.GetUserProjectsAsync(_currentUser.Email);
             ProjectProjectItem project = null;
             if (userProjectsResult?.Result != null && userProjectsResult?.Result.Count > 0)
             {
@@ -50,6 +78,7 @@ namespace W2.Activities
                 Id = _currentUser.Id,
                 Email = _currentUser.Email,
                 Name = _currentUser.Name,
+                TargetStaffEmail = targetStaffEmail,
                 Project = _currentUser.FindClaimValue(CustomClaim.ProjectName),
                 HeadOfOfficeEmail = branchResult?.HeadOfOfficeEmail,
                 BranchCode = branchResult?.Code,
