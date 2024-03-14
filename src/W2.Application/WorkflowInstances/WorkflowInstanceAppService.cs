@@ -101,19 +101,26 @@ namespace W2.WorkflowInstances
         public async Task<string> CancelAsync(string id)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
+            var isAdmin = _currentUser.IsInRole("admin");
 
-            var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id && x.Status == WorkflowInstancesStatus.Pending);
+            var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id);
             if (workflowInstanceStarter == null)
             {
-                throw new UserFriendlyException(L["Cancel Failed: Cannot cancel a request if status is not Pending!"]);
+                throw new UserFriendlyException(L["Cancel Failed: workflowInstanceStarter Is Not Found!"]);
+            }
+            else if (!isAdmin && workflowInstanceStarter.Status != WorkflowInstancesStatus.Pending)
+            {
+                throw new UserFriendlyException(L[" Cannot cancel a request if status is not Pending!"]);
             }
 
             var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
-            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending);
+
+            // skip if current user is a admin
+            var hasAnyApproved = isAdmin ? false : myTasks.Any(task => task.Status != W2TaskStatus.Pending);
 
             var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
 
-            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
+            if (hasAnyApproved == true || (!isAdmin && (taskActions != null && taskActions.Count > 0)))
             {
                 throw new UserFriendlyException(L["Cancel Failed: No Permission!"]);
             }
@@ -184,49 +191,6 @@ namespace W2.WorkflowInstances
             }
 
             return instance.Id;
-        }
-
-        public async Task<string> DeleteAsync(string id)
-        {
-            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
-
-            var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
-            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending && task.Status != W2TaskStatus.Cancel);
-
-            var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
-
-            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
-            {
-                throw new UserFriendlyException(L["Delete Failed: No Permission!"]);
-            }
-
-            // Only allow workflow has pending or faulted or cancel status to deleted
-            if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted && workflowInstance.WorkflowStatus != WorkflowStatus.Cancelled))
-            {
-                throw new UserFriendlyException(L["Delete Failed: Workflow Is Not Valid!"]);
-            }
-
-            var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id && (x.Status == WorkflowInstancesStatus.Pending || x.Status == WorkflowInstancesStatus.Canceled));
-            if (workflowInstanceStarter == null)
-            {
-                throw new UserFriendlyException(L["Exception: workflowInstanceStarter Is Not Found"]);
-            }
-
-            var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
-            if (tasks != null && tasks.Count > 0)
-            {
-                await _taskRepository.DeleteManyAsync(tasks);
-            }
-
-            await _instanceStarterRepository.DeleteAsync(workflowInstanceStarter);
-
-            var result = await _workflowInstanceDeleter.DeleteAsync(id);
-            if (result.Status == DeleteWorkflowInstanceResultStatus.NotFound)
-            {
-                throw new UserFriendlyException(L["Exception:InstanceNotFound"]);
-            }
-
-            return "Delete Request workflow successful";
         }
 
         [AllowAnonymous]
@@ -517,7 +481,7 @@ namespace W2.WorkflowInstances
             {
                 workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.CreatorId == Guid.Parse(input.RequestUser));
             }
-
+             
             if (!string.IsNullOrWhiteSpace(input?.Status))
             {
                 WorkflowInstancesStatus status = WorkflowInstancesStatus.Pending;
