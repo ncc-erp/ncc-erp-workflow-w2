@@ -2101,12 +2101,6 @@ namespace W2.Migrations
                     b.Property<string>("Input")
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 

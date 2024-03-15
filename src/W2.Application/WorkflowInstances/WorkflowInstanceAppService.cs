@@ -491,7 +491,7 @@ namespace W2.WorkflowInstances
                         status = WorkflowInstancesStatus.Approved;
                         break;
                     case "Rejected":
-                        status = WorkflowInstancesStatus.Rejected;
+                        status = WorkflowInstancesStatus.Rejected; 
                         break;
                     case "Pending":
                         status = WorkflowInstancesStatus.Pending;
@@ -594,13 +594,13 @@ namespace W2.WorkflowInstances
                 .ToList();
             var totalCount = workflowInstanceStartersOptQuery.Count();
             var totalResults = instancesQuery.Select(x => new
-            {
-                instance = x.WorkflowInstance,
-                task = x.W2task,
-                instanceStarter = x.WorkflowInstanceStarter,
-                definition = x.Definition,
-                user = x.User
-            }).ToList();
+                {
+                    instance = x.WorkflowInstance,
+                    task = x.W2task,
+                    instanceStarter = x.WorkflowInstanceStarter,
+                    definition = x.Definition,
+                    user = x.User
+                }).ToList();
 
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
