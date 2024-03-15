@@ -60,6 +60,7 @@ namespace W2.WorkflowInstances
         private readonly IConfiguration _configuration;
         private readonly IDataFilter _dataFilter;
         private readonly ICurrentUser _currentUser;
+        private readonly IExternalResourceAppService _externalResourceAppService;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -75,7 +76,8 @@ namespace W2.WorkflowInstances
             IAntClientApi antClientApi,
             IConfiguration configuration,
             IDataFilter dataFilter,
-            ICurrentUser currentUser
+            ICurrentUser currentUser,
+            IExternalResourceAppService externalResourceAppService
             )
         {
             _workflowLaunchpad = workflowLaunchpad;
@@ -93,18 +95,32 @@ namespace W2.WorkflowInstances
             _taskActionsRepository = taskActionsRepository;
             _dataFilter = dataFilter;
             _currentUser = currentUser;
+            _externalResourceAppService = externalResourceAppService;
         }
 
         public async Task<string> CancelAsync(string id)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
+            var isAdmin = _currentUser.IsInRole("admin");
+
+            var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id);
+            if (workflowInstanceStarter == null)
+            {
+                throw new UserFriendlyException(L["Cancel Failed: workflowInstanceStarter Is Not Found!"]);
+            }
+            else if (!isAdmin && workflowInstanceStarter.Status != WorkflowInstancesStatus.Pending)
+            {
+                throw new UserFriendlyException(L[" Cannot cancel a request if status is not Pending!"]);
+            }
 
             var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
-            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending);
+
+            // skip if current user is a admin
+            var hasAnyApproved = isAdmin ? false : myTasks.Any(task => task.Status != W2TaskStatus.Pending);
 
             var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
 
-            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
+            if (hasAnyApproved == true || (!isAdmin && (taskActions != null && taskActions.Count > 0)))
             {
                 throw new UserFriendlyException(L["Cancel Failed: No Permission!"]);
             }
@@ -114,6 +130,9 @@ namespace W2.WorkflowInstances
             {
                 throw new UserFriendlyException(L["Cancel Failed: Workflow Is Not Valid!"]);
             }
+
+            workflowInstanceStarter.Status = WorkflowInstancesStatus.Canceled;
+            await _instanceStarterRepository.UpdateAsync(workflowInstanceStarter);
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
@@ -172,41 +191,6 @@ namespace W2.WorkflowInstances
             }
 
             return instance.Id;
-        }
-
-        public async Task<string> DeleteAsync(string id)
-        {
-            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
-
-            var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
-            var hasAnyApproved = myTasks.Any(task => task.Status != W2TaskStatus.Pending);
-
-            var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
-
-            if (hasAnyApproved == true || (taskActions != null && taskActions.Count > 0))
-            {
-                throw new UserFriendlyException(L["Delete Failed: No Permission!"]);
-            }
-
-            // Only allow workflow has pending or faulted status to deleted
-            if (workflowInstance == null || (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Faulted))
-            {
-                throw new UserFriendlyException(L["Delete Failed: Workflow Is Not Valid!"]);
-            }
-
-            var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
-            if (tasks != null && tasks.Count > 0)
-            {
-                await _taskRepository.DeleteManyAsync(tasks);
-            }
-
-            var result = await _workflowInstanceDeleter.DeleteAsync(id);
-            if (result.Status == DeleteWorkflowInstanceResultStatus.NotFound)
-            {
-                throw new UserFriendlyException(L["Exception:InstanceNotFound"]);
-            }
-
-            return "Delete Request workflow successful";
         }
 
         [AllowAnonymous]
@@ -497,7 +481,7 @@ namespace W2.WorkflowInstances
             {
                 workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.CreatorId == Guid.Parse(input.RequestUser));
             }
-
+             
             if (!string.IsNullOrWhiteSpace(input?.Status))
             {
                 WorkflowInstancesStatus status = WorkflowInstancesStatus.Pending;
@@ -645,7 +629,7 @@ namespace W2.WorkflowInstances
 
                 var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
                 var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
-                workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition.DisplayName;
+                workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition?.DisplayName;
                 workflowInstanceDto.StakeHolders = new List<string>();
                 workflowInstanceDto.CurrentStates = new List<string>();
 
@@ -878,17 +862,42 @@ namespace W2.WorkflowInstances
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
 
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
-                 new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance.DefinitionId }))).FirstOrDefault();
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { workflowInstance?.DefinitionId }))).FirstOrDefault();
 
-            var tasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == workflowInstance.Id);
+            Dictionary<string, dynamic> input = new Dictionary<string, dynamic>();
+
+            if (workflowInstance != null)
+            {
+                input = (Dictionary<string, dynamic>)(workflowInstance?.Variables.Data);
+            }
+            else
+            {
+                var requestUserFormat = new Dictionary<string, dynamic>();
+                var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id);
+
+                var requestIndentityUser = await _userRepository.FindAsync((Guid)workflowInstanceStarter.CreatorId);
+
+                var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(requestIndentityUser.Email);
+
+                requestUserFormat.Add("id", requestIndentityUser?.Id);
+                requestUserFormat.Add("email", requestIndentityUser?.Email);
+                requestUserFormat.Add("name", requestIndentityUser?.Name);
+                requestUserFormat.Add("headOfOfficeEmail", branchResult?.HeadOfOfficeEmail);
+                requestUserFormat.Add("branchCode", branchResult?.Code);
+                requestUserFormat.Add("branchName", branchResult?.DisplayName);
+
+                input.Add("Request", workflowInstanceStarter.Input);
+                input.Add("RequestUser", requestUserFormat);
+            }
+
+            var tasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
             var requestTasks = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(tasks);
-
             var workflowInstanceDetailDto = new WorkflowInstanceDetailDto
             {
                 workInstanceId = id,
                 tasks = requestTasks,
-                input = workflowInstance.Variables.Data,
-                typeRequest = workflowDefinitions.DisplayName,
+                input = input,
+                typeRequest = workflowDefinitions != null ? workflowDefinitions.DisplayName : "[Deleted]",
             };
 
             return workflowInstanceDetailDto;
