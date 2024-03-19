@@ -23,7 +23,6 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -883,18 +882,18 @@ namespace W2.WorkflowInstances
 
                 var requestIndentityUser = await _userRepository.FindAsync((Guid)workflowInstanceStarter.CreatorId);
 
-                    var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(requestIndentityUser.Email);
+                var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(requestIndentityUser.Email);
 
-                    requestUserFormat.Add("id", requestIndentityUser?.Id);
-                    requestUserFormat.Add("email", requestIndentityUser?.Email);
-                    requestUserFormat.Add("name", requestIndentityUser?.Name);
-                    requestUserFormat.Add("headOfOfficeEmail", branchResult?.HeadOfOfficeEmail);
-                    requestUserFormat.Add("branchCode", branchResult?.Code);
-                    requestUserFormat.Add("branchName", branchResult?.DisplayName);
+                requestUserFormat.Add("id", requestIndentityUser?.Id);
+                requestUserFormat.Add("email", requestIndentityUser?.Email);
+                requestUserFormat.Add("name", requestIndentityUser?.Name);
+                requestUserFormat.Add("headOfOfficeEmail", branchResult?.HeadOfOfficeEmail);
+                requestUserFormat.Add("branchCode", branchResult?.Code);
+                requestUserFormat.Add("branchName", branchResult?.DisplayName);
 
-                    input.Add("Request", workflowInstanceStarter.Input);
-                    input.Add("RequestUser", requestUserFormat);
-                }
+                input.Add("Request", workflowInstanceStarter.Input);
+                input.Add("RequestUser", requestUserFormat);
+            }
 
             var tasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
             var requestTasks = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(tasks);
