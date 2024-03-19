@@ -23,6 +23,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -467,6 +468,8 @@ namespace W2.WorkflowInstances
             var specialStatus = new string[] { "approved", "rejected" };
             var isAdmin = _currentUser.IsInRole("admin");
             // hot fix load 
+            var usersQuery = await _userRepository.GetListAsync();
+            
             var workflowInstanceStartersOptQuery = await _instanceStarterRepository.GetQueryableAsync();
             if (!string.IsNullOrWhiteSpace(input?.WorkflowDefinitionId))
             {
@@ -477,11 +480,23 @@ namespace W2.WorkflowInstances
                 workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.CreatorId == _currentUser.Id);
             }
 
+            // If search by user and the user is admin
             if (!string.IsNullOrWhiteSpace(input?.RequestUser) && isAdmin)
             {
                 workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => x.CreatorId == Guid.Parse(input.RequestUser));
             }
-             
+
+            if (!string.IsNullOrWhiteSpace(input?.EmailRequest) && isAdmin)
+            {
+                string emailRequest = input.EmailRequest.Trim().ToLowerInvariant();
+                usersQuery = usersQuery.Where(x => x.Email.ToLowerInvariant().Contains(input?.EmailRequest) && !x.IsDeleted).ToList();
+            }
+
+            List<Guid> creatorIds = usersQuery.Select(x => x.Id).ToList();
+
+            // get request by creatorIds
+            workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery.Where(x => creatorIds.Contains((Guid)x.CreatorId));
+
             if (!string.IsNullOrWhiteSpace(input?.Status))
             {
                 WorkflowInstancesStatus status = WorkflowInstancesStatus.Pending;
@@ -532,7 +547,7 @@ namespace W2.WorkflowInstances
 
             var instances = (await _workflowInstanceStore.FindManyAsync(new WorkflowInstanceIdsSpecification(instanceIds)));
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
-                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, workflowInstanceStartersOptQueryLimit.Select(i => i.WorkflowDefinitionId).ToArray())
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
             )).ToList();
 
             //if (specialStatus.Contains(input.Status.ToLower()))
@@ -565,21 +580,12 @@ namespace W2.WorkflowInstances
 
             workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
 
-            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
-            var users = await _userRepository.GetListAsync();
-            if (!string.IsNullOrWhiteSpace(input.EmailRequest))
-            {
-                string emailRequest = input.EmailRequest.Trim().ToLowerInvariant();
-                users = users.Where(x => x.Email.ToLowerInvariant().Contains(emailRequest) && !x.IsDeleted).ToList();
-            }
-            var requestUsers = users
-                            .Where(x => x.Id.IsIn(requestUserIds))
-                            .ToList();
+            var requestUsers = usersQuery;
 
             var instancesQuery = (from w in workflowInstanceStartersQuery.ToList()
                                   from i in instances.Where(i => i.Id == w.WorkflowInstanceId).DefaultIfEmpty()
                                   from t in tasks.Where(t => w.WorkflowInstanceId == t.WorkflowInstanceId).DefaultIfEmpty()
-                                  from d in workflowDefinitions.Where(d => w.WorkflowDefinitionId == d.DefinitionId).DefaultIfEmpty()
+                                  from d in workflowDefinitions.Where(d => i?.DefinitionId == d.DefinitionId).DefaultIfEmpty()
                                   from u in requestUsers.Where(u => u.Id == w.CreatorId).DefaultIfEmpty()
                                   select new
                                   {
@@ -618,7 +624,7 @@ namespace W2.WorkflowInstances
                         Status = res.instanceStarter.Status.ToString(),
                         WorkflowDefinitionDisplayName = res.definition == null ? "NotFound" : res.definition.Name,
                         Id = res.instanceStarter.WorkflowInstanceId,
-                        UserRequestName = res.user.Name,
+                        UserRequestName = res.user?.Name,
                         CurrentStates = new List<string>(),
                         StakeHolders = new List<string>(),
                         LastExecutedAt = res.instanceStarter.CreationTime
@@ -629,7 +635,7 @@ namespace W2.WorkflowInstances
 
                 var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
                 var workflowInstanceDto = ObjectMapper.Map<WorkflowInstance, WorkflowInstanceDto>(instance);
-                workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition?.DisplayName;
+                workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition?.DisplayName ?? "Not Found";
                 workflowInstanceDto.StakeHolders = new List<string>();
                 workflowInstanceDto.CurrentStates = new List<string>();
 
@@ -877,18 +883,18 @@ namespace W2.WorkflowInstances
 
                 var requestIndentityUser = await _userRepository.FindAsync((Guid)workflowInstanceStarter.CreatorId);
 
-                var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(requestIndentityUser.Email);
+                    var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(requestIndentityUser.Email);
 
-                requestUserFormat.Add("id", requestIndentityUser?.Id);
-                requestUserFormat.Add("email", requestIndentityUser?.Email);
-                requestUserFormat.Add("name", requestIndentityUser?.Name);
-                requestUserFormat.Add("headOfOfficeEmail", branchResult?.HeadOfOfficeEmail);
-                requestUserFormat.Add("branchCode", branchResult?.Code);
-                requestUserFormat.Add("branchName", branchResult?.DisplayName);
+                    requestUserFormat.Add("id", requestIndentityUser?.Id);
+                    requestUserFormat.Add("email", requestIndentityUser?.Email);
+                    requestUserFormat.Add("name", requestIndentityUser?.Name);
+                    requestUserFormat.Add("headOfOfficeEmail", branchResult?.HeadOfOfficeEmail);
+                    requestUserFormat.Add("branchCode", branchResult?.Code);
+                    requestUserFormat.Add("branchName", branchResult?.DisplayName);
 
-                input.Add("Request", workflowInstanceStarter.Input);
-                input.Add("RequestUser", requestUserFormat);
-            }
+                    input.Add("Request", workflowInstanceStarter.Input);
+                    input.Add("RequestUser", requestUserFormat);
+                }
 
             var tasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
             var requestTasks = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(tasks);
