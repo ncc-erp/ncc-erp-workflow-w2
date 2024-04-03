@@ -7,6 +7,7 @@ namespace W2.WorkflowInstances
 {
     public class WorkflowInstanceStarter : CreationAuditedEntity<Guid>, IMultiTenant
     {
+        public Guid? Id { get; set; } = default!;
         public string WorkflowInstanceId { get; set; } = default!;
         public string WorkflowDefinitionId { get; set; } = default!;
         public string WorkflowDefinitionVersionId { get; set; } = default!;

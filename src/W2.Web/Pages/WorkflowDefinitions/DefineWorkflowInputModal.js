@@ -26,7 +26,7 @@
         const count = $('.property-wrapper').length;
         const newElementHtml = `        
             <div class="row property-wrapper">
-                <div class="col-4">
+                <div class="col-3">
                     <div class="mb-3">
 	                    <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__Name">Property Name</label><span> * </span>
 	                    <input type="text" data-val="true" 
@@ -40,7 +40,7 @@
                             data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].Name" data-valmsg-replace="true"></span>
                     </div>
                 </div>
-                <div class="col-4">
+                <div class="col-3">
                     <div class="mb-3">
                         <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__Type">Property Type</label>
                         <select class="form-select form-control property-type" data-val="true"
@@ -77,6 +77,20 @@
                     <span class="text-danger field-validation-valid"
                         data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].IsRequired" data-valmsg-replace="true"></span>
                 </div>
+            <div class="col-2 d-flex flex-column">
+                <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__IsTitle">Title</label>
+                <input class="property-title form-check-input" 
+                        type="checkbox" checked="checked" 
+                        data-val="true" 
+                        data-val-required="The title field is required." 
+                        id="WorkflowInputDefinition_PropertyDefinitionViewModels_${count}__IsTitle" 
+                        name="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].IsTitle"
+                        value="true"
+                        style="width: 2em; height: 2em"
+                >
+                <span class="text-danger field-validation-valid"
+                    data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[${count}].IsTitle" data-valmsg-replace="true"></span>
+            </div>
                 <div class="col">
                     <div class="mb-3">
                         <label class="form-label" style="width:100%;">&nbsp;</label>
@@ -137,6 +151,15 @@
                 requiredInput.attr('id', requiredInputId);
                 requiredInput.attr('name', requiredInputName);
             }
+            const titleInput = row.find('.property-title');
+            if (requiredInput.length) {
+                const titleInputId = `WorkflowInputDefinition_PropertyDefinitionViewModels_${i}__IsTitle`;
+                const titleInputName = `WorkflowInputDefinition.PropertyDefinitionViewModels[${i}].IsTitle`;
+
+                titleInput.attr('id', titleInputId);
+                titleInput.attr('name', titleInputName);
+            }
+            
         }
     }
 

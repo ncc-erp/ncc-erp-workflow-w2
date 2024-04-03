@@ -101,8 +101,10 @@ namespace W2.Activities
             {
                 UserId = (Guid)currentUser.Id,
                 WorkflowInstanceId = context.WorkflowInstance.Id,
+                ShortTitle = currentUser.ShortTitle,
                 ApproveSignal = ApproveSignal.Trim(),
                 RejectSignal = RejectSignal.Trim(),
+                RequestId = currentUser.requestId,
                 DynamicActionData = DynamicActionData,
                 Description = Description,
                 EmailTo = EmailTo,

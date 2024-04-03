@@ -37,7 +37,8 @@ namespace W2.Activities
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             string targetStaffEmail = null;
-
+            string shortTitle = null;
+            string requestId = null;
             try
             {
                 // Check if context and context.Input are not null
@@ -50,16 +51,30 @@ namespace W2.Activities
                     {
                         var instanceInput = bodyProperty.GetValue(context.Input);
 
-                        if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Staff"))
+                        if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("shortHeader"))
                         {
-                            targetStaffEmail = valueDictionary["Staff"];
+                            var key = valueDictionary["shortHeader"];
+                            shortTitle = valueDictionary.ContainsKey(key) ?  valueDictionary[key] : "no title";
                         }
+
+                        if (instanceInput is IDictionary<string, string> dictionary && dictionary.ContainsKey("Staff"))
+                        {
+                            targetStaffEmail = dictionary["Staff"];
+                        }
+
+                        if(instanceInput is IDictionary<string, string> dictionaryRequest && dictionaryRequest.ContainsKey("requestId"))
+                        {
+                            requestId = dictionaryRequest["requestId"];
+                        }
+
+                        
                     }
                 }
             }
             catch (Exception)
             {
                 targetStaffEmail = null;
+                shortTitle = "";
             }
 
             // set project
@@ -84,7 +99,9 @@ namespace W2.Activities
                 BranchCode = branchResult?.Code,
                 BranchName = branchResult?.DisplayName,
                 ProjectCode = project?.Code,
-                PM = project?.PM?.EmailAddress
+                ShortTitle = shortTitle,
+                PM = project?.PM?.EmailAddress,
+                requestId = Guid.Parse(requestId)
             };
             context.SetVariable(nameof(RequestUser), requestUser);
             return Done();

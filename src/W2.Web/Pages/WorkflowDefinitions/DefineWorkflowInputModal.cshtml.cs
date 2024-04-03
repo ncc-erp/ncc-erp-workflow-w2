@@ -38,7 +38,8 @@ namespace W2.Web.Pages.WorkflowDefinitions
                 {
                     Name = "",
                     Type = WorkflowInputDefinitionProperyType.Text,
-                    IsRequired = false
+                    IsRequired = false,
+                    IsTitle = false
                 });
             }
             else
@@ -53,7 +54,9 @@ namespace W2.Web.Pages.WorkflowDefinitions
                     {
                         Name = "",
                         Type = WorkflowInputDefinitionProperyType.Text,
-                        IsRequired = false
+                        IsRequired = false,
+                        IsTitle = false
+
                     });
                     _logger.LogException(ex);
                 }
