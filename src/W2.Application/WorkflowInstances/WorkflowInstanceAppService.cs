@@ -169,10 +169,8 @@ namespace W2.WorkflowInstances
                 throw new UserFriendlyException(L["Exception:NoStartableWorkflowFound"]);
             }
 
-            // Tạo UUID mới cho requestId
             var requestId = GuidGenerator.Create().ToString();
 
-            // Thêm requestId vào input
             input.Input["requestId"] = requestId;
 
 
