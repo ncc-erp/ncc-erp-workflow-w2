@@ -9,6 +9,7 @@ namespace W2.Tasks
     {
         public Guid UserId { get; set; }
         public string WorkflowInstanceId { get; set; }
+        public string Staff { get; set; }
         public string ApproveSignal { get; set; }
         public string RejectSignal { get; set; }
         public string DynamicActionData { get; set; }
