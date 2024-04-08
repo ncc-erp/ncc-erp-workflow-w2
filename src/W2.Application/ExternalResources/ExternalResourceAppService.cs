@@ -48,7 +48,7 @@ namespace W2.ExternalResources
                 {
                     Code = "HN3",
                     DisplayName = "Hà Nội 3",
-                    HeadOfOfficeEmail = "phi.lekim@ncc.asia"
+                    HeadOfOfficeEmail = "tien.nguyenhuu@ncc.asia"
                 },
                 new OfficeInfo
                 {
