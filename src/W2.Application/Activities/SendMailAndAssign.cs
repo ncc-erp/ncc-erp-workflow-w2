@@ -96,11 +96,12 @@ namespace W2.Activities
                     this.Body = this.Body.Replace("{" + key + "}", listDynamicData[key]);
                 }
             }
-
+            
             var input = new AssignTaskInput
             {
                 UserId = (Guid)currentUser.Id,
                 WorkflowInstanceId = context.WorkflowInstance.Id,
+                Staff = currentUser.TargetStaffEmail,
                 ApproveSignal = ApproveSignal.Trim(),
                 RejectSignal = RejectSignal.Trim(),
                 DynamicActionData = DynamicActionData,
