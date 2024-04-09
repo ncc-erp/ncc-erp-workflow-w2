@@ -169,6 +169,11 @@ namespace W2.WorkflowInstances
                 throw new UserFriendlyException(L["Exception:NoStartableWorkflowFound"]);
             }
 
+            var requestId = GuidGenerator.Create().ToString();
+
+            input.Input["requestId"] = requestId;
+
+
             var httpRequestModel = GetHttpRequestModel(nameof(HttpMethod.Post), input.Input);
 
             var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
@@ -178,6 +183,7 @@ namespace W2.WorkflowInstances
             {
                 var workflowInstanceStarter = new WorkflowInstanceStarter
                 {
+                    Id = Guid.Parse(requestId),
                     WorkflowInstanceId = instance.Id,
                     WorkflowDefinitionId = instance.DefinitionId,
                     WorkflowDefinitionVersionId = instance.DefinitionVersionId,
@@ -189,6 +195,7 @@ namespace W2.WorkflowInstances
 
                 _logger.LogInformation("Saved changes to database");
             }
+
 
             return instance.Id;
         }
@@ -620,6 +627,9 @@ namespace W2.WorkflowInstances
                         WorkflowDefinitionId = res.instanceStarter.WorkflowDefinitionId,
                         CreatedAt = res.instanceStarter.CreationTime,
                         CreatorId = res.instanceStarter.CreatorId,
+                        ShortTitle = res.instanceStarter.Input.ContainsKey("shortHeader") && !string.IsNullOrEmpty(res.instanceStarter.Input["shortHeader"])
+                        ? (res.instanceStarter.Input.ContainsKey(res.instanceStarter.Input["shortHeader"]) ? res.instanceStarter.Input[res.instanceStarter.Input["shortHeader"]] : "no title")
+                        : "no title",
                         Status = res.instanceStarter.Status.ToString(),
                         WorkflowDefinitionDisplayName = res.definition == null ? "NotFound" : res.definition.Name,
                         Id = res.instanceStarter.WorkflowInstanceId,
@@ -637,7 +647,7 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition?.DisplayName ?? "Not Found";
                 workflowInstanceDto.StakeHolders = new List<string>();
                 workflowInstanceDto.CurrentStates = new List<string>();
-
+                workflowInstanceDto.ShortTitle = res.instanceStarter.Input.ContainsKey("shortHeader") && !string.IsNullOrEmpty(res.instanceStarter.Input["shortHeader"]) ? (res.instanceStarter.Input.ContainsKey(res.instanceStarter.Input["shortHeader"]) ? res.instanceStarter.Input[res.instanceStarter.Input["shortHeader"]] : "no title") : "no title";
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{

@@ -12,7 +12,8 @@ namespace W2.Tasks
         public string WorkflowInstanceId { get; set; }
         public string WorkflowDefinitionId { get; set; }
         public string Email { get; set; }
-        public Guid ? TaskId { get; set; }
+        public string Title { get; set; }
+        public Guid ? RequestId { get; set; }
         public W2TaskStatus Status { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }

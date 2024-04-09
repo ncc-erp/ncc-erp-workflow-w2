@@ -8,6 +8,7 @@
 @{
     Layout = null;
     var countProperties = Model.PropertyDefinitionViewModels.Count;
+    var shortHeaderName = Model.PropertyDefinitionViewModels.FirstOrDefault(p => p.IsTitle)?.Name ?? "Default Header";
 }
 
 <form method="post" asp-page="/WorkflowDefinitions/NewWorkflowInstanceModal"
@@ -17,6 +18,10 @@
         <abp-modal-header title="@Model.WorkflowDefinitionSummaryDto.DisplayName"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="WorkflowDefinitionId" type="hidden" />
+            @*<abp-input asp-for="WorkflowDefinitionId" type="hidden" />*@
+
+            <input id="input_shortHeader" name="WorkflowInput[shortHeader]" type="hidden" value="@shortHeaderName" />
+
             @for (int i = 0; i < countProperties; i++)
             {
                 var propertyDefinition = Model.PropertyDefinitionViewModels[i];
@@ -25,26 +30,28 @@
                 <div class="row">
                     <div class="col">
                         <div class="mb-3">
-                            <label class="form-label" for="@inputName">@propertyDefinition.Name
+                            <label class="form-label" for="@inputName">
+                                @propertyDefinition.Name
                                 @if (propertyDefinition.IsRequired)
                                 {
                                     <span style="color: red">*</span>
                                 }
                             </label>
+
                             @switch (propertyDefinition.Type)
                             {
                                 case WorkflowInputDefinitionProperyType.Text:
                                     <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
-                                        type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
+                                           type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.Numeric:
                                     <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
-                                        type="number" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
+                                           type="number" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]" />
                                     break;
                                 case WorkflowInputDefinitionProperyType.DateTime:
                                     <input id="@inputId" name="@inputName" data-validate-required="@propertyDefinition.IsRequired"
                                            type="text" class="form-control" value="@Model.WorkflowInput[propertyDefinition.Name]"
-                                        readonly style="cursor: pointer"/>
+                                           readonly style="cursor: pointer" />
                                     <script>
                                         {
                                             $('#@inputId').datepicker({
@@ -91,7 +98,7 @@
                                     break;
                                 case WorkflowInputDefinitionProperyType.UserList:
                                     <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
-                                        @foreach(var item in Model.UserSelectListItems)
+                                        @foreach (var item in Model.UserSelectListItems)
                                         {
                                             <option value="@item.Value">@item.Text (@item.Value)</option>
                                         }
@@ -108,7 +115,7 @@
                                 case WorkflowInputDefinitionProperyType.MyPMProject:
                                     <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
                                         <option value="" selected disabled hidden>Select project</option>
-                                        @foreach(var item in Model.ProjectSelectListItems)
+                                        @foreach (var item in Model.ProjectSelectListItems)
                                         {
                                             <option value="@item.Value" selected="@item.Selected">@item.Text (@item.Text)</option>
                                         }
@@ -124,7 +131,7 @@
                                 case WorkflowInputDefinitionProperyType.OfficeList:
                                     <select id="@inputId" name="@inputName" style="width:100%;" data-validate-required="@propertyDefinition.IsRequired">
                                         <option value="" selected disabled hidden>Select office</option>
-                                        @foreach(var item in Model.OfficeSelectListItems)
+                                        @foreach (var item in Model.OfficeSelectListItems)
                                         {
                                             <option value="@item.Value" selected="@(item.Selected && propertyDefinition.Name == "CurrentOffice")">@item.Text</option>
                                         }
@@ -154,8 +161,10 @@
         return new Date(dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0]);
     }
 
+
     function validate() {
         let validated = true;
+
         $("abp-validation-summary").text("");
         $("[id^=input_][data-validate-required=True]").each(function(index, self) {
             if ($(self).is('textarea')) 

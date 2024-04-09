@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -13,9 +14,10 @@ using W2.EntityFrameworkCore;
 namespace W2.Migrations
 {
     [DbContext(typeof(W2DbContext))]
-    partial class W2DbContextModelSnapshot : ModelSnapshot
+    [Migration("20240329134943_add-column-title-task")]
+    partial class addcolumntitletask
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2030,11 +2032,11 @@ namespace W2.Migrations
                     b.Property<string>("RejectSignal")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("RequestId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("TaskId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")

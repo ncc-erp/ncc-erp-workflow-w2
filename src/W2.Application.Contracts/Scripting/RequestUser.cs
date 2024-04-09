@@ -7,6 +7,7 @@ namespace W2.Scripting
         public string Email { get; set; }
         public string TargetStaffEmail { get; set; }
         public string Name { get; set; }
+        public string ShortTitle { get; set; }
         public string Project { get; set; }
         public string PM { get; set; }
         public string HeadOfOfficeEmail { get; set; }
@@ -14,5 +15,6 @@ namespace W2.Scripting
         public string BranchName { get; set; }
         public string BranchCode { get; set; }
         public Guid? Id { get; set; }
+        public Guid? requestId { get; set; }
     }
 }

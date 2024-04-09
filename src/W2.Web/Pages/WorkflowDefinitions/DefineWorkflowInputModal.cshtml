@@ -11,7 +11,7 @@
     Layout = null;
 }
 
-<form method="post" asp-page="/WorkflowDefinitions/DefineWorkflowInputModal">
+<form method="post" asp-page="/WorkflowDefinitions/DefineWorkflowInputModal" onsubmit="return validate()" >
     <abp-modal size="Large">
         <abp-modal-header title="Define Workflow Input"></abp-modal-header>
         <abp-modal-body>
@@ -23,10 +23,10 @@
                     for (int i = 0; i < Model.WorkflowInputDefinition.PropertyDefinitionViewModels.Count; i++)
                     {
                         <div class="row property-wrapper">
-                            <div class="col-4">
+                            <div class="col-3">
                                 <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Name" class="property-name" />
                             </div>
-                            <div class="col-4">
+                            <div class="col-3">
                                 <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[i].Type" class="property-type" />
                             </div>
                             <div class="col-2 d-flex flex-column">
@@ -37,10 +37,21 @@
                                        id="WorkflowInputDefinition_PropertyDefinitionViewModels_@(i)__IsRequired"
                                        name="WorkflowInputDefinition.PropertyDefinitionViewModels[@(i)].IsRequired"
                                        value="true"
-                                       style="width: 2em; height: 2em"
-                                >
+                                       style="width: 2em; height: 2em">
                                 <span class="text-danger field-validation-valid"
                                       data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[@(i)].IsRequired" data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-2 d-flex flex-column">
+                                <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_@(i)__IsTitle">Title</label>
+                                <input class="property-title form-check-input"
+                                       type="checkbox" checked="@Model.WorkflowInputDefinition.PropertyDefinitionViewModels[i].IsTitle"
+                                       data-val="true" data-val-required="The Title field is required."
+                                       id="WorkflowInputDefinition_PropertyDefinitionViewModels_@(i)__IsTitle"
+                                       name="WorkflowInputDefinition.PropertyDefinitionViewModels[@(i)].IsTitle"
+                                       value="true"
+                                       style="width: 2em; height: 2em">
+                                <span class="text-danger field-validation-valid"
+                                      data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[@(i)].IsTitle" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col">
                                 <div class="mb-3">
@@ -56,10 +67,10 @@
                 else
                 {
                     <div class="row property-wrapper">
-                        <div class="col-4">
+                        <div class="col-3">
                             <abp-input asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Name" class="property-name" />
                         </div>
-                        <div class="col-4">
+                        <div class="col-3">
                             <abp-select asp-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].Type" class="property-type" />
                         </div>
                         <div class="col-2 d-flex flex-column">
@@ -67,11 +78,20 @@
                                    type="checkbox" checked="checked"
                                    id="WorkflowInputDefinition_PropertyDefinitionViewModels_0__IsRequired"
                                    name="WorkflowInputDefinition.PropertyDefinitionViewModels[0].IsRequired"
-                                   style="width: 2em; height: 2em"
-                            >
+                                   style="width: 2em; height: 2em">
                             <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_0__IsRequired">Required</label>
                             <span class="text-danger field-validation-valid"
                                   data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].IsRequired" data-valmsg-replace="true"></span>
+                        </div>
+                        <div class="col-2 d-flex flex-column">
+                            <input class="property-title form-check-input"
+                                   type="checkbox" checked="checked"
+                                   id="WorkflowInputDefinition_PropertyDefinitionViewModels_0__IsTitle"
+                                   name="WorkflowInputDefinition.PropertyDefinitionViewModels[0].IsTitle"
+                                   style="width: 2em; height: 2em">
+                            <label class="form-label" for="WorkflowInputDefinition_PropertyDefinitionViewModels_0__IsTitle">Title</label>
+                            <span class="text-danger field-validation-valid"
+                                  data-valmsg-for="WorkflowInputDefinition.PropertyDefinitionViewModels[0].IsTitle" data-valmsg-replace="true"></span>
                         </div>
                         <div class="col">
                             <div class="mb-3">
@@ -91,3 +111,27 @@
     </abp-modal>
 </form>
 
+
+
+<script type="text/javascript">
+    function validate() {
+        var countTitle = 0;
+        $(".property-title").each(function () {
+            if ($(this).prop('checked')) {
+                countTitle++;
+            }
+        });
+
+        if (countTitle === 0) {
+            alert("Vui lòng chọn ít nhất một trường làm tiêu đề.");
+            return false;
+        }
+
+        if (countTitle > 1) {
+            alert("Chỉ được chọn một trường làm tiêu đề.");
+            return false;
+        }
+
+        return true;
+    }
+</script>

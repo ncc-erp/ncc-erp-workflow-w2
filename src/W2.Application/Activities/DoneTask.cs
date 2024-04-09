@@ -23,7 +23,7 @@ namespace W2.Activities
         private readonly IProjectClientApi _projectClientApi;
         private readonly IExternalResourceAppService _externalResourceAppService;
         [ActivityInput(Hint = "User's assigned.", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
-        public object? User { get; set; }
+        public object User { get; set; }
 
         public DoneTask(ICurrentUser currentUser,
             IProjectClientApi projectClientApi,
