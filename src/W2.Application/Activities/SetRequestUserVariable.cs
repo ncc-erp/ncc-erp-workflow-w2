@@ -54,7 +54,7 @@ namespace W2.Activities
                         if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("shortHeader"))
                         {
                             var key = valueDictionary["shortHeader"];
-                            shortTitle = valueDictionary.ContainsKey(key) ?  valueDictionary[key] : "no title";
+                            shortTitle = valueDictionary.ContainsKey(key) ?  valueDictionary[key] : "";
                         }
 
                         if (instanceInput is IDictionary<string, string> dictionary && dictionary.ContainsKey("Staff"))

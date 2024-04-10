@@ -628,8 +628,8 @@ namespace W2.WorkflowInstances
                         CreatedAt = res.instanceStarter.CreationTime,
                         CreatorId = res.instanceStarter.CreatorId,
                         ShortTitle = res.instanceStarter.Input.ContainsKey("shortHeader") && !string.IsNullOrEmpty(res.instanceStarter.Input["shortHeader"])
-                        ? (res.instanceStarter.Input.ContainsKey(res.instanceStarter.Input["shortHeader"]) ? res.instanceStarter.Input[res.instanceStarter.Input["shortHeader"]] : "no title")
-                        : "no title",
+                        ? (res.instanceStarter.Input.ContainsKey(res.instanceStarter.Input["shortHeader"]) ? res.instanceStarter.Input[res.instanceStarter.Input["shortHeader"]] : "")
+                        : "",
                         Status = res.instanceStarter.Status.ToString(),
                         WorkflowDefinitionDisplayName = res.definition == null ? "NotFound" : res.definition.Name,
                         Id = res.instanceStarter.WorkflowInstanceId,
@@ -647,7 +647,7 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.WorkflowDefinitionDisplayName = workflowDefinition?.DisplayName ?? "Not Found";
                 workflowInstanceDto.StakeHolders = new List<string>();
                 workflowInstanceDto.CurrentStates = new List<string>();
-                workflowInstanceDto.ShortTitle = res.instanceStarter.Input.ContainsKey("shortHeader") && !string.IsNullOrEmpty(res.instanceStarter.Input["shortHeader"]) ? (res.instanceStarter.Input.ContainsKey(res.instanceStarter.Input["shortHeader"]) ? res.instanceStarter.Input[res.instanceStarter.Input["shortHeader"]] : "no title") : "no title";
+                workflowInstanceDto.ShortTitle = res.instanceStarter.Input.ContainsKey("shortHeader") && !string.IsNullOrEmpty(res.instanceStarter.Input["shortHeader"]) ? (res.instanceStarter.Input.ContainsKey(res.instanceStarter.Input["shortHeader"]) ? res.instanceStarter.Input[res.instanceStarter.Input["shortHeader"]] : "") : "";
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{
