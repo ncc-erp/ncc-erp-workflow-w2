@@ -20,8 +20,7 @@ namespace W2;
     typeof(AbpIdentityApplicationContractsModule),
     typeof(AbpPermissionManagementApplicationContractsModule),
     typeof(AbpSettingManagementApplicationContractsModule),
-    typeof(AbpTenantManagementApplicationContractsModule),
-    typeof(AbpObjectExtendingModule)
+    typeof(AbpTenantManagementApplicationContractsModule)
 )]
 public class W2ApplicationContractsModule : AbpModule
 {
