@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on:  prod
+    runs-on:  dev
     name: Build Workflow W2 Production
     environment: production
     outputs:
@@ -55,7 +55,7 @@ jobs:
 
         echo "::set-output name=date_time::$DATE_TIME"
   deploy:
-    runs-on:  prod
+    runs-on:  dev
     name: Deploy Workflow W2 Production
     environment: production
     needs:
