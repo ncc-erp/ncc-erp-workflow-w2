@@ -49,7 +49,7 @@ namespace W2.Signals
 
             var affectedWorkflows = await _signaler.TriggerSignalAsync(signal.Name, null, signal.WorkflowInstanceId).ToList();
 
-            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
+            //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
         }
 
         public async Task TriggerAsync(TriggerSignalWithInputDto triggerSignalInput)
@@ -66,7 +66,7 @@ namespace W2.Signals
                 )
                 .ToList();
             var signalModel = new SignalModel(triggerSignalInput.Signal, triggerSignalInput.WorkflowInstanceId);
-            await _mediator.Publish(new HttpTriggeredSignal(signalModel, affectedWorkflows));
+            //await _mediator.Publish(new HttpTriggeredSignal(signalModel, affectedWorkflows));
         }
     }
 }
