@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on:  [self-hosted, w2, dev]
+    runs-on:  [self-hosted, w2, prod]
     name: Build Workflow W2 Production
     environment: production
     outputs:
