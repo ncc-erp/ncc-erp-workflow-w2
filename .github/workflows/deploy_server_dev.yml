@@ -44,7 +44,7 @@ jobs:
         cp -r * /var/www/app/w2/dev-dotnet-host-w2/
         
   deploy:
-    runs-on:  [self-hosted, w2, dev]
+    runs-on:  dev
     name: Deploy Workflow W2 Dev
     environment: dev
     needs:
