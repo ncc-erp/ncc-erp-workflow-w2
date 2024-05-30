@@ -147,7 +147,7 @@ namespace W2.Tasks
 
             var affectedWorkflows = (await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId)).ToList();
             var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
-            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
+            //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             return "Approval successful";
         }
