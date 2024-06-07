@@ -5,6 +5,7 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -50,7 +51,9 @@ namespace W2.Activities
             myWorkflow.Status = WorkflowInstancesStatus.Rejected;
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
 
-            return Done();
+            List<string> outcomes = new List<string> { "Done" };
+
+            return Outcomes(outcomes);
         }
     }
 }

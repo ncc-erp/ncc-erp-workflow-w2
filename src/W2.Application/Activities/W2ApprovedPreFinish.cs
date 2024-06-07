@@ -1,4 +1,5 @@
 ﻿using Elsa.Activities.ControlFlow;
+using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Models;
@@ -6,6 +7,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -60,7 +62,9 @@ namespace W2.Activities
             myWorkflow.Status = WorkflowInstancesStatus.Approved;
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
 
-            return Done();
+            List<string> outcomes = new List<string> { "Done" };
+
+            return Outcomes(outcomes);
         }
     }
 }
