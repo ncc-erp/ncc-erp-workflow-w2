@@ -16,7 +16,7 @@ namespace W2.Activities
 {
     [Activity(
         Category = "Workflows",
-        DisplayName = "W2 Approved Finish",
+        DisplayName = "W2 Approved Pre Finish",
         Description = "Update Assign Task Status, Workflow Status and Removes any blocking activities from the current container (workflow or composite activity).", 
         Outcomes = new string[] { })]
     public class W2ApprovedPreFinish : Activity
