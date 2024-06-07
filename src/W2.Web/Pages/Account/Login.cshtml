@@ -21,7 +21,7 @@
 <div class="card mt-3 shadow-sm rounded">
     <div class="card-body p-5">
         <h4 class="text-center">@W2L["Login"]</h4>
-        @if (HostingEnvironment.IsDevelopment() && Model.EnableLocalLogin)
+        @if (Model.EnableLocalLogin)
         {
             <form method="post" class="mt-4">
                 <div class="mb-3">
