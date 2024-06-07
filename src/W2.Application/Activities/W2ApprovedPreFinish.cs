@@ -1,4 +1,5 @@
-﻿using Elsa.Activities.ControlFlow;
+﻿using Elsa;
+using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -19,8 +20,8 @@ namespace W2.Activities
     [Activity(
         Category = "Workflows",
         DisplayName = "W2 Approved Pre Finish",
-        Description = "Update Assign Task Status, Workflow Status and Removes any blocking activities from the current container (workflow or composite activity).", 
-        Outcomes = new string[] { })]
+        Description = "Update Assign Task Status, Workflow Status and Removes any blocking activities from the current container (workflow or composite activity).",
+        Outcomes = new[] { OutcomeNames.Done })]
     public class W2ApprovedPreFinish : Activity
     {
         private IRepository<W2Task, Guid> _taskRepository;

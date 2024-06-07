@@ -1,4 +1,5 @@
-﻿using Elsa.Activities.ControlFlow;
+﻿using Elsa;
+using Elsa.Activities.ControlFlow;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Models;
@@ -18,7 +19,7 @@ namespace W2.Activities
         Category = "Workflows",
         DisplayName = "W2 Rejected Pre Finish",
         Description = "Update Assign Task Status, Workflow Status and Removes any blocking activities from the current container (workflow or composite activity).",
-        Outcomes = new string[] { })]
+        Outcomes = new[] { OutcomeNames.Done })]
     public class W2RejectedPreFinish : Activity
     {
         private IRepository<W2Task, Guid> _taskRepository;
