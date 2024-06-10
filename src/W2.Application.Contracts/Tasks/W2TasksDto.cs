@@ -18,6 +18,8 @@ namespace W2.Tasks
         public string DynamicActionData { get; set; }
         public string Reason { get; set; }
         public DateTime CreationTime { get; set; }
+        public string Title { get; set; }
+        public Guid? RequestId { get; set; }
         public List<TaskActionsDto>? OtherActionSignals { get; set; }
         public List<string> EmailTo { get; set; }
         public Guid Author { get; set; }

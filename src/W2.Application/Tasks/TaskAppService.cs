@@ -22,6 +22,8 @@ using W2.TaskEmail;
 using W2.TaskActions;
 using System.Collections;
 using Elsa.Models;
+using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
 
 namespace W2.Tasks
 {
@@ -37,7 +39,8 @@ namespace W2.Tasks
         private readonly ICurrentUser _currentUser;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-
+        private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
+        private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
 
         public TaskAppService(
             IRepository<W2Task, Guid> taskRepository,
@@ -48,6 +51,8 @@ namespace W2.Tasks
             ICurrentUser currentUser,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
+            IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
+            IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
             IIdentityUserRepository userRepository)
         {
             _signaler = signaler;
@@ -58,6 +63,8 @@ namespace W2.Tasks
             _currentUser = currentUser;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
+            _instanceStarterRepository = instanceStarterRepository;
+            _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _userRepository = userRepository;
         }
 
@@ -314,6 +321,8 @@ namespace W2.Tasks
                     AuthorName = x.W2User.Name,
                     CreationTime = x.W2task.CreationTime,
                     Description = x.W2task.Description,
+                    RequestId = x.W2task.Id,// todo request id not task
+                    Title = "",
                     Email = x.W2task.Email,
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
@@ -326,6 +335,26 @@ namespace W2.Tasks
                     WorkflowInstanceId = x.W2task.WorkflowInstanceId
                 })
                 .ToList();
+            // todo refactor later 
+            // get all defines
+            var listDefineIds = requestTasks.Select(x => x.WorkflowDefinitionId).ToList();
+            var listWorkflowInstanceId = requestTasks.Select(x => x.WorkflowInstanceId).ToList();
+            var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
+                .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+            var allCustomDefine = (await _instanceStarterRepository.GetQueryableAsync())
+                .Where(i => listWorkflowInstanceId.Contains(i.WorkflowInstanceId))
+                .ToDictionary(x => x.WorkflowInstanceId, x => x);
+
+            foreach (var item in requestTasks)
+            {
+                if (allDefines.ContainsKey(item.WorkflowDefinitionId) && allCustomDefine.ContainsKey(item.WorkflowInstanceId))
+                {
+                    var titleFiled = allDefines.GetItem(item.WorkflowDefinitionId);
+                    var customInput = allCustomDefine.GetItem(item.WorkflowInstanceId);
+                    item.Title = customInput.Input.GetItem(titleFiled.Name);
+                }
+            }
 
             return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
         }
