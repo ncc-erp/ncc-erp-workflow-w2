@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on:  [self-hosted, w2, dev ]
+    runs-on: dev
     name: Build Workflow W2 Dev
     environment: dev
     steps:
@@ -44,7 +44,7 @@ jobs:
         cp -r * /var/www/app/w2/dev-dotnet-host-w2/
         
   deploy:
-    runs-on:  [self-hosted, w2, dev]
+    runs-on:  dev
     name: Deploy Workflow W2 Dev
     environment: dev
     needs:
@@ -71,6 +71,7 @@ jobs:
         GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
         GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
         TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
+        ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_DEV }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
 
     - name: Migrate Database

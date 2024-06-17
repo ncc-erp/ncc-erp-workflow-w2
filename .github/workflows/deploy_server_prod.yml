@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on:  [self-hosted, w2, dev]
+    runs-on:  dev
     name: Build Workflow W2 Production
     environment: production
     outputs:
@@ -55,7 +55,7 @@ jobs:
 
         echo "::set-output name=date_time::$DATE_TIME"
   deploy:
-    runs-on:  [self-hosted, w2, prod]
+    runs-on:  prod
     name: Deploy Workflow W2 Production
     environment: production
     needs:
@@ -83,6 +83,7 @@ jobs:
         GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
         GG_SECRET: ${{ secrets.GG_SECRET_prod }}
         TALENT_DF: ${{ secrets.TALENT_DF_prod }}
+        ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_PROD }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
             
     - name: Download Migrator & Host from S3
