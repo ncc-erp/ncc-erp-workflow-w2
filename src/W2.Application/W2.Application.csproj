@@ -22,6 +22,7 @@
     <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="5.3.0" />
+    <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="5.3.0" />
   </ItemGroup>
 
 </Project>

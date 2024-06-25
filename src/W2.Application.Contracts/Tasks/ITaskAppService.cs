@@ -20,5 +20,6 @@ namespace W2.Tasks
         Task<TaskDetailDto> GetDetailByIdAsync(string id);
         Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input);
         Task<Dictionary<string, string>> handleDynamicData(TaskDynamicDataInput input);
+        Task<string> UpdateTasksAtMidnightAsync();
     }
 }
