@@ -24,6 +24,7 @@ using System.Collections;
 using Elsa.Models;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
+using W2.Utils;
 
 namespace W2.Tasks
 {
@@ -352,7 +353,9 @@ namespace W2.Tasks
                 {
                     var titleFiled = allDefines.GetItem(item.WorkflowDefinitionId);
                     var customInput = allCustomDefine.GetItem(item.WorkflowInstanceId);
-                    item.Title = customInput.Input.GetItem(titleFiled.Name);
+                    // render title by titleFiled.TitleTemplate
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, customInput.Input);
+                    item.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
                 }
             }
 

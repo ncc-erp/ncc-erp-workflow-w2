@@ -39,6 +39,7 @@ using W2.Permissions;
 using W2.Specifications;
 using W2.TaskActions;
 using W2.Tasks;
+using W2.Utils;
 using W2.WorkflowDefinitions;
 using static IdentityServer4.Models.IdentityResources;
 
@@ -681,7 +682,10 @@ namespace W2.WorkflowInstances
                 if (allDefines.ContainsKey(workflowDefinition.DefinitionId))
                 {
                     var titleFiled = allDefines.GetItem(workflowDefinition.DefinitionId);
-                    workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
+
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, workflowInstanceStarter.Input);
+                    workflowInstanceDto.ShortTitle = title.IsNullOrEmpty() ? workflowInstanceStarter.Input.GetItem(titleFiled.Name) : title;
+                    //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
                 }
                 foreach (var blockingActitvity in instance.BlockingActivities)
                 {
