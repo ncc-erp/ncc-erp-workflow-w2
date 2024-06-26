@@ -683,6 +683,7 @@ namespace W2.WorkflowInstances
                 {
                     var titleFiled = allDefines.GetItem(workflowDefinition.DefinitionId);
 
+                    workflowInstanceStarter.Input.Add("RequestUser", workflowInstanceDto.UserRequestName);
                     var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, workflowInstanceStarter.Input);
                     workflowInstanceDto.ShortTitle = title.IsNullOrEmpty() ? workflowInstanceStarter.Input.GetItem(titleFiled.Name) : title;
                     //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
