@@ -354,8 +354,11 @@ namespace W2.Tasks
                     var titleFiled = allDefines.GetItem(item.WorkflowDefinitionId);
                     var customInput = allCustomDefine.GetItem(item.WorkflowInstanceId);
                     // render title by titleFiled.TitleTemplate
-                    customInput.Input.Add("RequestUser", item.AuthorName);
-                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, customInput.Input);
+                    var InputClone = new Dictionary<string, string>(customInput.Input)
+                    {
+                        { "RequestUser", item.AuthorName }
+                    };
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
                     item.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
                 }
             }
