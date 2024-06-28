@@ -401,6 +401,26 @@ namespace W2.Tasks
             var data = workflowInstance.Variables.Data;
 
             var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(query.FirstOrDefault()?.W2task);
+            // todo refactor later 
+            // get all defines
+            var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
+                .Where(i => i.WorkflowDefinitionId == taskDto.WorkflowDefinitionId)
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+            var customInput = (await _instanceStarterRepository.GetQueryableAsync())
+                .Where(i => i.WorkflowInstanceId == taskDto.WorkflowInstanceId).FirstOrDefault();
+
+            if (customInput != null && allDefines.ContainsKey(taskDto.WorkflowDefinitionId))
+            {
+                var titleFiled = allDefines.GetItem(taskDto.WorkflowDefinitionId);
+                // render title by titleFiled.TitleTemplate
+                var InputClone = new Dictionary<string, string>(customInput.Input)
+                    {
+                        { "RequestUser", taskDto.AuthorName }
+                    };
+                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
+                taskDto.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
+            }
+
             var taskDetailDto = new TaskDetailDto
             {
                 Tasks = taskDto,
