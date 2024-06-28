@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Namotion.Reflection;
 using NetBox.Extensions;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
@@ -38,6 +39,8 @@ using W2.Permissions;
 using W2.Specifications;
 using W2.TaskActions;
 using W2.Tasks;
+using W2.Utils;
+using W2.WorkflowDefinitions;
 using static IdentityServer4.Models.IdentityResources;
 
 namespace W2.WorkflowInstances
@@ -60,6 +63,7 @@ namespace W2.WorkflowInstances
         private readonly IConfiguration _configuration;
         private readonly IDataFilter _dataFilter;
         private readonly ICurrentUser _currentUser;
+        private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
         private readonly IExternalResourceAppService _externalResourceAppService;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
@@ -77,6 +81,7 @@ namespace W2.WorkflowInstances
             IConfiguration configuration,
             IDataFilter dataFilter,
             ICurrentUser currentUser,
+            IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
             IExternalResourceAppService externalResourceAppService
             )
         {
@@ -95,6 +100,7 @@ namespace W2.WorkflowInstances
             _taskActionsRepository = taskActionsRepository;
             _dataFilter = dataFilter;
             _currentUser = currentUser;
+            _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _externalResourceAppService = externalResourceAppService;
         }
 
@@ -609,6 +615,11 @@ namespace W2.WorkflowInstances
 
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
+            // get all defines
+            var listDefineIds = totalResults.Select(x => x.definition.DefinitionId).ToList();
+            var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
+                .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
 
             foreach (var res in totalResults)
             {
@@ -668,6 +679,19 @@ namespace W2.WorkflowInstances
                 }
 
                 var blockingActivityIds = instance.BlockingActivities.Select(x => x.ActivityId);
+                if (allDefines.ContainsKey(workflowDefinition.DefinitionId))
+                {
+                    var titleFiled = allDefines.GetItem(workflowDefinition.DefinitionId);
+
+
+                    var InputClone = new Dictionary<string, string>(workflowInstanceStarter.Input)
+                    {
+                        { "RequestUser", workflowInstanceDto.UserRequestName }
+                    };
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
+                    workflowInstanceDto.ShortTitle = title.IsNullOrEmpty() ? workflowInstanceStarter.Input.GetItem(titleFiled.Name) : title;
+                    //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
+                }
                 foreach (var blockingActitvity in instance.BlockingActivities)
                 {
                     var connection = workflowDefinition.Connections.FirstOrDefault(x => x.TargetActivityId == blockingActitvity.ActivityId);
