@@ -616,7 +616,7 @@ namespace W2.WorkflowInstances
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
             // get all defines
-            var listDefineIds = totalResults.Select(x => x.definition.DefinitionId).ToList();
+            var listDefineIds = totalResults.Select(x => x.instanceStarter.WorkflowDefinitionId).ToList();
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
                 .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
