@@ -7,5 +7,7 @@
         public bool IsRequired { get; set; }
         public bool IsTitle { get; set; }
         public string TitleTemplate { get; set; }
+        public string Helper { get; set; }
+        public string DefaultValue { get; set; }
     }
 }
