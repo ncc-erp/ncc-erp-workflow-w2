@@ -314,12 +314,12 @@ namespace W2.WorkflowInstances
                             egb.Key.Branch,
                             totalRemoteDay = egb.Count(),
                             Dates = egb.Select(e => e.RemoteDate).ToList(),
-                            totalRemoteCount = wfhQuery
+                            totalRemoteCount = wfhQuery.Where(w => w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb)
+                                .Where(w => w.Email == egb.Key.Email)
                                 .Join(wfInstanceQueryJoin, // the source table of the inner join
                                   x => x.WorkflowInstanceStarterId,        // Select the primary key (the first part of the "on" clause in an sql "join" statement)
                                   y => y.Id,   // Select the foreign key (the second part of the "on" clause)
                                   (h, wf) => new { history = h, wf }) // selection
-                                .Where(w => w.history.Email == egb.Key.Email)
                                 .Where(wf => wf.wf.Status == status)
                                 .GroupBy(g => g.history.WorkflowInstanceId).Count(),
                          };
