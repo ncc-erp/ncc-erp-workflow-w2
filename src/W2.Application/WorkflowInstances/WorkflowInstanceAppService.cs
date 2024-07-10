@@ -476,7 +476,6 @@ namespace W2.WorkflowInstances
 
             var workflowInstanceStartersOptQuery = await _instanceStarterRepository.GetQueryableAsync();
 
-            //string defaultWFHDefinitionsId = "3a123a2e-6add-a21a-e2a6-a0d8a31bf60c";
             string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
 
             var specification = Specification<WorkflowInstance>.Identity;
