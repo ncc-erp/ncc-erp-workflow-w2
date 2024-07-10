@@ -14,5 +14,6 @@ namespace W2.WorkflowInstances
         Task<WorkflowInstanceDto> GetByIdAsync(string id);
         Task<PagedResultDto<WFHDto>> GetWfhListAsync(ListAllWFHRequestInput input);
         Task<WorkflowInstanceDetailDto> GetDetailByIdAsync(string id);
+        Task<PagedResultDto<CountingWFHDto>> GetCountingWFHAsync(ListAllCountingWFHRequestInput input);
     }
 }

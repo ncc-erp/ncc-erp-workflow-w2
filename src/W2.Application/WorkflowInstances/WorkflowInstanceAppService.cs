@@ -10,6 +10,7 @@ using Elsa.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Namotion.Reflection;
@@ -465,6 +466,169 @@ namespace W2.WorkflowInstances
 
             List<WFHDto> sortedList = SortWFHDtos(WFHList, input.Sorting);
             return new PagedResultDto<WFHDto>(totalCount, sortedList);
+        }
+
+        [HttpGet("/remote/counting")]
+        public async Task<PagedResultDto<CountingWFHDto>> GetCountingWFHAsync(ListAllCountingWFHRequestInput input)
+        {
+
+            var usersQuery = await _userRepository.GetListAsync();
+
+            var workflowInstanceStartersOptQuery = await _instanceStarterRepository.GetQueryableAsync();
+
+            //string defaultWFHDefinitionsId = "3a123a2e-6add-a21a-e2a6-a0d8a31bf60c";
+            string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
+
+            var specification = Specification<WorkflowInstance>.Identity;
+            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId)
+                .WithStatus(WorkflowStatus.Finished);
+
+            var instances = (await _workflowInstanceStore.FindManyAsync(specification));
+            var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
+                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
+            )).ToList();
+
+
+
+            instances = instances.Where(instance =>
+            {
+                var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
+                var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+
+                return GetFinalStatus(lastExecutedActivity) == "Approved";
+            });
+
+            var instancesIds = instances.Select(x => x.Id);
+            var tasks = (await _taskRepository.GetListAsync());
+            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
+            workflowInstanceStartersOptQuery = workflowInstanceStartersOptQuery
+                .Where(x => instancesIds.Contains(x.WorkflowInstanceId));
+            workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersOptQuery);
+
+            var instancesQuery = workflowInstanceStarters
+                .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
+                (WorkflowInstanceStarter, WorkflowInstance) => new
+                {
+                    WorkflowInstanceStarter,
+                    WorkflowInstance
+                })
+                .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
+                (joinedEntities, W2task) => new
+                {
+                    joinedEntities.WorkflowInstanceStarter,
+                    joinedEntities.WorkflowInstance,
+                    W2task = W2task.FirstOrDefault()
+                })
+                .AsQueryable();
+
+            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
+            var totalCount = (await _userRepository.GetListAsync())
+                .Where(x => x.Id.IsIn(requestUserIds))
+                .Count();
+
+            var query = (await _userRepository.GetListAsync())
+                .Where(x => x.Id.IsIn(requestUserIds))
+                .AsQueryable();
+
+   
+
+            var requestUsers = query
+                .Skip(input.offset)
+                .Take(input.limit)
+                .ToList(); 
+
+            var CountingWFHList = new List<CountingWFHDto>();
+            foreach (var requestUser in requestUsers)
+            {
+                var totalRemoteDay = 0;
+                List<string> totalRemoteDayStr = new List<string>();
+                var totalRemoteCount = 0;
+                var workflowInstanceStarterList = workflowInstanceStarters.Where(x => x.CreatorId == requestUser.Id).ToList();
+                if (input.from != DateTime.MinValue && input.to != DateTime.MinValue)
+                {
+                    totalRemoteCount = workflowInstanceStarters
+                        .Where(x => x.CreatorId == requestUser.Id &&
+                                    x.CreationTime >= input.from &&
+                                    x.CreationTime <= input.to)
+                        .Count();
+                }
+                else if (input.from != DateTime.MinValue)
+                {
+                    totalRemoteCount = workflowInstanceStarters
+                        .Where(x => x.CreatorId == requestUser.Id &&
+                                    x.CreationTime >= input.from)
+                        .Count();
+                }
+                else if (input.to != DateTime.MinValue)
+                {
+                    totalRemoteCount = workflowInstanceStarters
+                        .Where(x => x.CreatorId == requestUser.Id &&
+                                    x.CreationTime <= input.to)
+                        .Count();
+                }
+                else
+                {
+                    totalRemoteCount = workflowInstanceStarters
+                        .Where(x => x.CreatorId == requestUser.Id)
+                        .Count();
+                }
+
+                foreach (var workflowInstanceStarter in workflowInstanceStarterList)
+                {
+                    var workflowInstance = instances.FirstOrDefault(x => x.Id == workflowInstanceStarter.WorkflowInstanceId);
+
+                    var data = workflowInstance.Variables.Data;
+                    foreach (KeyValuePair<string, object> kvp in data)
+                    {
+                        var value = kvp.Value;
+                        if (value is Dictionary<string, string> dateDictionary && dateDictionary.ContainsKey("Dates"))
+                        {
+                            string dateStr = dateDictionary["Dates"];
+                            char[] separator = new char[] { ',' };
+                            string[] dateArray = dateStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                            if (input.from != DateTime.MinValue && input.to != DateTime.MinValue)
+                            {
+                                foreach (string dateString in dateArray)
+                                {
+                                    if (DateTime.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
+                                    {
+                                        if (date >= input.from && date <= input.to)
+                                        {
+                                            totalRemoteDay++;
+                                            totalRemoteDayStr.Add(date.ToString("dd/MM/yyyy"));
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                totalRemoteDay += dateArray.Length;
+                                totalRemoteDayStr.AddRange(dateArray);
+                            }
+                        }
+                    }
+                }
+
+                if (totalRemoteDay == 0)
+                {
+                    continue;
+                }
+
+                var users = await GetUserInfoBySlug(ConvertEmailToSlug(requestUser.Email));
+                var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(requestUser.Email);
+                var countingWFHDto = new CountingWFHDto
+                {
+                    email = requestUser.Email,
+                    totalRemoteDay = totalRemoteDay,
+                    totalRemoteCount = totalRemoteCount,
+                    branch = branchResult.Code,
+                };
+                CountingWFHList.Add(countingWFHDto);
+            }
+
+            return new PagedResultDto<CountingWFHDto>(totalCount, CountingWFHList);
+
+
         }
 
 
