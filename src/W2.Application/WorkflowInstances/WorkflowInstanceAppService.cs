@@ -312,8 +312,8 @@ namespace W2.WorkflowInstances
                          select new { 
                             egb.Key.Email,
                             egb.Key.Branch,
-                            totalRemoteDay = egb.Count(),
-                            Dates = egb.Select(e => e.RemoteDate).ToList(),
+                            totalRemoteDay = egb.Select(e => e.RemoteDate).Distinct().Count(),
+                            Dates = egb.Select(e => e.RemoteDate).Distinct().ToList(),
                             totalRemoteCount = wfhQuery.Where(w => w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb)
                                 .Where(w => w.Email == egb.Key.Email)
                                 .Join(wfInstanceQueryJoin, // the source table of the inner join
