@@ -42,7 +42,7 @@ namespace W2.Activities
         {
             _logger.LogInformation("start OnExecuteAsync finished");
             string workflowInstanceId = context.WorkflowInstance.Id;
-            
+
             _logger.LogInformation("start OnExecuteAsync finished id: " + workflowInstanceId);
             // update status for workflow task
             var tasksToApprove = await _taskRepository
@@ -55,13 +55,13 @@ namespace W2.Activities
                 task.UpdatedBy = "W2 Workflow";
             });
 
-            await _taskRepository.UpdateManyAsync(tasksToApprove);
+            await _taskRepository.UpdateManyAsync(tasksToApprove, cancellationToken: context.CancellationToken);
             _logger.LogInformation("OnExecuteAsync finished done UpdateManyAsync: " + tasksToApprove.Count);
 
             // update status for workflow instance stater 
             var myWorkflow = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == workflowInstanceId);
             myWorkflow.Status = WorkflowInstancesStatus.Approved;
-            await _instanceStarterRepository.UpdateAsync(myWorkflow);
+            await _instanceStarterRepository.UpdateAsync(myWorkflow, cancellationToken: context.CancellationToken);
 
             List<string> outcomes = new List<string> { "Done" };
 

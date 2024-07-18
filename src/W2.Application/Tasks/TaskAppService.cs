@@ -25,6 +25,7 @@ using Elsa.Models;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 using W2.Utils;
+using System.Threading;
 
 namespace W2.Tasks
 {
@@ -121,7 +122,7 @@ namespace W2.Tasks
 
         public async Task createTask(string id) { }
 
-        public async Task<string> ApproveAsync(ApproveTasksInput input)
+        public async Task<string> ApproveAsync(ApproveTasksInput input, CancellationToken cancellationToken)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
@@ -153,14 +154,15 @@ namespace W2.Tasks
             myTask.UpdatedBy = _currentUser.Email;
             await _taskRepository.UpdateAsync(myTask, true);// avoid conflict with approve signal
 
-            var affectedWorkflows = (await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId)).ToList();
-            var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
+            await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId, cancellationToken: cancellationToken);
+            //var affectedWorkflows = (await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId)).ToList();
+            //var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
             //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             return "Approval successful";
         }
 
-        public async Task<string> RejectAsync([Required] string id, [Required] string reason)
+        public async Task<string> RejectAsync([Required] string id, [Required] string reason, CancellationToken cancellationToken)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
@@ -188,9 +190,10 @@ namespace W2.Tasks
             myTask.Reason = reason;
             await _taskRepository.UpdateAsync(myTask, true);// avoid conflict with approve signal
 
-            var affectedWorkflows = await (_signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId)).ToList();
+            await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId, cancellationToken: cancellationToken);
+            //var affectedWorkflows = await (_signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId)).ToList();
 
-            var signal = new SignalModel(myTask.RejectSignal, myTask.WorkflowInstanceId);
+            //var signal = new SignalModel(myTask.RejectSignal, myTask.WorkflowInstanceId);
             //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             return "Reject successful";

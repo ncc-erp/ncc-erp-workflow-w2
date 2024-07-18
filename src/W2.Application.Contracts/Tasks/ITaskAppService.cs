@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -12,9 +13,9 @@ namespace W2.Tasks
     public interface ITaskAppService : IApplicationService
     {
         Task<string> assignTask(AssignTaskInput input);
-        Task<string> ApproveAsync(ApproveTasksInput input);
+        Task<string> ApproveAsync(ApproveTasksInput input, CancellationToken cancellationToken);
         Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input);
-        Task<string> RejectAsync(string id, string reason);
+        Task<string> RejectAsync(string id, string reason, CancellationToken cancellationToken);
         Task<string> ActionAsync(ListTaskActions input);
         // Task<string> CancelAsync(string id);
         Task<TaskDetailDto> GetDetailByIdAsync(string id);
