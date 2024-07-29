@@ -126,7 +126,7 @@ namespace W2.WorkflowInstances
 
             var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
 
-            if (hasAnyApproved == true || (!isAdmin && (taskActions != null && taskActions.Count > 0)))
+            if (hasAnyApproved == true)
             {
                 throw new UserFriendlyException(L["Cancel Failed: No Permission!"]);
             }
