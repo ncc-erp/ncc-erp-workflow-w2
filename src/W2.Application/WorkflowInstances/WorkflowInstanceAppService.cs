@@ -111,25 +111,22 @@ namespace W2.WorkflowInstances
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
             var isAdmin = _currentUser.IsInRole("admin");
+            var currentUserId = _currentUser.Id;
 
             var workflowInstanceStarter = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == id);
             if (workflowInstanceStarter == null)
             {
                 throw new UserFriendlyException(L["Cancel Failed: workflowInstanceStarter Is Not Found!"]);
             }
+
             else if (!isAdmin && workflowInstanceStarter.Status != WorkflowInstancesStatus.Pending)
             {
                 throw new UserFriendlyException(L[" Cannot cancel a request if status is not Pending!"]);
             }
+            var isMyRequest = workflowInstanceStarter.CreatorId == currentUserId;
 
-            var myTasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
 
-            // skip if current user is a admin
-            var hasAnyApproved = isAdmin ? false : myTasks.Any(task => task.Status != W2TaskStatus.Pending);
-
-            var taskActions = await _taskActionsRepository.GetListAsync(x => myTasks.Select(task => task.Id.ToString()).Contains(x.TaskId) && x.Status != W2TaskActionsStatus.Pending);
-
-            if (hasAnyApproved == true || (!isAdmin && (taskActions != null && taskActions.Count > 0)))
+            if (!(isAdmin || isMyRequest))
             {
                 throw new UserFriendlyException(L["Cancel Failed: No Permission!"]);
             }
