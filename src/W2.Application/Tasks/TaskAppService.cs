@@ -72,7 +72,7 @@ namespace W2.Tasks
 
         [AllowAnonymous]
         [RemoteService(IsEnabled = false)]
-        public async Task<string> assignTask(AssignTaskInput input)
+        public async Task<string> assignTask(AssignTaskInput input, CancellationToken cancellationToken)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
@@ -90,7 +90,7 @@ namespace W2.Tasks
                 Description = input.Description,
                 ApproveSignal = input.ApproveSignal,
                 RejectSignal = input.RejectSignal,
-            });
+            }, cancellationToken: cancellationToken);
 
             if (input.OtherActionSignals != null)
             {
@@ -102,7 +102,7 @@ namespace W2.Tasks
                             OtherActionSignal = action,
                             Status = W2TaskActionsStatus.Pending,
                             TaskId = task.Id.ToString(),
-                        }
+                        }, cancellationToken: cancellationToken
                     );
                 }
             }
@@ -114,7 +114,7 @@ namespace W2.Tasks
                 {
                     Email = email,
                     TaskId = task.Id.ToString(),
-                });
+                }, cancellationToken: cancellationToken);
             }
 
             return task.Id.ToString();

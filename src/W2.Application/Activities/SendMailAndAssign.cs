@@ -109,7 +109,7 @@ namespace W2.Activities
                 OtherActionSignals = OtherActionSignals
             };
 
-            var taskId = await _taskAppService.assignTask(input);
+            var taskId = await _taskAppService.assignTask(input, context.CancellationToken);
             this.Body = this.Body.Replace("${taskId}", taskId);
             if (DynamicActionData != null)
             {

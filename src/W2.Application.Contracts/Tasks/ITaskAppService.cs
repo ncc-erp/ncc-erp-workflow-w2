@@ -12,7 +12,7 @@ namespace W2.Tasks
 {
     public interface ITaskAppService : IApplicationService
     {
-        Task<string> assignTask(AssignTaskInput input);
+        Task<string> assignTask(AssignTaskInput input, CancellationToken cancellationToken);
         Task<string> ApproveAsync(ApproveTasksInput input, CancellationToken cancellationToken);
         Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input);
         Task<string> RejectAsync(string id, string reason, CancellationToken cancellationToken);
