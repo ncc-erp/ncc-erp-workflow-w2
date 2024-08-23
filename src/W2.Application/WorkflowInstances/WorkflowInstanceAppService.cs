@@ -38,10 +38,12 @@ using W2.ExternalResources;
 using W2.Permissions;
 using W2.Specifications;
 using W2.TaskActions;
+using W2.TaskEmail;
 using W2.Tasks;
 using W2.Utils;
 using W2.WorkflowDefinitions;
 using static IdentityServer4.Models.IdentityResources;
+using static Volo.Abp.Identity.IdentityPermissions;
 
 namespace W2.WorkflowInstances
 {
@@ -65,7 +67,7 @@ namespace W2.WorkflowInstances
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
         private readonly IExternalResourceAppService _externalResourceAppService;
-
+        private readonly IRepository<W2TaskEmail, Guid> _taskEmailRepository;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
@@ -82,7 +84,8 @@ namespace W2.WorkflowInstances
             IDataFilter dataFilter,
             ICurrentUser currentUser,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
-            IExternalResourceAppService externalResourceAppService
+            IExternalResourceAppService externalResourceAppService,
+             IRepository<W2TaskEmail, Guid> taskEmailRepository
             )
         {
             _workflowLaunchpad = workflowLaunchpad;
@@ -102,6 +105,7 @@ namespace W2.WorkflowInstances
             _currentUser = currentUser;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _externalResourceAppService = externalResourceAppService;
+            _taskEmailRepository = taskEmailRepository;
         }
 
         public async Task<string> CancelAsync(string id)
@@ -917,7 +921,60 @@ namespace W2.WorkflowInstances
             }
 
             var tasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == id);
-            var requestTasks = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(tasks);
+            var users = await _userRepository.GetListAsync();
+            var taskEmail = await _taskEmailRepository.GetListAsync();
+            var taskAction = await _taskActionsRepository.GetListAsync();
+            var query = from task in tasks
+                        join user in users on task.Author equals user.Id
+                        join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
+                        join action in taskAction on new { TaskID = task.Id.ToString() } equals new { TaskID = action.TaskId } into actionGroup
+                        let emailList = (
+                            from email in taskEmail
+                            where email.TaskId == task.Id.ToString()
+                            select email.Email
+                        ).ToList()
+                        let actionList = (
+                            from action in actionGroup.DefaultIfEmpty()
+                            select action != null ? new TaskActionsDto
+                            {
+                                OtherActionSignal = action.OtherActionSignal,
+                                Status = action.Status
+                            } : null
+                        ).OrderBy(action => action?.OtherActionSignal).ToList()
+                        select new
+                        {
+                            W2TaskEmail = email,
+                            W2User = user,
+                            W2task = task,
+                            EmailTo = emailList,
+                            OtherActionSignals = actionList.All(a => a != null) ? actionList : null
+                        };
+            var requestTasks = query
+            .GroupBy(x => x.W2task.Id)
+            .Select(group => group.FirstOrDefault())
+            .OrderByDescending(task => task.W2task.CreationTime)
+            .Select(x => new W2TasksDto
+            {
+                Author = x.W2task.Author,
+                AuthorName = x.W2User.Name,
+                CreationTime = x.W2task.CreationTime,
+                Description = x.W2task.Description,
+                RequestId = x.W2task.Id,// todo request id not task
+                Title = "",
+                Email = x.W2task.Email,
+                Id = x.W2task.Id,
+                Name = x.W2task.Name,
+                EmailTo = x.EmailTo,
+                DynamicActionData = x.W2task.DynamicActionData,
+                OtherActionSignals = x.OtherActionSignals,
+                Reason = x.W2task.Reason,
+                Status = x.W2task.Status,
+                UpdatedBy = x.W2task.UpdatedBy,
+                WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
+                WorkflowInstanceId = x.W2task.WorkflowInstanceId
+            })
+            .ToList();
+            //var requestTasks = ObjectMapper.Map<List<W2Task>, List<W2TasksDto>>(tasks);
             var workflowInstanceDetailDto = new WorkflowInstanceDetailDto
             {
                 workInstanceId = id,
