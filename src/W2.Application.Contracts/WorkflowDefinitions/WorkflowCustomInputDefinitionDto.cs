@@ -7,9 +7,11 @@ namespace W2.WorkflowDefinitions
     public class WorkflowCustomInputDefinitionDto : EntityDto<Guid>
     {
         public string WorkflowDefinitionId { get; set; }
+
+        public string Settings { get; set; }
         public List<WorkflowCustomInputPropertyDefinitionDto> PropertyDefinitions { get; set; }
     }
-
+  
     public class WorkflowCustomInputPropertyDefinitionDto
     {
         public string Name { get; set; }

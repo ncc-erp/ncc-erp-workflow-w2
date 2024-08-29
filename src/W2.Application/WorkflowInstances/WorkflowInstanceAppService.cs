@@ -582,6 +582,7 @@ namespace W2.WorkflowInstances
 
             workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
 
+
             var requestUsers = usersQuery;
 
             var instancesQuery = (from w in workflowInstanceStartersQuery.ToList()
@@ -610,10 +611,15 @@ namespace W2.WorkflowInstances
                     user = x.User
                 }).ToList();
 
+            
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
             // get all defines
             var listDefineIds = totalResults.Select(x => x.definition.DefinitionId).ToList();
+
+            var inputDefinitions = await _workflowCustomInputDefinitionRepository
+            .GetListAsync(x => listDefineIds.Contains(x.WorkflowDefinitionId));
+
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
                 .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
@@ -621,6 +627,7 @@ namespace W2.WorkflowInstances
             foreach (var res in totalResults)
             {
                 var instance = res.instance;
+    
                 if (instance == null)
                 {
                     totalResultsAfterMapping.Add(new WorkflowInstanceDto
@@ -634,7 +641,7 @@ namespace W2.WorkflowInstances
                         UserRequestName = res.user?.Name,
                         CurrentStates = new List<string>(),
                         StakeHolders = new List<string>(),
-                        LastExecutedAt = res.instanceStarter.CreationTime
+                        LastExecutedAt = res.instanceStarter.CreationTime,
                     });
                     continue;
                 }
@@ -647,6 +654,8 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.CurrentStates = new List<string>();
 
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
+                workflowInstanceDto.Settings = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId).Settings ?? null;
+
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{
                 //    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
@@ -684,7 +693,7 @@ namespace W2.WorkflowInstances
                     var InputClone = new Dictionary<string, string>(workflowInstanceStarter.Input)
                     {
                         { "RequestUser", workflowInstanceDto.UserRequestName }
-                    };
+                    };                                                                                          
                     var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
                     workflowInstanceDto.ShortTitle = title.IsNullOrEmpty() ? workflowInstanceStarter.Input.GetItem(titleFiled.Name) : title;
                     //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
