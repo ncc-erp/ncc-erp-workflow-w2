@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Identity;
+using static Volo.Abp.Identity.IdentityPermissions;
 
 namespace W2.CustomIdentityManager
 {
@@ -22,7 +23,6 @@ namespace W2.CustomIdentityManager
             _userRepository = userRepository;
             _userManager = userManager;
         }
-
         public async Task<PagedResultDto<CustomUserManageDto>> GetListAsync(ListUsersInput input)
         {
             List<IdentityUser> users;
@@ -31,7 +31,8 @@ namespace W2.CustomIdentityManager
             {
                 IList<IdentityUser> temp = await _userManager.GetUsersInRoleAsync(input.Roles);
                 users = temp.ToList();
-            } else
+            }
+            else
             {
                 users = await _userRepository.GetListAsync();
             }
@@ -47,16 +48,20 @@ namespace W2.CustomIdentityManager
                 users = ApplySorting(users, input.Sorting);
             }
 
-            var userDtos = users.Select(MapUserToDto)
-                                .Skip(input.SkipCount)
-                                .Take(input.MaxResultCount)
-                                .ToList();
+            var userDtos = new List<CustomUserManageDto>();
+            foreach (var user in users.Skip(input.SkipCount).Take(input.MaxResultCount))
+            {
+                var userDto = await MapUserToDto(user);
+                userDtos.Add(userDto);
+            }
 
             return new PagedResultDto<CustomUserManageDto>(users.Count(), userDtos);
         }
 
-        private CustomUserManageDto MapUserToDto(IdentityUser user)
+        private async Task<CustomUserManageDto> MapUserToDto(IdentityUser user)
         {
+            var roles = await _userManager.GetRolesAsync(user);
+
             return new CustomUserManageDto
             {
                 TenantId = user.TenantId,
@@ -77,23 +82,25 @@ namespace W2.CustomIdentityManager
                 CreationTime = user.CreationTime,
                 CreatorId = user.CreatorId,
                 Id = user.Id,
-                ExtraProperties = user.ExtraProperties
+                ExtraProperties = user.ExtraProperties,
+                Roles = roles.ToList()  
             };
         }
+
+
 
         private List<IdentityUser> ApplySorting(List<IdentityUser> users, string sorting)
         {
             if (string.IsNullOrEmpty(sorting))
             {
-                return users.OrderBy(u => u.CreationTime).ToList(); // Default sorting
+                return users.OrderBy(u => u.CreationTime).ToList();
             }
 
             var sortingParts = sorting.Trim().Split(' ');
 
             if (sortingParts.Length != 2)
             {
-                // Handle invalid sorting format
-                return users.OrderBy(u => u.CreationTime).ToList(); // Default sorting
+                return users.OrderBy(u => u.CreationTime).ToList();
             }
 
             var property = sortingParts[0].ToLower();

@@ -29,5 +29,6 @@ namespace W2.CustomIdentityManager
         public Guid? CreatorId { get; set; }
         public Guid Id { get; set; }
         public Dictionary<string, object> ExtraProperties { get; set; }
+        public List<string> Roles { get; set; }
     }
 }
