@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Auditing;
 
 namespace W2.WorkflowInstances
@@ -9,6 +10,8 @@ namespace W2.WorkflowInstances
         public string Id { get; set; }
         public string WorkflowDefinitionId { get; set; }
         public string WorkflowDefinitionDisplayName { get; set; }
+
+        public SettingsDto Settings { get; set; } = new SettingsDto();
         public string ShortTitle { get; set; }
         public string UserRequestName { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -17,5 +20,15 @@ namespace W2.WorkflowInstances
         public List<string> StakeHolders { get; set; }
         public List<string> CurrentStates { get; set; }
         public Guid? CreatorId { get; set; }
+    }
+
+    public class SettingsDto
+    {
+        public string Color { get; set; }
+
+        public static implicit operator SettingsDto(WorkflowDefinitions.SettingsDto v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

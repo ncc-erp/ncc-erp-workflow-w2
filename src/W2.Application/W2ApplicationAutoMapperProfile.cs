@@ -52,6 +52,8 @@ public class W2ApplicationAutoMapperProfile : Profile
         CreateMap<WorkflowInstance, WorkflowStatusDto>()
             // .ForMember(d => d.CreatedAt, options => options.MapFrom(s => s.CreatedAt.ToDateTimeUtc()))
             .ForMember(d => d.Status, options => options.MapFrom(s => GetMappedStatus(s.WorkflowStatus)));
+        CreateMap<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>()
+             .ForMember(dest => dest.Settings, opt => opt.MapFrom(src => src.Settings));
     }
     private int GetMappedStatus(WorkflowStatus workflowStatus)
     {
