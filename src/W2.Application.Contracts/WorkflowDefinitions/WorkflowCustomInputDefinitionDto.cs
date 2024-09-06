@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using Volo.Abp.Application.Dtos;
+using W2.WorkflowInstances;
 
 namespace W2.WorkflowDefinitions
 {
     public class WorkflowCustomInputDefinitionDto : EntityDto<Guid>
     {
         public string WorkflowDefinitionId { get; set; }
-
-        public string Settings { get; set; }
+        public SettingsEntity Settings { get; set; } = new SettingsEntity();
         public List<WorkflowCustomInputPropertyDefinitionDto> PropertyDefinitions { get; set; }
     }
   

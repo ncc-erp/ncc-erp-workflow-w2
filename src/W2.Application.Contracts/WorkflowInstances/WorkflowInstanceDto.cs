@@ -9,8 +9,7 @@ namespace W2.WorkflowInstances
         public string Id { get; set; }
         public string WorkflowDefinitionId { get; set; }
         public string WorkflowDefinitionDisplayName { get; set; }
-
-        public string Settings { get; set; }
+        public SettingsEntity Settings { get; set; } = new SettingsEntity();
         public string ShortTitle { get; set; }
         public string UserRequestName { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -19,5 +18,9 @@ namespace W2.WorkflowInstances
         public List<string> StakeHolders { get; set; }
         public List<string> CurrentStates { get; set; }
         public Guid? CreatorId { get; set; }
+    }
+    public class SettingsEntity
+    {
+        public string Color { get; set; }
     }
 }
