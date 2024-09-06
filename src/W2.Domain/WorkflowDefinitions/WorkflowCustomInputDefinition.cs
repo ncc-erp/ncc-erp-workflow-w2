@@ -8,12 +8,12 @@ namespace W2.WorkflowDefinitions
     public class WorkflowCustomInputDefinition : CreationAuditedEntity<Guid>, IMultiTenant
     {
         public string WorkflowDefinitionId { get; set; }
-        public SettingsDto Settings { get; set; } = new SettingsDto();
+        public Settings Settings { get; set; } = new Settings();
         public ICollection<WorkflowCustomInputPropertyDefinition> PropertyDefinitions { get; set; } = new List<WorkflowCustomInputPropertyDefinition>();
         public Guid? TenantId { get; set; }
     }
 
-    public class SettingsDto
+    public class Settings
     {
         public string Color { get; set; }
     }

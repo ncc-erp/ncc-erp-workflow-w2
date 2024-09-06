@@ -2,6 +2,7 @@
 using Elsa.Models;
 using System;
 using System.Linq;
+using Volo.Abp.AutoMapper;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
@@ -30,6 +31,7 @@ public class W2ApplicationAutoMapperProfile : Profile
                 })
                 .ToList()));
         CreateMap<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>()
+            .Ignore(d => d.Settings)
             .ForMember(d => d.PropertyDefinitions, options =>
                 options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinition
                 {
@@ -52,8 +54,8 @@ public class W2ApplicationAutoMapperProfile : Profile
         CreateMap<WorkflowInstance, WorkflowStatusDto>()
             // .ForMember(d => d.CreatedAt, options => options.MapFrom(s => s.CreatedAt.ToDateTimeUtc()))
             .ForMember(d => d.Status, options => options.MapFrom(s => GetMappedStatus(s.WorkflowStatus)));
-        CreateMap<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>()
-             .ForMember(dest => dest.Settings, opt => opt.MapFrom(src => src.Settings));
+
+        CreateMap<W2.WorkflowDefinitions.Settings, SettingsDto>();
     }
     private int GetMappedStatus(WorkflowStatus workflowStatus)
     {

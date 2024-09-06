@@ -8,7 +8,7 @@ namespace W2.WorkflowDefinitions
     {
         public string WorkflowDefinitionId { get; set; }
 
-        public SettingsDto Settings { get; set; } = new SettingsDto();
+        public SettingsDto Settings { get; set; }
         public List<WorkflowCustomInputPropertyDefinitionDto> PropertyDefinitions { get; set; }
     }
 
