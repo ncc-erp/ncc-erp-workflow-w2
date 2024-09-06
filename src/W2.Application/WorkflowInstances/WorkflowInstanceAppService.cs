@@ -508,7 +508,7 @@ namespace W2.WorkflowInstances
                         status = WorkflowInstancesStatus.Approved;
                         break;
                     case "Rejected":
-                        status = WorkflowInstancesStatus.Rejected;
+                        status = WorkflowInstancesStatus.Rejected; 
                         break;
                     case "Pending":
                         status = WorkflowInstancesStatus.Pending;
@@ -625,7 +625,6 @@ namespace W2.WorkflowInstances
             foreach (var res in totalResults)
             {
                 var instance = res.instance;
-    
                 if (instance == null)
                 {
                     totalResultsAfterMapping.Add(new WorkflowInstanceDto
@@ -639,7 +638,7 @@ namespace W2.WorkflowInstances
                         UserRequestName = res.user?.Name,
                         CurrentStates = new List<string>(),
                         StakeHolders = new List<string>(),
-                        LastExecutedAt = res.instanceStarter.CreationTime,
+                        LastExecutedAt = res.instanceStarter.CreationTime
                     });
                     continue;
                 }
