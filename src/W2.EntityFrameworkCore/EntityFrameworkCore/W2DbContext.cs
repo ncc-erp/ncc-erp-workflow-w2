@@ -125,6 +125,7 @@ public class W2DbContext :
         {
             b.ToTable("WorkflowCustomInputDefinitions");
             b.Property(x => x.PropertyDefinitions).HasConversion(new ElsaEFJsonValueConverter<ICollection<WorkflowCustomInputPropertyDefinition>>(), ValueComparer.CreateDefault(typeof(ICollection<WorkflowCustomInputPropertyDefinition>), false));
+            b.Property(x => x.Settings).HasConversion(new ElsaEFJsonValueConverter<W2.WorkflowDefinitions.Settings>(), ValueComparer.CreateDefault(typeof(W2.WorkflowDefinitions.Settings), false));
             b.Property(x => x.WorkflowDefinitionId).IsRequired();
             b.HasIndex(x => x.WorkflowDefinitionId);
         });
