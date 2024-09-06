@@ -582,7 +582,6 @@ namespace W2.WorkflowInstances
 
             workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
 
-
             var requestUsers = usersQuery;
 
             var instancesQuery = (from w in workflowInstanceStartersQuery.ToList()
@@ -603,14 +602,13 @@ namespace W2.WorkflowInstances
                 .ToList();
             var totalCount = workflowInstanceStartersOptQuery.Count();
             var totalResults = instancesQuery.Select(x => new
-            {
-                instance = x.WorkflowInstance,
-                task = x.W2task,
-                instanceStarter = x.WorkflowInstanceStarter,
-                definition = x.Definition,
-                user = x.User
-            }).ToList();
-
+                {
+                    instance = x.WorkflowInstance,
+                    task = x.W2task,
+                    instanceStarter = x.WorkflowInstanceStarter,
+                    definition = x.Definition,
+                    user = x.User
+                }).ToList();
             
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();

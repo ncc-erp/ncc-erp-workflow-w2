@@ -11,7 +11,6 @@ namespace W2.WorkflowDefinitions
         public SettingsDto Settings { get; set; }
         public List<WorkflowCustomInputPropertyDefinitionDto> PropertyDefinitions { get; set; }
     }
-  
     public class WorkflowCustomInputPropertyDefinitionDto
     {
         public string Name { get; set; }
