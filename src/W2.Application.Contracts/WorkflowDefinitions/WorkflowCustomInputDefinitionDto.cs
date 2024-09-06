@@ -8,7 +8,7 @@ namespace W2.WorkflowDefinitions
     public class WorkflowCustomInputDefinitionDto : EntityDto<Guid>
     {
         public string WorkflowDefinitionId { get; set; }
-        public SettingsEntity Settings { get; set; } = new SettingsEntity();
+        public SettingsDto Settings { get; set; }
         public List<WorkflowCustomInputPropertyDefinitionDto> PropertyDefinitions { get; set; }
     }
   
@@ -19,5 +19,9 @@ namespace W2.WorkflowDefinitions
         public bool IsRequired { get; set; }
         public bool IsTitle { get; set; }
         public string TitleTemplate { get; set; }
+    }
+    public class SettingsDto
+    {
+        public string Color { get; set; }
     }
 }
