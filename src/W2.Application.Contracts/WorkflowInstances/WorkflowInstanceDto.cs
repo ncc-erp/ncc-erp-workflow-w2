@@ -10,7 +10,7 @@ namespace W2.WorkflowInstances
         public string Id { get; set; }
         public string WorkflowDefinitionId { get; set; }
         public string WorkflowDefinitionDisplayName { get; set; }
-        public SettingsDto Settings { get; set; } = new SettingsDto();
+        public SettingsDto Settings { get; set; }
         public string ShortTitle { get; set; }
         public string UserRequestName { get; set; }
         public DateTime CreatedAt { get; set; }
