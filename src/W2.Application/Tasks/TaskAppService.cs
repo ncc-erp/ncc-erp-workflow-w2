@@ -336,12 +336,15 @@ namespace W2.Tasks
                     Reason = x.W2task.Reason,
                     Status = x.W2task.Status,
                     WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
-                    WorkflowInstanceId = x.W2task.WorkflowInstanceId
+                    WorkflowInstanceId = x.W2task.WorkflowInstanceId,
+                    Settings = new SettingsDto { Color = "#aabbcc" }
                 })
                 .ToList();
             // todo refactor later 
             // get all defines
             var listDefineIds = requestTasks.Select(x => x.WorkflowDefinitionId).ToList();
+            var inputDefinitions = await _workflowCustomInputDefinitionRepository
+            .GetListAsync(x => listDefineIds.Contains(x.WorkflowDefinitionId));
             var listWorkflowInstanceId = requestTasks.Select(x => x.WorkflowInstanceId).ToList();
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
@@ -363,6 +366,7 @@ namespace W2.Tasks
                     };
                     var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
                     item.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
+                    item.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId).Settings.Color ?? "#aabbcc";
                 }
             }
 
