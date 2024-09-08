@@ -20,7 +20,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
@@ -650,7 +649,7 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.CurrentStates = new List<string>();
 
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
-                workflowInstanceDto.Settings = new SettingsDto { Color = "#ffffff" };
+                workflowInstanceDto.Settings = new SettingsDto { Color = "#aabbcc" };
                 workflowInstanceDto.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId).Settings.Color ?? null;
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{

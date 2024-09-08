@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Volo.Abp.Auditing;
 using W2.TaskActions;
 using W2.Tasks;
+using W2.WorkflowDefinitions;
 
 namespace W2.Tasks
 {
@@ -25,6 +26,7 @@ namespace W2.Tasks
         public Guid Author { get; set; }
         public string AuthorName { get; set; }
         public string UpdatedBy { get; set; }
+        public SettingsDto Settings { get; set; }
 
     }
 }
