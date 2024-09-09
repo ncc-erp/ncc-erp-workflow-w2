@@ -650,7 +650,7 @@ namespace W2.WorkflowInstances
 
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
                 workflowInstanceDto.Settings = new SettingsDto { Color = "#aabbcc" };
-                workflowInstanceDto.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId).Settings.Color ?? null;
+                workflowInstanceDto.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{
                 //    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
