@@ -366,7 +366,7 @@ namespace W2.Tasks
                     };
                     var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
                     item.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
-                    item.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId).Settings.Color ?? "#aabbcc";
+                    item.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
                 }
             }
 
