@@ -29,8 +29,8 @@ namespace W2.CustomIdentityManager
 
             if (!string.IsNullOrWhiteSpace(input.Roles))
             {
-                IList<IdentityUser> temp = await _userManager.GetUsersInRoleAsync(input.Roles);
-                users = temp.ToList();
+                IList<IdentityUser> user = await _userManager.GetUsersInRoleAsync(input.Roles);
+                users = user.ToList();
             }
             else
             {
@@ -118,8 +118,6 @@ namespace W2.CustomIdentityManager
         {
             switch (property)
             {
-                case "createdat":
-                    return u => u.CreationTime;
                 case "username":
                     return u => u.UserName;
                 case "email":
