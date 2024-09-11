@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,10 +14,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Caching;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
 using W2.Identity;
+using W2.Settings;
 using W2.WorkflowDefinitions;
 
 namespace W2.ExternalResources
@@ -29,66 +32,16 @@ namespace W2.ExternalResources
         private readonly IDistributedCache<AllUserInfoCacheItem> _userInfoCache;
         private readonly IProjectClientApi _projectClient;
         private readonly ITimesheetClientApi _timesheetClient;
+        private readonly IRepository<W2Setting, Guid> _settingRepository;
         //private readonly IHrmClientApi _hrmClient;
-        private readonly List<OfficeInfo> listOfOffices = new List<OfficeInfo>
-            {
-                new OfficeInfo
-                {
-                    Code = "HN1",
-                    DisplayName = "Hà Nội 1",
-                    HeadOfOfficeEmail = "tung.nguyen@ncc.asia"
-                },
-                new OfficeInfo
-                {
-                    Code = "HN2",
-                    DisplayName = "Hà Nội 2",
-                    HeadOfOfficeEmail = "hieu.dohoang@ncc.asia"
-                },
-                new OfficeInfo
-                {
-                    Code = "HN3",
-                    DisplayName = "Hà Nội 3",
-                    HeadOfOfficeEmail = "tien.nguyenhuu@ncc.asia"
-                },
-                new OfficeInfo
-                {
-                    Code = "ĐN",
-                    DisplayName = "Đà Nẵng",
-                    HeadOfOfficeEmail = "thien.dang@ncc.asia"
-                },
-                new OfficeInfo
-                {
-                    Code = "V",
-                    DisplayName = "Vinh",
-                    HeadOfOfficeEmail = "dai.trinhduc@ncc.asia"
-                },
-                new OfficeInfo
-                {
-                    Code = "SG",
-                    DisplayName = "Sài Gòn",
-                    HeadOfOfficeEmail = "linh.nguyen@ncc.asia"
-                },
-                //new OfficeInfo
-                //{
-                //    Code = "SG2",
-                //    DisplayName = "Sài Gòn 2",
-                //    HeadOfOfficeEmail = "linh.nguyen@ncc.asia"
-                //},
-                new OfficeInfo
-                {
-                    Code = "QN",
-                    DisplayName = "Quy Nhơn",
-                    HeadOfOfficeEmail = "duy.nguyenxuan@ncc.asia"
-                }
-            };
-
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
             //IHrmClientApi hrmClient,
             IProjectClientApi projectClient,
             ITimesheetClientApi timesheetClient,
             IConfiguration configuration,
-            IdentityUserManager userManager
+            IdentityUserManager userManager,
+            IRepository<W2Setting, Guid> settingRepository
             )
         {
             _userInfoCache = userInfoCache;
@@ -98,6 +51,7 @@ namespace W2.ExternalResources
             _configuration = configuration;
             _userManager = userManager;
             _simpleGuidGenerator = SimpleGuidGenerator.Instance;
+            _settingRepository = settingRepository;
         }
 
 
@@ -138,7 +92,23 @@ namespace W2.ExternalResources
 
         public async Task<List<OfficeInfo>> GetListOfOfficeAsync()
         {
-            return await Task.FromResult(this.listOfOffices);
+            return await GetListOfOffice();
+        }
+
+        private async Task<List<OfficeInfo>> GetListOfOffice()
+        {
+            var setting = await _settingRepository.FirstOrDefaultAsync(setting => setting.Code == "GDVP");
+            var settingValue = JsonConvert.DeserializeObject<W2SettingValue>(setting.Value);
+            List<OfficeInfo> officeInfoList = new List<OfficeInfo>();
+            settingValue.items.ForEach(item => {
+                officeInfoList.Add(new OfficeInfo
+                {
+                    Code = item.code,
+                    DisplayName = item.name,
+                    HeadOfOfficeEmail = item.email,
+                });
+            });
+            return officeInfoList;
         }
 
         private async Task<AllUserInfoCacheItem> GetAllUsersInfoFromApiAsync()
@@ -166,7 +136,8 @@ namespace W2.ExternalResources
         public async Task<OfficeInfo> GetUserBranchInfoAsync(string email)
         {
             var response = await _timesheetClient.GetUserInfoByEmailAsync(email);
-            var office = this.listOfOffices.FirstOrDefault(l => l.Code == response.Result.Branch);
+            var officeList = await GetListOfOffice();
+            var office = officeList.FirstOrDefault(l => l.Code == response.Result.Branch);
 
             return office;
         }
