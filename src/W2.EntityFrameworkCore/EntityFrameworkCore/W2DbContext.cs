@@ -45,6 +45,8 @@ public class W2DbContext :
      * uses this DbContext on runtime. Otherwise, it will use its own DbContext class.
      */
     public DbSet<WorkflowInstanceStarter> WorkflowInstanceStarters { get; set; }
+
+    public DbSet<WFHHistory> WFHHistories { get; set; }
     public DbSet<WorkflowCustomInputDefinition> WorkflowCustomInputDefinitions { get; set; }
 
     //Identity

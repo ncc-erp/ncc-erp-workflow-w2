@@ -52,6 +52,7 @@ namespace W2.WorkflowInstances
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
         private readonly IRepository<W2Task, Guid> _taskRepository;
         private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
+        private readonly IRepository<WFHHistory, Guid> _wfhHistoryRepository;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
@@ -70,6 +71,7 @@ namespace W2.WorkflowInstances
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
                         IRepository<W2TaskActions, Guid> taskActionsRepository,
+                        IRepository<WFHHistory, Guid> wfhHistoryRepository,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
@@ -98,6 +100,7 @@ namespace W2.WorkflowInstances
             _configuration = configuration;
             _taskRepository = taskRepository;
             _taskActionsRepository = taskActionsRepository;
+            _wfhHistoryRepository = wfhHistoryRepository;
             _dataFilter = dataFilter;
             _currentUser = currentUser;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
@@ -220,6 +223,109 @@ namespace W2.WorkflowInstances
 
             return instanceDto;
         }
+
+        [AllowAnonymous]
+        public async Task<object> GetWfhCount(
+                        [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string from,
+            [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string to,
+            [Required]
+            Int16 limit,
+            [Required]
+            Int32 offset,
+            WorkflowInstancesStatus status = WorkflowInstancesStatus.Approved)
+        {// date "dd/MM/yyyy"
+            // fake todo change
+            if (from.IsNullOrEmpty())
+            {
+                from = "2000-01-01";
+            }
+            if (to.IsNullOrEmpty())
+            {
+                to = "3000-01-01";
+            }
+            var dateFromArray = from.Split("-");
+            var dateFromDb = Int64.Parse($"{dateFromArray[0]}{dateFromArray[1]}{dateFromArray[2]}");
+            var dateToArray = to.Split("-");
+            var dateToDb = Int64.Parse($"{dateToArray[0]}{dateToArray[1]}{dateToArray[2]}");
+            string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
+
+            var wfhQuery = await _wfhHistoryRepository.GetQueryableAsync();
+            var latestWfhHistory = wfhQuery.OrderByDescending(x => x.CreationTime).FirstOrDefault();
+            // migrate before get
+            var wfInstanceQuery = await _instanceStarterRepository.GetQueryableAsync();
+            wfInstanceQuery = wfInstanceQuery.Where(x => x.WorkflowDefinitionId == defaultWFHDefinitionsId);
+            //wfInstanceQuery.Join(XmlConfig)
+            if (latestWfhHistory != null)
+            {
+                wfInstanceQuery = wfInstanceQuery.Where(w => w.CreationTime > latestWfhHistory.CreationTime);
+            }
+            // migrate all item
+            var listUsers = wfInstanceQuery.Select(w => w.CreatorId).ToList();
+            var userMap = (await _userRepository.GetListAsync()).Where(u => listUsers.Contains(u.Id)).ToDictionary(x => x.Id.ToString(), x => x.Email);
+            foreach ( var wfh in wfInstanceQuery.ToList())
+            {
+                // migrate
+                try
+                {
+                    var remoteDates = wfh.Input.GetItem<string>("Dates").Split(",");// all remote dates, "Dates":"08/04/2024,09/04/2024"
+                    foreach (var remoteDate in remoteDates)
+                    {
+                        var dateArray = remoteDate.Split("/");
+                        var dateNumberDb = Int64.Parse($"{dateArray[2]}{dateArray[1]}{dateArray[0]}");
+                        await _wfhHistoryRepository.InsertAsync(new WFHHistory
+                        {
+                            RemoteDate = dateNumberDb,
+                            Branch = wfh.Input.GetItem<string>("CurrentOffice"),
+                            Email = userMap.GetItem(wfh.CreatorId.ToString()),
+                            RequestUser = wfh.CreatorId,
+                            WorkflowDefinitionId = wfh.WorkflowDefinitionId,
+                            WorkflowInstanceId = wfh.WorkflowInstanceId,
+                            WorkflowInstanceStarterId = wfh.Id,
+                        }, true);
+                    }
+                } catch (Exception ex)
+                {
+                    _logger.LogError("Migrate wfh error: " + wfh, ex);
+                }
+            }
+
+            //
+
+            var wfInstanceQueryJoin = (await _instanceStarterRepository.GetQueryableAsync()).Where(x => x.WorkflowDefinitionId == defaultWFHDefinitionsId);
+
+            var totalCount = wfhQuery.Where(w => w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb)
+                .Join(wfInstanceQueryJoin, // the source table of the inner join
+                  x => x.WorkflowInstanceStarterId,        // Select the primary key (the first part of the "on" clause in an sql "join" statement)
+                  y => y.Id,   // Select the foreign key (the second part of the "on" clause)
+                  (h, wf) => new { history = h, wf }) // selection
+               .Where(wf => wf.wf.Status == status)
+                .GroupBy(g => g.history.Email).Count();
+            var result = from w in wfhQuery where w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb
+                         join wf in wfInstanceQueryJoin on w.WorkflowInstanceStarterId equals wf.Id
+                         where wf.Status == status
+                         group w by new { w.Email, w.Branch } into egb
+                         select new { 
+                            egb.Key.Email,
+                            egb.Key.Branch,
+                            totalRemoteDay = egb.Select(e => e.RemoteDate).Distinct().Count(),
+                            Dates = egb.Select(e => e.RemoteDate).Distinct().ToList(),
+                            totalRemoteCount = wfhQuery.Where(w => w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb)
+                                .Where(w => w.Email == egb.Key.Email)
+                                .Join(wfInstanceQueryJoin, // the source table of the inner join
+                                  x => x.WorkflowInstanceStarterId,        // Select the primary key (the first part of the "on" clause in an sql "join" statement)
+                                  y => y.Id,   // Select the foreign key (the second part of the "on" clause)
+                                  (h, wf) => new { history = h, wf }) // selection
+                                .Where(wf => wf.wf.Status == status)
+                                .GroupBy(g => g.history.WorkflowInstanceId).Count(),
+                         };
+            return new { 
+             totalCount,
+             data = result.Skip(offset).Take(limit).ToList(),
+            };
+        }
+
 
         // todo refactor/ new logic
         [AllowAnonymous]
@@ -613,9 +719,11 @@ namespace W2.WorkflowInstances
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
             // get all defines
-            var listDefineIds = totalResults.Select(x => x.definition.DefinitionId).ToList();
+
+            var listDefineIds = totalResults.Select(x => x.instanceStarter.WorkflowDefinitionId).ToList();
             var inputDefinitions = await _workflowCustomInputDefinitionRepository
             .GetListAsync(x => listDefineIds.Contains(x.WorkflowDefinitionId));
+
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
                 .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
