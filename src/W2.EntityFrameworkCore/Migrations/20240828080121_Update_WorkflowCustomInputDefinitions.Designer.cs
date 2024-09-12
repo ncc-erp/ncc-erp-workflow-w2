@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -13,9 +14,10 @@ using W2.EntityFrameworkCore;
 namespace W2.Migrations
 {
     [DbContext(typeof(W2DbContext))]
-    partial class W2DbContextModelSnapshot : ModelSnapshot
+    [Migration("20240828080121_Update_WorkflowCustomInputDefinitions")]
+    partial class Update_WorkflowCustomInputDefinitions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1949,25 +1951,6 @@ namespace W2.Migrations
                     b.ToTable("AbpTenantConnectionStrings", (string)null);
                 });
 
-            modelBuilder.Entity("W2.Settings.W2Setting", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("W2Settings", (string)null);
-                });
-
             modelBuilder.Entity("W2.TaskActions.W2TaskActions", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2102,45 +2085,6 @@ namespace W2.Migrations
                     b.HasIndex("WorkflowDefinitionId");
 
                     b.ToTable("WorkflowCustomInputDefinitions", (string)null);
-                });
-
-            modelBuilder.Entity("W2.WorkflowInstances.WFHHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Branch")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text");
-
-                    b.Property<long>("RemoteDate")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid?>("RequestUser")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("WorkflowDefinitionId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("WorkflowInstanceStarterId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("WFHHistories");
                 });
 
             modelBuilder.Entity("W2.WorkflowInstances.WorkflowInstanceStarter", b =>
