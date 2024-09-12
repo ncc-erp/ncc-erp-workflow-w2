@@ -85,6 +85,7 @@ jobs:
         TALENT_DF: ${{ secrets.TALENT_DF_prod }}
         ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_PROD }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
+        URL_WEB: ${{ secrets.URL_WEB_PROD }}
             
     - name: Download Migrator & Host from S3
       run: |

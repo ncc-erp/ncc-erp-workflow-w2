@@ -73,6 +73,7 @@ jobs:
         TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
         ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_DEV }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
+        URL_WEB: ${{ secrets.URL_WEB_DEV }}
 
     - name: Migrate Database
       run: |

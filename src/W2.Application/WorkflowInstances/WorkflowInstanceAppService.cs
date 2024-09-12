@@ -577,7 +577,7 @@ namespace W2.WorkflowInstances
             var isAdmin = _currentUser.IsInRole("admin");
             // hot fix load 
             var usersQuery = await _userRepository.GetListAsync();
-            
+
             var workflowInstanceStartersOptQuery = await _instanceStarterRepository.GetQueryableAsync();
             if (!string.IsNullOrWhiteSpace(input?.WorkflowDefinitionId))
             {
@@ -715,11 +715,15 @@ namespace W2.WorkflowInstances
                     definition = x.Definition,
                     user = x.User
                 }).ToList();
-
+            
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
             // get all defines
+
             var listDefineIds = totalResults.Select(x => x.instanceStarter.WorkflowDefinitionId).ToList();
+            var inputDefinitions = await _workflowCustomInputDefinitionRepository
+            .GetListAsync(x => listDefineIds.Contains(x.WorkflowDefinitionId));
+
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
                 .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
@@ -753,6 +757,8 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.CurrentStates = new List<string>();
 
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
+                workflowInstanceDto.Settings = new SettingsDto { Color = "#aabbcc" };
+                workflowInstanceDto.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{
                 //    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
@@ -790,7 +796,7 @@ namespace W2.WorkflowInstances
                     var InputClone = new Dictionary<string, string>(workflowInstanceStarter.Input)
                     {
                         { "RequestUser", workflowInstanceDto.UserRequestName }
-                    };
+                    };                                                                                          
                     var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
                     workflowInstanceDto.ShortTitle = title.IsNullOrEmpty() ? workflowInstanceStarter.Input.GetItem(titleFiled.Name) : title;
                     //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
