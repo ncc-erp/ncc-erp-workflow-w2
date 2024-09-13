@@ -97,8 +97,8 @@ namespace W2.ExternalResources
 
         private async Task<List<OfficeInfo>> GetListOfOffice()
         {
-            var setting = await _settingRepository.FirstOrDefaultAsync(setting => setting.Code == "GDVP");
-            var settingValue = JsonConvert.DeserializeObject<W2SettingValue>(setting.Value);
+            var setting = await _settingRepository.FirstOrDefaultAsync(setting => setting.Code == SettingCodeEnum.DIRECTOR);
+            var settingValue = setting.ValueObject;
             List<OfficeInfo> officeInfoList = new List<OfficeInfo>();
             settingValue.items.ForEach(item => {
                 officeInfoList.Add(new OfficeInfo

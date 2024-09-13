@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Domain.Values;
 using Volo.Abp.SettingManagement;
 using W2.Permissions;
 
@@ -75,7 +75,7 @@ namespace W2.Settings
                 {
                     Code = input.SettingCode,
                     Name = input.SettingCode + "W2Settings",
-                    Value = JsonConvert.SerializeObject(newSettingValue)
+                    ValueObject = newSettingValue
                 };
 
                 setting = await _settingRepository.InsertAsync(newW2Setting);
@@ -83,16 +83,15 @@ namespace W2.Settings
                 return w2settingDto;
             } else
             {
-                var settingValue = JsonConvert.DeserializeObject<W2SettingValue>(setting.Value);
+                var settingValue = setting.ValueObject;
 
-                if (input.SettingCode == "GDVP")
+                if (input.SettingCode == SettingCodeEnum.DIRECTOR)
                 {
                     var duplicateCodeItem = settingValue.items.FirstOrDefault(item => item.code == input.Code);
                     if (duplicateCodeItem != null)
                     {
                         throw new UserFriendlyException("Exception:W2SettingCodeDuplicate", "409");
                     }
-
                 }
                 else
                 {
@@ -104,7 +103,7 @@ namespace W2.Settings
                 }
 
                 settingValue.items.Add(new W2SettingValueItem { code = input.Code, email = input.Email, name = input.Name});
-                setting.Value = JsonConvert.SerializeObject(settingValue);
+                setting.ValueObject = settingValue;
                 var newSetting = await _settingRepository.UpdateAsync(setting);
                 var w2settingDto = mapper.Map<W2SettingDto>(newSetting);
                 return w2settingDto;
@@ -118,10 +117,10 @@ namespace W2.Settings
                 throw new UserFriendlyException(L["Exception:W2SettingNotFound"]);
             }
             
-            var settingValue = JsonConvert.DeserializeObject<W2SettingValue>(setting.Value);
+            var settingValue = setting.ValueObject;
             var updateSettingValue = new W2SettingValueItem(); 
 
-            if (input.SettingCode == "GDVP") updateSettingValue = settingValue.items.FirstOrDefault(u => u.code == input.Code);
+            if (input.SettingCode == SettingCodeEnum.DIRECTOR) updateSettingValue = settingValue.items.FirstOrDefault(u => u.code == input.Code);
             else updateSettingValue = settingValue.items.FirstOrDefault(u => u.email == input.Email);
 
             if (updateSettingValue == null)
@@ -131,7 +130,7 @@ namespace W2.Settings
             updateSettingValue.name = input.Name;
             updateSettingValue.code = input.Code;
             updateSettingValue.email = input.Email;
-            setting.Value = JsonConvert.SerializeObject(settingValue);
+            setting.ValueObject = settingValue;
             var newSetting = await _settingRepository.UpdateAsync(setting);
             var config = new MapperConfiguration(cfg => cfg.CreateMap<W2Setting, W2SettingDto>());
             var mapper = config.CreateMapper();
@@ -147,10 +146,10 @@ namespace W2.Settings
             {
                 throw new UserFriendlyException(L["Exception:W2SettingNotFound"]);
             }
-            var settingValue = JsonConvert.DeserializeObject<W2SettingValue>(setting.Value);
+            var settingValue = setting.ValueObject;
             var deleteSettingValue = new W2SettingValueItem(); 
 
-            if (input.SettingCode == "GDVP") deleteSettingValue = settingValue.items.FirstOrDefault(u => u.code == input.Code);
+            if (input.SettingCode == SettingCodeEnum.DIRECTOR) deleteSettingValue = settingValue.items.FirstOrDefault(u => u.code == input.Code);
             else deleteSettingValue = settingValue.items.FirstOrDefault(u => u.email == input.Email);
 
             if (deleteSettingValue == null)
@@ -158,7 +157,7 @@ namespace W2.Settings
                 throw new UserFriendlyException(L["Exception:W2SettingValueItemNotFound"]);
             }
             settingValue.items.Remove(deleteSettingValue);
-            setting.Value = JsonConvert.SerializeObject(settingValue);
+            setting.ValueObject = settingValue;
             await _settingRepository.UpdateAsync(setting);
             return true;
         }

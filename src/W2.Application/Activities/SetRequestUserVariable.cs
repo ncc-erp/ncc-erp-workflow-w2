@@ -84,27 +84,31 @@ namespace W2.Activities
             var w2Setting = await _settingRepository.GetListAsync();
             var ITEmails = new List<string>();
             var CEOEmails = new List<string>();
-            var GDVPEmails = new List<string>();
+            var DirectorEmails = new List<string>();
             var HREmails = new List<string>();
             var SaleEmails = new List<string>();
             w2Setting.ForEach(setting => {
-                var settingValue = JsonConvert.DeserializeObject<W2SettingValue>(setting.Value);
+                var settingValue = setting.ValueObject;
+                var emailArr = new List<string>();
+                settingValue.items.ForEach(item => emailArr.Add(item.email));
                 switch (setting.Code)
                 {
-                    case "IT":
-                        settingValue.items.ForEach(item => ITEmails.Add(item.email));
+                    case SettingCodeEnum.IT:
+                        ITEmails.AddRange(emailArr);
                         break;
-                    case "CEO":
-                        settingValue.items.ForEach(item => CEOEmails.Add(item.email));
+                    case SettingCodeEnum.CEO:
+                        CEOEmails.AddRange(emailArr);
                         break;
-                    case "GDVP":
-                        settingValue.items.ForEach(item => GDVPEmails.Add(item.email));
+                    case SettingCodeEnum.DIRECTOR:
+                        DirectorEmails.AddRange(emailArr);
                         break;
-                    case "HR":
-                        settingValue.items.ForEach(item => HREmails.Add(item.email));
+                    case SettingCodeEnum.HR:
+                        HREmails.AddRange(emailArr);
                         break;
-                    case "Sale":
-                        settingValue.items.ForEach(item => SaleEmails.Add(item.email));
+                    case SettingCodeEnum.SALE:
+                        SaleEmails.AddRange(emailArr);
+                        break;
+                    default:
                         break;
                 }
             });
@@ -120,7 +124,7 @@ namespace W2.Activities
                 BranchCode = branchResult?.Code,
                 ITEmails = ITEmails,
                 CEOEmails = CEOEmails,
-                GDVPEmails = GDVPEmails,
+                DirectorEmails = DirectorEmails,
                 HREmails = HREmails,
                 SaleEmails = SaleEmails,
                 BranchName = branchResult?.DisplayName,

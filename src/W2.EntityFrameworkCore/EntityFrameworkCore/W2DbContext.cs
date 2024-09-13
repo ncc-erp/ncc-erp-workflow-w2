@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Namotion.Reflection;
 using System.Collections.Generic;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -109,6 +110,9 @@ public class W2DbContext :
         builder.Entity<W2Setting>(b =>
         {
             b.ToTable("W2Settings");
+            b.Property(e => e.Value)
+             .HasColumnType("jsonb");
+            b.HasKey(e => e.Id);
         });
 
         builder.Entity<W2TaskEmail>(b =>
