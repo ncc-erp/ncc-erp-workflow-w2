@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Namotion.Reflection;
 using System.Collections.Generic;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -14,6 +15,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.Settings;
 using W2.TaskActions;
 using W2.TaskEmail;
 using W2.Tasks;
@@ -62,7 +64,7 @@ public class W2DbContext :
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
     // tasks
     public DbSet<W2Task> Tasks { get; set; }
-
+    public DbSet<W2Setting> W2Setting { get; set; }
     #endregion
     public DbSet<W2TaskEmail> W2TaskEmail { get; set; }
     public DbSet<W2TaskActions> W2TaskActions { get; set; }
@@ -103,6 +105,14 @@ public class W2DbContext :
             b.Property(x => x.WorkflowInstanceId).IsRequired();
             b.Property(x => x.Data).HasConversion(new ElsaEFJsonValueConverter<Dictionary<string, string>>(), ValueComparer.CreateDefault(typeof(Dictionary<string, string>), false));
             b.HasIndex(x => x.WorkflowInstanceId);
+        });
+
+        builder.Entity<W2Setting>(b =>
+        {
+            b.ToTable("W2Settings");
+            b.Property(e => e.Value)
+             .HasColumnType("jsonb");
+            b.HasKey(e => e.Id);
         });
 
         builder.Entity<W2TaskEmail>(b =>
