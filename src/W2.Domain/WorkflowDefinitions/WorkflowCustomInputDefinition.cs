@@ -17,5 +17,6 @@ namespace W2.WorkflowDefinitions
     public class Settings
     {
         public string Color { get; set; }
+        public string TitleTemplate { get; set; }
     }
 }

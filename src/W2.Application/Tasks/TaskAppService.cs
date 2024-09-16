@@ -337,7 +337,7 @@ namespace W2.Tasks
                     Status = x.W2task.Status,
                     WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
                     WorkflowInstanceId = x.W2task.WorkflowInstanceId,
-                    Settings = new SettingsDto { Color = "#aabbcc" }
+                    Settings = new SettingsDto { Color = "#aabbcc", TitleTemplate = "" }
                 })
                 .ToList();
             // todo refactor later 
@@ -348,7 +348,7 @@ namespace W2.Tasks
             var listWorkflowInstanceId = requestTasks.Select(x => x.WorkflowInstanceId).ToList();
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
-                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
             var allCustomDefine = (await _instanceStarterRepository.GetQueryableAsync())
                 .Where(i => listWorkflowInstanceId.Contains(i.WorkflowInstanceId))
                 .ToDictionary(x => x.WorkflowInstanceId, x => x);
@@ -364,8 +364,8 @@ namespace W2.Tasks
                     {
                         { "RequestUser", item.AuthorName }
                     };
-                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
-                    item.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled?.Settings?.TitleTemplate ?? "", InputClone);
+                    item.Settings.TitleTemplate = title;
                     item.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
                 }
             }
@@ -412,7 +412,7 @@ namespace W2.Tasks
             // get all defines
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => i.WorkflowDefinitionId == taskDto.WorkflowDefinitionId)
-                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
             var customInput = (await _instanceStarterRepository.GetQueryableAsync())
                 .Where(i => i.WorkflowInstanceId == taskDto.WorkflowInstanceId).FirstOrDefault();
 
@@ -424,8 +424,8 @@ namespace W2.Tasks
                     {
                         { "RequestUser", taskDto.AuthorName }
                     };
-                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
-                taskDto.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
+                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings.TitleTemplate, InputClone);
+                taskDto.Title = title;
             }
 
             var taskDetailDto = new TaskDetailDto

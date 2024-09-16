@@ -24,9 +24,7 @@ public class W2ApplicationAutoMapperProfile : Profile
                 {
                     Name = i.Name,
                     Type = i.Type,
-                    IsRequired = i.IsRequired,
-                    IsTitle = i.IsTitle,
-                    TitleTemplate = i.TitleTemplate
+                    IsRequired = i.IsRequired
                 })
                 .ToList()));
         CreateMap<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>()
@@ -35,9 +33,7 @@ public class W2ApplicationAutoMapperProfile : Profile
                 {
                     Name = i.Name,
                     Type = i.Type,
-                    IsRequired = i.IsRequired,
-                    IsTitle = i.IsTitle,
-                    TitleTemplate = i.TitleTemplate
+                    IsRequired = i.IsRequired
                 })
                 .ToList()));
         CreateMap<CreateWorkflowDefinitionDto, WorkflowDefinition>();
