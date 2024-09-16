@@ -65,6 +65,7 @@ jobs:
         DB_PORT: ${{ secrets.DB_PORT_DEV }}
         PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
         SES_HOST: ${{ secrets.SES_HOST_DEV }}
+        SES_PORT: ${{ secrets.SES_PORT_DEV }}
         SES_SENDER: ${{ secrets.SES_SENDER_DEV }}
         SES_USER: ${{ secrets.SES_USER_DEV }}
         SES_PASS: ${{ secrets.SES_PASS_DEV }}
