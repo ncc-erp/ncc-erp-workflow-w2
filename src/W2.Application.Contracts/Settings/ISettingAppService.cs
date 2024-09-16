@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
 namespace W2.Settings
@@ -10,5 +7,9 @@ namespace W2.Settings
     {
         Task<SocialLoginSettingsDto> GetSocialLoginSettingsAsync();
         Task UpdateSocialLoginSettingsAsync(SocialLoginSettingsDto input);
+        Task<W2SettingDto> GetW2SettingListAsync(string settingCode);
+        Task<W2SettingDto> CreateNewW2SettingValueAsync(CreateNewW2SettingValueDto input);
+        Task<W2SettingDto> UpdateW2SettingValueAsync(CreateNewW2SettingValueDto input);
+        Task<bool> DeleteW2SettingValueAsync(CreateNewW2SettingValueDto input);
     }
 }

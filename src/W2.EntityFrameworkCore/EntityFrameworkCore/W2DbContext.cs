@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Namotion.Reflection;
 using System.Collections.Generic;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -14,6 +15,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.Settings;
 using W2.TaskActions;
 using W2.TaskEmail;
 using W2.Tasks;
@@ -45,6 +47,8 @@ public class W2DbContext :
      * uses this DbContext on runtime. Otherwise, it will use its own DbContext class.
      */
     public DbSet<WorkflowInstanceStarter> WorkflowInstanceStarters { get; set; }
+
+    public DbSet<WFHHistory> WFHHistories { get; set; }
     public DbSet<WorkflowCustomInputDefinition> WorkflowCustomInputDefinitions { get; set; }
 
     //Identity
@@ -60,7 +64,7 @@ public class W2DbContext :
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
     // tasks
     public DbSet<W2Task> Tasks { get; set; }
-
+    public DbSet<W2Setting> W2Setting { get; set; }
     #endregion
     public DbSet<W2TaskEmail> W2TaskEmail { get; set; }
     public DbSet<W2TaskActions> W2TaskActions { get; set; }
@@ -103,6 +107,14 @@ public class W2DbContext :
             b.HasIndex(x => x.WorkflowInstanceId);
         });
 
+        builder.Entity<W2Setting>(b =>
+        {
+            b.ToTable("W2Settings");
+            b.Property(e => e.Value)
+             .HasColumnType("jsonb");
+            b.HasKey(e => e.Id);
+        });
+
         builder.Entity<W2TaskEmail>(b =>
         {
             b.ToTable("W2TaskEmail");
@@ -125,6 +137,7 @@ public class W2DbContext :
         {
             b.ToTable("WorkflowCustomInputDefinitions");
             b.Property(x => x.PropertyDefinitions).HasConversion(new ElsaEFJsonValueConverter<ICollection<WorkflowCustomInputPropertyDefinition>>(), ValueComparer.CreateDefault(typeof(ICollection<WorkflowCustomInputPropertyDefinition>), false));
+            b.Property(x => x.Settings).HasConversion(new ElsaEFJsonValueConverter<W2.WorkflowDefinitions.Settings>(), ValueComparer.CreateDefault(typeof(W2.WorkflowDefinitions.Settings), false));
             b.Property(x => x.WorkflowDefinitionId).IsRequired();
             b.HasIndex(x => x.WorkflowDefinitionId);
         });

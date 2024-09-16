@@ -49,7 +49,7 @@ namespace W2.WorkflowDefinitions
                     specification,
                     new OrderBy<WorkflowDefinition>(x => x.Name!, SortDirection.Ascending)
                 ))
-                .Where(w => w.IsPublished)
+                .Where(w => w.IsLatest)
                 .ToList();
             var definitionIds = workflowDefinitions.Select(x => x.DefinitionId).ToList();
             var inputDefinitions = await _workflowCustomInputDefinitionRepository
