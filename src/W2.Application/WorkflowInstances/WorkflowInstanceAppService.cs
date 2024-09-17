@@ -726,7 +726,7 @@ namespace W2.WorkflowInstances
 
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
-                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
 
             foreach (var res in totalResults)
             {
@@ -757,8 +757,9 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.CurrentStates = new List<string>();
 
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
-                workflowInstanceDto.Settings = new SettingsDto { Color = "#aabbcc" };
+                workflowInstanceDto.Settings = new SettingsDto { Color = "#aabbcc", TitleTemplate = "" };
                 workflowInstanceDto.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
+                workflowInstanceDto.Settings.TitleTemplate = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId)?.Settings?.TitleTemplate ?? "";
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{
                 //    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
@@ -797,8 +798,8 @@ namespace W2.WorkflowInstances
                     {
                         { "RequestUser", workflowInstanceDto.UserRequestName }
                     };                                                                                          
-                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
-                    workflowInstanceDto.ShortTitle = title.IsNullOrEmpty() ? workflowInstanceStarter.Input.GetItem(titleFiled.Name) : title;
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings?.TitleTemplate ?? "", InputClone);
+                    workflowInstanceDto.ShortTitle = title;
                     //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
                 }
                 foreach (var blockingActitvity in instance.BlockingActivities)
