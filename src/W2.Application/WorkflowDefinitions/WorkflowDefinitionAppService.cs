@@ -111,9 +111,9 @@ namespace W2.WorkflowDefinitions
         {
             var workflowDefinition = ObjectMapper.Map<CreateWorkflowDefinitionDto, WorkflowDefinition>(input);
 
-            await _workflowPublisher.SaveDraftAsync(workflowDefinition);
+            var workflowDraft = await _workflowPublisher.SaveDraftAsync(workflowDefinition);
 
-            return workflowDefinition.Id;
+            return workflowDraft.DefinitionId;
         }
 
         [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
