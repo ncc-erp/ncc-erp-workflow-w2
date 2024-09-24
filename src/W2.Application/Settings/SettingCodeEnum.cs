@@ -13,5 +13,7 @@ namespace W2.Settings
         public const string SALE = "Sale";
         public const string HR = "HR";
         public const string IT = "IT";
+        public const string HPM = "HPM";
+
     }
 }
