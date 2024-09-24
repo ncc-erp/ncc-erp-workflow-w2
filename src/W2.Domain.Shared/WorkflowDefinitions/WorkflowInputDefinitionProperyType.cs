@@ -22,5 +22,7 @@ namespace W2.WorkflowDefinitions
         OfficeList,
         [Display(Name = "Multiple Date Time")]
         MultiDatetime,
+        [Display(Name = "File")]
+        File,
     }
 }
