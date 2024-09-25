@@ -15,5 +15,6 @@ namespace W2.Settings
         public const string IT = "IT";
         public const string HPM = "HPM";
 
+        public const string SAODO = "SaoDo";
     }
 }

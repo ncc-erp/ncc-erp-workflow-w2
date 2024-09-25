@@ -88,6 +88,7 @@ namespace W2.Activities
             var HREmails = new List<string>();
             var SaleEmails = new List<string>();
             var HPMEmails = new List<string>();
+            var SaoDoEmails = new List<string>();
             w2Setting.ForEach(setting => {
                 var settingValue = setting.ValueObject;
                 var emailArr = new List<string>();
