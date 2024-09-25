@@ -89,6 +89,7 @@ namespace W2.Activities
             var SaleEmails = new List<string>();
             var HPMEmails = new List<string>();
             var SaoDoEmails = new List<string>();
+            var AccountantEmails = new List<string>();
             w2Setting.ForEach(setting => {
                 var settingValue = setting.ValueObject;
                 var emailArr = new List<string>();
@@ -113,6 +114,12 @@ namespace W2.Activities
                     case SettingCodeEnum.HPM:
                         HPMEmails.AddRange(emailArr);
                         break;
+                    case SettingCodeEnum.SAODO:
+                        SaoDoEmails.AddRange(emailArr);
+                        break;
+                    case SettingCodeEnum.ACCOUNTANT:
+                        AccountantEmails.AddRange(emailArr);
+                        break;
                     default:
                         break;
                 }
@@ -133,6 +140,8 @@ namespace W2.Activities
                 HREmails = HREmails,
                 SaleEmails = SaleEmails,
                 HPMEmails = HPMEmails,
+                SaoDoEmails = SaoDoEmails,
+                AccountantEmails = AccountantEmails,
                 BranchName = branchResult?.DisplayName,
                 ProjectCode = project?.Code,
                 PM = project?.PM?.EmailAddress
