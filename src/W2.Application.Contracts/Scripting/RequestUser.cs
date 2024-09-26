@@ -22,5 +22,7 @@ namespace W2.Scripting
         public List<string> HREmails { get; set; }
         public List<string> SaleEmails { get; set; }
         public List<string> HPMEmails { get; set; }
+        public List<string> SaoDoEmails { get; set; }
+        public List<string> AccountantEmails { get; set; }
     }
 }

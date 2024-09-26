@@ -14,6 +14,7 @@ namespace W2.Settings
         public const string HR = "HR";
         public const string IT = "IT";
         public const string HPM = "HPM";
-
+        public const string SAODO = "SaoDo";
+        public const string ACCOUNTANT = "Accountant";
     }
 }
