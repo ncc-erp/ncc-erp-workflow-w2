@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -90,7 +90,6 @@ public class W2WebModule : AbpModule
                 typeof(W2WebModule).Assembly
             );
         });
-
         PreConfigure<IdentityBuilder>(identityBuilder =>
         {
             identityBuilder.AddSignInManager<CustomSignInManager>();
@@ -101,7 +100,7 @@ public class W2WebModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
-        var configuration = context.Services.GetConfiguration();
+        var configuration = context.Services.GetConfiguration();     
 
         ConfigureUrls(configuration);
         ConfigureBundles();

@@ -520,5 +520,40 @@ namespace W2.Tasks
                 }
             }
         }
+
+
+
+        public async Task<string> UpdateTasksAtMidnightAsync()
+        {
+            try
+            { // Get current date
+                var currentDate = DateTime.Now;
+
+                var threeMonthsAgo = currentDate.AddMonths(-3);
+
+                // Find tasks older than 3 months with status = Pending
+                var tasksToUpdate = await _taskRepository.GetListAsync(x => x.Status == W2TaskStatus.Pending && x.CreationTime < threeMonthsAgo);
+
+                // Update tasks to reject
+                if (tasksToUpdate != null && tasksToUpdate.Any())
+                {
+                    foreach (var task in tasksToUpdate)
+                    {
+                        task.Status = W2TaskStatus.Reject;
+                    }
+
+                    await _taskRepository.UpdateManyAsync(tasksToUpdate);
+                }
+
+                return "Tasks updated successfully.";
+            }
+            catch (Exception)
+            {
+                return "tasks updated failed.";
+            }
+        }
+
+
+
     }
 }
