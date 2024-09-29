@@ -26,6 +26,7 @@ using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 using W2.Utils;
 using System.Threading;
+using W2.Scripting;
 
 namespace W2.Tasks
 {
@@ -501,6 +502,35 @@ namespace W2.Tasks
             );
 
             return dynamicData;
+        }
+
+        [AllowAnonymous]
+        [RemoteService(IsEnabled = false)]
+        public async Task<List<DynamicDataDto>> GetDynamicRawData(TaskDynamicDataInput input)
+        {
+            List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
+            List<DynamicDataDto> dynamicDataList = [];
+
+            foreach (var task in tasks)
+            {
+                var dynamicActionDataJson = task.DynamicActionData;
+
+                if (dynamicActionDataJson.IsNullOrEmpty())
+                {
+                    continue;
+                }
+
+                try
+                {
+                    dynamicDataList.Add(new DynamicDataDto { DynamicDataList = JsonConvert.DeserializeObject<List<DynamicData>>(dynamicActionDataJson), Description = task.Description });
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+
+            return dynamicDataList;
         }
 
         private void UpdateDynamicData(Dictionary<string, string> dynamicData, List<Dictionary<string, object>> data)

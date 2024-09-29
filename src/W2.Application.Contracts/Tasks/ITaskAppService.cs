@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using W2.Scripting;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 
@@ -21,5 +22,6 @@ namespace W2.Tasks
         Task<TaskDetailDto> GetDetailByIdAsync(string id);
         Task<PagedResultDto<W2TasksDto>> DynamicDataByIdAsync(TaskDynamicDataInput input);
         Task<Dictionary<string, string>> handleDynamicData(TaskDynamicDataInput input);
+        Task<List<DynamicDataDto>> GetDynamicRawData(TaskDynamicDataInput input);
     }
 }
