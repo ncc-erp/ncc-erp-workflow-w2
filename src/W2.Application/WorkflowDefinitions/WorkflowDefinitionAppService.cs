@@ -34,7 +34,7 @@ namespace W2.WorkflowDefinitions
             _workflowPublisher = workflowPublisher;
         }
 
-        public async Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync()
+        public async Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync(bool? isPublish)
         {
             var specification = Specification<WorkflowDefinition>.Identity;
             specification = specification.And(new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, null));
@@ -44,14 +44,25 @@ namespace W2.WorkflowDefinitions
                 specification = specification.And(new PublishedWorkflowDefinitionsSpecification());
             }
 
-            var workflowDefinitions = (await _workflowDefinitionStore
+            var workflowDefinitionsFound = (await _workflowDefinitionStore
                 .FindManyAsync(
                     specification,
                     new OrderBy<WorkflowDefinition>(x => x.Name!, SortDirection.Ascending)
-                ))
-                .Where(w => w.IsLatest)
-                .OrderByDescending(w => w.IsPublished)
-                .ToList();
+                ));
+                
+            List<WorkflowDefinition> workflowDefinitions;
+
+            if (isPublish == true)
+            {
+                workflowDefinitions = workflowDefinitionsFound.Where(w => w.IsPublished).ToList();
+            }
+            else
+            {
+                workflowDefinitions = workflowDefinitionsFound
+                                        .Where(w => w.IsLatest)
+                                        .OrderByDescending(w => w.IsPublished)
+                                        .ToList();
+            }
             var definitionIds = workflowDefinitions.Select(x => x.DefinitionId).ToList();
             var inputDefinitions = await _workflowCustomInputDefinitionRepository
                 .GetListAsync(x => definitionIds.Contains(x.WorkflowDefinitionId));
