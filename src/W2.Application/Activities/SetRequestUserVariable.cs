@@ -2,7 +2,6 @@
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Humanizer;
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -13,9 +12,6 @@ using W2.Permissions;
 using W2.Scripting;
 using Volo.Abp.Domain.Repositories;
 using W2.Settings;
-using Volo.Abp.SettingManagement;
-using Newtonsoft.Json;
-using W2.Tasks;
 
 namespace W2.Activities
 {
@@ -30,19 +26,16 @@ namespace W2.Activities
         private readonly IProjectClientApi _projectClientApi;
         private readonly IExternalResourceAppService _externalResourceAppService;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
-        private readonly ITaskAppService _taskAppService;
 
         public SetRequestUserVariable(ICurrentUser currentUser,
             IProjectClientApi projectClientApi,
             IExternalResourceAppService externalResourceAppService,
-            IRepository<W2Setting, Guid> settingRepository,
-            ITaskAppService taskAppService)
+            IRepository<W2Setting, Guid> settingRepository)
         {
             _currentUser = currentUser;
             _projectClientApi = projectClientApi;
             _externalResourceAppService = externalResourceAppService;
             _settingRepository = settingRepository;
-            _taskAppService = taskAppService;
         }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

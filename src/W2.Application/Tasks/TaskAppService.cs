@@ -20,8 +20,6 @@ using Newtonsoft.Json;
 using Volo.Abp.Identity;
 using W2.TaskEmail;
 using W2.TaskActions;
-using System.Collections;
-using Elsa.Models;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 using W2.Utils;
@@ -504,7 +502,6 @@ namespace W2.Tasks
             return dynamicData;
         }
 
-        [AllowAnonymous]
         [RemoteService(IsEnabled = false)]
         public async Task<List<DynamicDataDto>> GetDynamicRawData(TaskDynamicDataInput input)
         {

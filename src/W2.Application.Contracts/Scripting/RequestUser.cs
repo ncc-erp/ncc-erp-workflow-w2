@@ -24,6 +24,5 @@ namespace W2.Scripting
         public List<string> HPMEmails { get; set; }
         public List<string> SaoDoEmails { get; set; }
         public List<string> AccountantEmails { get; set; }
-        public List<DynamicDataDto> DynamicDataByTask { get; set; }
     }
 }
