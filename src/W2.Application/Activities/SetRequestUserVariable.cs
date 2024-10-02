@@ -2,7 +2,6 @@
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Humanizer;
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -13,8 +12,6 @@ using W2.Permissions;
 using W2.Scripting;
 using Volo.Abp.Domain.Repositories;
 using W2.Settings;
-using Volo.Abp.SettingManagement;
-using Newtonsoft.Json;
 
 namespace W2.Activities
 {
@@ -82,47 +79,12 @@ namespace W2.Activities
             }
 
             var w2Setting = await _settingRepository.GetListAsync();
-            var ITEmails = new List<string>();
-            var CEOEmails = new List<string>();
-            var DirectorEmails = new List<string>();
-            var HREmails = new List<string>();
-            var SaleEmails = new List<string>();
-            var HPMEmails = new List<string>();
-            var SaoDoEmails = new List<string>();
-            var AccountantEmails = new List<string>();
+            var emailDict = new Dictionary<string, List<string>>();
+
             w2Setting.ForEach(setting => {
                 var settingValue = setting.ValueObject;
-                var emailArr = new List<string>();
-                settingValue.items.ForEach(item => emailArr.Add(item.email));
-                switch (setting.Code)
-                {
-                    case SettingCodeEnum.IT:
-                        ITEmails.AddRange(emailArr);
-                        break;
-                    case SettingCodeEnum.CEO:
-                        CEOEmails.AddRange(emailArr);
-                        break;
-                    case SettingCodeEnum.DIRECTOR:
-                        DirectorEmails.AddRange(emailArr);
-                        break;
-                    case SettingCodeEnum.HR:
-                        HREmails.AddRange(emailArr);
-                        break;
-                    case SettingCodeEnum.SALE:
-                        SaleEmails.AddRange(emailArr);
-                        break;
-                    case SettingCodeEnum.HPM:
-                        HPMEmails.AddRange(emailArr);
-                        break;
-                    case SettingCodeEnum.SAODO:
-                        SaoDoEmails.AddRange(emailArr);
-                        break;
-                    case SettingCodeEnum.ACCOUNTANT:
-                        AccountantEmails.AddRange(emailArr);
-                        break;
-                    default:
-                        break;
-                }
+                var emailArr = settingValue.items.Select(item => item.email).ToList();
+                emailDict[setting.Code.ToString()] = emailArr;
             });
 
             var requestUser = new RequestUser
@@ -134,20 +96,25 @@ namespace W2.Activities
                 Project = _currentUser.FindClaimValue(CustomClaim.ProjectName),
                 HeadOfOfficeEmail = branchResult?.HeadOfOfficeEmail,
                 BranchCode = branchResult?.Code,
-                ITEmails = ITEmails,
-                CEOEmails = CEOEmails,
-                DirectorEmails = DirectorEmails,
-                HREmails = HREmails,
-                SaleEmails = SaleEmails,
-                HPMEmails = HPMEmails,
-                SaoDoEmails = SaoDoEmails,
-                AccountantEmails = AccountantEmails,
                 BranchName = branchResult?.DisplayName,
                 ProjectCode = project?.Code,
                 PM = project?.PM?.EmailAddress
             };
+
+            foreach (var emailGroup in emailDict)
+            {
+                var propertyName = $"{emailGroup.Key}Emails";
+                var property = requestUser.GetType().GetProperty(propertyName);
+
+                if (property != null && property.CanWrite)
+                {
+                    property.SetValue(requestUser, emailGroup.Value);
+                }
+            }
+
             context.SetVariable(nameof(RequestUser), requestUser);
-            return Done();
+
+            return Done(); 
         }
     }
 }
