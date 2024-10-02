@@ -248,13 +248,10 @@ namespace W2.Tasks
 
             var query = from task in tasks
                         join user in users on task.Author equals user.Id
-                        join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
-                        join action in taskAction on new { TaskID = task.Id.ToString() } equals new { TaskID = action.TaskId } into actionGroup
-                        let emailList = (
-                            from email in taskEmail
-                            where email.TaskId == task.Id.ToString()
-                            select email.Email
-                        ).ToList()
+                        join emailGroup in taskEmail on task.Id.ToString() equals emailGroup.TaskId into groupedEmails
+                        join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
+                        from email in groupedEmails
+                        let emailList = groupedEmails.Select(e => e.Email).ToList()
                         let actionList = (
                             from action in actionGroup.DefaultIfEmpty()
                             select action != null ? new TaskActionsDto
@@ -263,6 +260,7 @@ namespace W2.Tasks
                                 Status = action.Status
                             } : null
                         ).OrderBy(action => action?.OtherActionSignal).ToList()
+                        where groupedEmails.Any()
                         select new
                         {
                             W2TaskEmail = email,
@@ -272,7 +270,7 @@ namespace W2.Tasks
                             OtherActionSignals = actionList.All(a => a != null) ? actionList : null
                         };
 
-
+         
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
