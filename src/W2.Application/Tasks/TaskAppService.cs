@@ -506,7 +506,7 @@ namespace W2.Tasks
         public async Task<List<DynamicDataDto>> GetDynamicRawData(TaskDynamicDataInput input)
         {
             List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
-            List<DynamicDataDto> dynamicDataList = [];
+            List<DynamicDataDto> dynamicDataList = new List<DynamicDataDto>();
 
             foreach (var task in tasks)
             {
