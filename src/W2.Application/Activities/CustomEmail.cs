@@ -43,8 +43,16 @@ namespace W2.Activities
                 WorkflowInstanceId = context.WorkflowInstance.Id,
             });
 
-            context.SetVariable("DynamicDataByTask", dynamicDataByTask);
-            return await base.OnExecuteAsync(context);
+            if (dynamicDataByTask != null) { 
+                context.SetVariable("DynamicDataByTask", dynamicDataByTask); 
+            }
+
+            _ = Task.Run(async () =>
+            {
+                await base.OnExecuteAsync(context);
+            });
+
+            return Done();
         }
     }
 }
