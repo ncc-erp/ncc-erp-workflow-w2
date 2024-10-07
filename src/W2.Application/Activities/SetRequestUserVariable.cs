@@ -54,6 +54,8 @@ namespace W2.Activities
                     {
                         var instanceInput = bodyProperty.GetValue(context.Input);
 
+                        context.SetVariable("Request", instanceInput);
+
                         if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Staff"))
                         {
                             targetStaffEmail = valueDictionary["Staff"];
