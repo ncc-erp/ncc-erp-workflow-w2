@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using W2.ExternalResources;
 using W2.Signals;
+using W2.Tasks;
 
 namespace W2.Activities
 {
@@ -28,8 +29,9 @@ namespace W2.Activities
         public SendEmailToMyPM(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
+            ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
-            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, contentSerializer)
+            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
         {
             _projectClientApi = projectClientApi;
         }

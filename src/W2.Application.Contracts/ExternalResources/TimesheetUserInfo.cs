@@ -31,13 +31,13 @@ namespace W2.ExternalResources
         public string Phone { get; set; }
 
         [JsonProperty("birthday")]
-        public DateTime Birthday { get; set; }
+        public DateTime? Birthday { get; set; }
 
         [JsonProperty("idCard")]
         public string IdCard { get; set; }
 
         [JsonProperty("issuedOn")]
-        public DateTime IssuedOn { get; set; }
+        public DateTime? IssuedOn { get; set; }
 
         [JsonProperty("issuedBy")]
         public string IssuedBy { get; set; }

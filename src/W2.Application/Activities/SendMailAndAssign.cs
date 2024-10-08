@@ -73,7 +73,8 @@ namespace W2.Activities
                 {
                     EmailTo.Add(email);
                 }
-            } else
+            }
+            else
             {
                 foreach (string email in To)
                 {
@@ -89,9 +90,9 @@ namespace W2.Activities
                 WorkflowInstanceId = context.WorkflowInstance.Id,
             });
 
-            if(listDynamicData.Count > 0)
+            if (listDynamicData.Count > 0)
             {
-                foreach(var key in listDynamicData.Keys)
+                foreach (var key in listDynamicData.Keys)
                 {
                     this.Body = this.Body.Replace("{" + key + "}", listDynamicData[key]);
                 }
@@ -109,14 +110,20 @@ namespace W2.Activities
                 OtherActionSignals = OtherActionSignals
             };
 
-            var taskId = await _taskAppService.assignTask(input);
+            var taskId = await _taskAppService.assignTask(input, context.CancellationToken);
             this.Body = this.Body.Replace("${taskId}", taskId);
             if (DynamicActionData != null)
             {
                 this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
             }
 
-            return await base.OnExecuteAsync(context);
+            _ = Task.Run(async () =>
+            {
+                await base.OnExecuteAsync(context);
+            });
+            
+
+            return Done();
         }
     }
 }

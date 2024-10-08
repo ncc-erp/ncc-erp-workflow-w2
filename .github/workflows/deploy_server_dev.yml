@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on:  [self-hosted, w2, dev ]
+    runs-on: dev
     name: Build Workflow W2 Dev
     environment: dev
     steps:
@@ -44,7 +44,7 @@ jobs:
         cp -r * /var/www/app/w2/dev-dotnet-host-w2/
         
   deploy:
-    runs-on:  [self-hosted, w2, dev]
+    runs-on:  dev
     name: Deploy Workflow W2 Dev
     environment: dev
     needs:
@@ -65,13 +65,17 @@ jobs:
         DB_PORT: ${{ secrets.DB_PORT_DEV }}
         PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
         SES_HOST: ${{ secrets.SES_HOST_DEV }}
+        SES_PORT: ${{ secrets.SES_PORT_DEV }}
         SES_SENDER: ${{ secrets.SES_SENDER_DEV }}
         SES_USER: ${{ secrets.SES_USER_DEV }}
         SES_PASS: ${{ secrets.SES_PASS_DEV }}
+        SES_REQ_CRE: ${{ secrets.SES_REQ_CRE_DEV }}
         GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
         GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
         TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
+        ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_DEV }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
+        URL_WEB: ${{ secrets.URL_WEB_DEV }}
 
     - name: Migrate Database
       run: |

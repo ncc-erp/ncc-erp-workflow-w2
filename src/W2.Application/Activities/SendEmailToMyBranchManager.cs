@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using W2.ExternalResources;
 using W2.Signals;
+using W2.Tasks;
 using static IdentityServer4.Models.IdentityResources;
 
 namespace W2.Activities
@@ -29,8 +30,9 @@ namespace W2.Activities
         public SendEmailToMyBranchManager(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
+            ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
-            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, contentSerializer)
+            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
         {
             _externalResourceAppService = externalResourceAppService;
         }

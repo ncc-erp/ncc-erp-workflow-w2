@@ -3,6 +3,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,21 +22,29 @@ namespace W2.Activities
     {
         private IRepository<W2Task, Guid> _taskRepository;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
+        private readonly ILogger<W2ApprovedFinish> _logger;
 
         public W2ApprovedFinish(
             IRepository<W2Task, Guid> taskRepository,
+            ILogger<W2ApprovedFinish> logger,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository)
         {
             _taskRepository = taskRepository;
             _instanceStarterRepository = instanceStarterRepository;
+            _logger = logger;
         }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
+            _logger.LogInformation("start OnExecuteAsync finished");
+            string workflowInstanceId = context.WorkflowInstance.Id;
+            
+            _logger.LogInformation("start OnExecuteAsync finished id: " + workflowInstanceId);
             // update status for workflow task
             var tasksToApprove = await _taskRepository
-                .GetListAsync(x => x.WorkflowInstanceId == context.WorkflowInstance.Id.ToString() && x.Status == W2TaskStatus.Pending);
+                .GetListAsync(x => x.WorkflowInstanceId == workflowInstanceId && x.Status == W2TaskStatus.Pending);
 
+            _logger.LogInformation("start OnExecuteAsync finished tasks length: " + tasksToApprove.Count);
             tasksToApprove.ForEach(task =>
             {
                 task.Status = W2TaskStatus.Approve;
@@ -43,11 +52,13 @@ namespace W2.Activities
             });
 
             await _taskRepository.UpdateManyAsync(tasksToApprove);
+            _logger.LogInformation("OnExecuteAsync finished done UpdateManyAsync: " + tasksToApprove.Count);
 
             // update status for workflow instance stater 
-            var myWorkflow = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == context.WorkflowInstance.Id.ToString());
-            myWorkflow.Status = WorkflowInstancesStatus.Approve;
+            var myWorkflow = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == workflowInstanceId);
+            myWorkflow.Status = WorkflowInstancesStatus.Approved;
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
+            _logger.LogInformation("OnExecuteAsync finished done _instanceStarterRepository UpdateManyAsync: " + myWorkflow.Id.ToString());
 
             // Handler Blocking Activities
             await WorkflowUtility.ProcessBlockingActivitiesAsync(context);

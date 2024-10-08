@@ -57,6 +57,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Collections.Generic;
 using W2.Web.Workflows;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace W2.Web;
 
@@ -306,6 +307,12 @@ public class W2WebModule : AbpModule
                 options.SaveTokens = true;
                 options.CorrelationCookie.SameSite = SameSiteMode.Lax;
             });
+        context.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        });
+
         context.Services.ConfigureExternalCookie(options =>
         {
             options.Cookie.SameSite = SameSiteMode.Lax;
@@ -381,5 +388,6 @@ public class W2WebModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+        app.UseForwardedHeaders();
     }
 }

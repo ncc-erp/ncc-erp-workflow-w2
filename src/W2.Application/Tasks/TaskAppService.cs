@@ -20,8 +20,11 @@ using Newtonsoft.Json;
 using Volo.Abp.Identity;
 using W2.TaskEmail;
 using W2.TaskActions;
-using System.Collections;
-using Elsa.Models;
+using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
+using W2.Utils;
+using System.Threading;
+using W2.Scripting;
 
 namespace W2.Tasks
 {
@@ -37,7 +40,8 @@ namespace W2.Tasks
         private readonly ICurrentUser _currentUser;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-
+        private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
+        private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
 
         public TaskAppService(
             IRepository<W2Task, Guid> taskRepository,
@@ -48,6 +52,8 @@ namespace W2.Tasks
             ICurrentUser currentUser,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
+            IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
+            IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
             IIdentityUserRepository userRepository)
         {
             _signaler = signaler;
@@ -58,12 +64,14 @@ namespace W2.Tasks
             _currentUser = currentUser;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
+            _instanceStarterRepository = instanceStarterRepository;
+            _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _userRepository = userRepository;
         }
 
         [AllowAnonymous]
         [RemoteService(IsEnabled = false)]
-        public async Task<string> assignTask(AssignTaskInput input)
+        public async Task<string> assignTask(AssignTaskInput input, CancellationToken cancellationToken)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(input.WorkflowInstanceId);
             var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
@@ -81,7 +89,7 @@ namespace W2.Tasks
                 Description = input.Description,
                 ApproveSignal = input.ApproveSignal,
                 RejectSignal = input.RejectSignal,
-            });
+            }, cancellationToken: cancellationToken);
 
             if (input.OtherActionSignals != null)
             {
@@ -93,7 +101,7 @@ namespace W2.Tasks
                             OtherActionSignal = action,
                             Status = W2TaskActionsStatus.Pending,
                             TaskId = task.Id.ToString(),
-                        }
+                        }, cancellationToken: cancellationToken
                     );
                 }
             }
@@ -105,7 +113,7 @@ namespace W2.Tasks
                 {
                     Email = email,
                     TaskId = task.Id.ToString(),
-                });
+                }, cancellationToken: cancellationToken);
             }
 
             return task.Id.ToString();
@@ -113,7 +121,7 @@ namespace W2.Tasks
 
         public async Task createTask(string id) { }
 
-        public async Task<string> ApproveAsync(ApproveTasksInput input)
+        public async Task<string> ApproveAsync(ApproveTasksInput input, CancellationToken cancellationToken)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
@@ -141,18 +149,19 @@ namespace W2.Tasks
                 myTask.DynamicActionData = input.DynamicActionData;
             }
 
-            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId).ToList();
-            var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
-            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
             myTask.Status = W2TaskStatus.Approve;
             myTask.UpdatedBy = _currentUser.Email;
-            await _taskRepository.UpdateAsync(myTask);
+            await _taskRepository.UpdateAsync(myTask, true);// avoid conflict with approve signal
+
+            await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId, cancellationToken: cancellationToken);
+            //var affectedWorkflows = (await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId)).ToList();
+            //var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
+            //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             return "Approval successful";
         }
 
-        public async Task<string> RejectAsync([Required] string id, [Required] string reason)
+        public async Task<string> RejectAsync([Required] string id, [Required] string reason, CancellationToken cancellationToken)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
             if (myTask == null || myTask.Status != W2TaskStatus.Pending)
@@ -175,16 +184,16 @@ namespace W2.Tasks
                 { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
-            var affectedWorkflows = await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId).ToList();
-
-            var signal = new SignalModel(myTask.RejectSignal, myTask.WorkflowInstanceId);
-            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
             myTask.Status = W2TaskStatus.Reject;
             myTask.UpdatedBy = _currentUser.Email;
             myTask.Reason = reason;
+            await _taskRepository.UpdateAsync(myTask, true);// avoid conflict with approve signal
 
-            await _taskRepository.UpdateAsync(myTask);
+            await _signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId, cancellationToken: cancellationToken);
+            //var affectedWorkflows = await (_signaler.TriggerSignalAsync(myTask.RejectSignal, Inputs, myTask.WorkflowInstanceId)).ToList();
+
+            //var signal = new SignalModel(myTask.RejectSignal, myTask.WorkflowInstanceId);
+            //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             return "Reject successful";
         }
@@ -218,13 +227,13 @@ namespace W2.Tasks
                 { "TriggeredBy", $"{_currentUser.Email}" }
             };
 
+            actions.Status = W2TaskActionsStatus.Approve;
+            await _taskActionsRepository.UpdateAsync(actions, true);// avoid config in signal
+
             var affectedWorkflows = await _signaler.TriggerSignalAsync(input.Action, Inputs, myTask.WorkflowInstanceId).ToList();
 
             var signal = new SignalModel(input.Action, myTask.WorkflowInstanceId);
-            await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
-            actions.Status = W2TaskActionsStatus.Approve;
-            await _taskActionsRepository.UpdateAsync(actions);
+            //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
             return "Send Action successful";
         }
@@ -239,13 +248,10 @@ namespace W2.Tasks
 
             var query = from task in tasks
                         join user in users on task.Author equals user.Id
-                        join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
-                        join action in taskAction on new { TaskID = task.Id.ToString() } equals new { TaskID = action.TaskId } into actionGroup
-                        let emailList = (
-                            from email in taskEmail
-                            where email.TaskId == task.Id.ToString()
-                            select email.Email
-                        ).ToList()
+                        join emailGroup in taskEmail on task.Id.ToString() equals emailGroup.TaskId into groupedEmails
+                        join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
+                        from email in groupedEmails
+                        let emailList = groupedEmails.Select(e => e.Email).ToList()
                         let actionList = (
                             from action in actionGroup.DefaultIfEmpty()
                             select action != null ? new TaskActionsDto
@@ -254,6 +260,7 @@ namespace W2.Tasks
                                 Status = action.Status
                             } : null
                         ).OrderBy(action => action?.OtherActionSignal).ToList()
+                        where groupedEmails.Any()
                         select new
                         {
                             W2TaskEmail = email,
@@ -263,7 +270,7 @@ namespace W2.Tasks
                             OtherActionSignals = actionList.All(a => a != null) ? actionList : null
                         };
 
-
+         
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
@@ -315,6 +322,8 @@ namespace W2.Tasks
                     AuthorName = x.W2User.Name,
                     CreationTime = x.W2task.CreationTime,
                     Description = x.W2task.Description,
+                    RequestId = x.W2task.Id,// todo request id not task
+                    Title = "",
                     Email = x.W2task.Email,
                     Id = x.W2task.Id,
                     Name = x.W2task.Name,
@@ -324,9 +333,39 @@ namespace W2.Tasks
                     Reason = x.W2task.Reason,
                     Status = x.W2task.Status,
                     WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
-                    WorkflowInstanceId = x.W2task.WorkflowInstanceId
+                    WorkflowInstanceId = x.W2task.WorkflowInstanceId,
+                    Settings = new SettingsDto { Color = "#aabbcc", TitleTemplate = "" }
                 })
                 .ToList();
+            // todo refactor later 
+            // get all defines
+            var listDefineIds = requestTasks.Select(x => x.WorkflowDefinitionId).ToList();
+            var inputDefinitions = await _workflowCustomInputDefinitionRepository
+            .GetListAsync(x => listDefineIds.Contains(x.WorkflowDefinitionId));
+            var listWorkflowInstanceId = requestTasks.Select(x => x.WorkflowInstanceId).ToList();
+            var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
+                .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
+            var allCustomDefine = (await _instanceStarterRepository.GetQueryableAsync())
+                .Where(i => listWorkflowInstanceId.Contains(i.WorkflowInstanceId))
+                .ToDictionary(x => x.WorkflowInstanceId, x => x);
+
+            foreach (var item in requestTasks)
+            {
+                if (allDefines.ContainsKey(item.WorkflowDefinitionId) && allCustomDefine.ContainsKey(item.WorkflowInstanceId))
+                {
+                    var titleFiled = allDefines.GetItem(item.WorkflowDefinitionId);
+                    var customInput = allCustomDefine.GetItem(item.WorkflowInstanceId);
+                    // render title by titleFiled.TitleTemplate
+                    var InputClone = new Dictionary<string, string>(customInput.Input)
+                    {
+                        { "RequestUser", item.AuthorName }
+                    };
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled?.Settings?.TitleTemplate ?? "", InputClone);
+                    item.Settings.TitleTemplate = title;
+                    item.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
+                }
+            }
 
             return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
         }
@@ -366,6 +405,26 @@ namespace W2.Tasks
             var data = workflowInstance.Variables.Data;
 
             var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(query.FirstOrDefault()?.W2task);
+            // todo refactor later 
+            // get all defines
+            var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
+                .Where(i => i.WorkflowDefinitionId == taskDto.WorkflowDefinitionId)
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
+            var customInput = (await _instanceStarterRepository.GetQueryableAsync())
+                .Where(i => i.WorkflowInstanceId == taskDto.WorkflowInstanceId).FirstOrDefault();
+
+            if (customInput != null && allDefines.ContainsKey(taskDto.WorkflowDefinitionId))
+            {
+                var titleFiled = allDefines.GetItem(taskDto.WorkflowDefinitionId);
+                // render title by titleFiled.TitleTemplate
+                var InputClone = new Dictionary<string, string>(customInput.Input)
+                    {
+                        { "RequestUser", taskDto.AuthorName }
+                    };
+                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings.TitleTemplate, InputClone);
+                taskDto.Title = title;
+            }
+
             var taskDetailDto = new TaskDetailDto
             {
                 Tasks = taskDto,
@@ -400,7 +459,8 @@ namespace W2.Tasks
                     Reason = x.Reason,
                     Status = x.Status,
                     WorkflowDefinitionId = x.WorkflowDefinitionId,
-                    WorkflowInstanceId = x.WorkflowInstanceId
+                    WorkflowInstanceId = x.WorkflowInstanceId,
+                    UpdatedBy = x.UpdatedBy
                 })
                 .ToList();
             return new PagedResultDto<W2TasksDto>(totalItemCount, tasks);
@@ -438,6 +498,34 @@ namespace W2.Tasks
             );
 
             return dynamicData;
+        }
+
+        [RemoteService(IsEnabled = false)]
+        public async Task<List<DynamicDataDto>> GetDynamicRawData(TaskDynamicDataInput input)
+        {
+            List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
+            List<DynamicDataDto> dynamicDataList = new List<DynamicDataDto>();
+
+            foreach (var task in tasks)
+            {
+                var dynamicActionDataJson = task.DynamicActionData;
+
+                if (dynamicActionDataJson.IsNullOrEmpty())
+                {
+                    continue;
+                }
+
+                try
+                {
+                    dynamicDataList.Add(new DynamicDataDto { DynamicDataList = JsonConvert.DeserializeObject<List<DynamicData>>(dynamicActionDataJson), Description = task.Description });
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+
+            return dynamicDataList;
         }
 
         private void UpdateDynamicData(Dictionary<string, string> dynamicData, List<Dictionary<string, object>> data)
