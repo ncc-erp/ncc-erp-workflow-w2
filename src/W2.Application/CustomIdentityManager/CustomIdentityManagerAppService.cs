@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Identity;
-using static Volo.Abp.Identity.IdentityPermissions;
+using AutoMapper;
 
 namespace W2.CustomIdentityManager
 {
@@ -48,46 +48,19 @@ namespace W2.CustomIdentityManager
                 users = ApplySorting(users, input.Sorting);
             }
 
+            var config = new MapperConfiguration(cfg => cfg.CreateMap<IdentityUser, CustomUserManageDto>());
+            var mapper = config.CreateMapper();
             var userDtos = new List<CustomUserManageDto>();
             foreach (var user in users.Skip(input.SkipCount).Take(input.MaxResultCount))
             {
-                var userDto = await MapUserToDto(user);
+                var userDto = mapper.Map<CustomUserManageDto>(user);
+                var roles = await _userManager.GetRolesAsync(user);
+                userDto.Roles = roles.ToList();
                 userDtos.Add(userDto);
             }
 
             return new PagedResultDto<CustomUserManageDto>(users.Count(), userDtos);
         }
-
-        private async Task<CustomUserManageDto> MapUserToDto(IdentityUser user)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-
-            return new CustomUserManageDto
-            {
-                TenantId = user.TenantId,
-                UserName = user.UserName,
-                Name = user.Name,
-                Surname = user.Surname,
-                Email = user.Email,
-                EmailConfirmed = user.EmailConfirmed,
-                PhoneNumber = user.PhoneNumber,
-                PhoneNumberConfirmed = user.PhoneNumberConfirmed,
-                IsActive = user.IsActive,
-                LockoutEnabled = user.LockoutEnabled,
-                LockoutEnd = user.LockoutEnd,
-                ConcurrencyStamp = user.ConcurrencyStamp,
-                IsDeleted = user.IsDeleted,
-                DeleterId = user.DeleterId,
-                DeletionTime = user.DeletionTime,
-                CreationTime = user.CreationTime,
-                CreatorId = user.CreatorId,
-                Id = user.Id,
-                ExtraProperties = user.ExtraProperties,
-                Roles = roles.ToList()  
-            };
-        }
-
-
 
         private List<IdentityUser> ApplySorting(List<IdentityUser> users, string sorting)
         {
