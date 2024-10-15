@@ -14,5 +14,7 @@ namespace W2.Tasks
         public string EmailRequest { get; set; }
         public string EmailAssign { get; set; }
         public string Dates { get; set; }
+        public string DateStart { get; set; }
+        public string DateEnd { get; set; }
     }
 }
