@@ -1,8 +1,13 @@
-﻿using Elsa.Models;
+﻿using Elsa;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using NodaTime.Serialization.JsonNet;
+using NodaTime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +15,6 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Users;
 using W2.Identity;
 using W2.Permissions;
 using W2.Specifications;
@@ -49,7 +53,6 @@ namespace W2.WorkflowDefinitions
                     specification,
                     new OrderBy<WorkflowDefinition>(x => x.Name!, SortDirection.Ascending)
                 ));
-                
             List<WorkflowDefinition> workflowDefinitions;
 
             if (isPublish == true)
@@ -75,6 +78,17 @@ namespace W2.WorkflowDefinitions
                 {
                     continue;
                 }
+                var workflowDefinition = workflowDefinitions.FirstOrDefault(el => el.DefinitionId == summary.DefinitionId);
+                if (workflowDefinition == null)
+                {
+                    continue;
+                }
+                var jsonString = JsonConvert.SerializeObject(workflowDefinition, new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                });
+                summary.DefineJson = jsonString;
+
                 summary.InputDefinition = ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>(inputDefinition);
             }
 
@@ -104,6 +118,8 @@ namespace W2.WorkflowDefinitions
         [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
         public async Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)
         {
+            if (input.DefineJson != null) await UpdateWorkflowDefinitionAsync(input.DefineJson);
+
             if (input.Id == default)
             {
                 await _workflowCustomInputDefinitionRepository.InsertAsync(
@@ -115,6 +131,21 @@ namespace W2.WorkflowDefinitions
                 var inputDefinition = await _workflowCustomInputDefinitionRepository.GetAsync(input.Id);
                 ObjectMapper.Map(input, inputDefinition);
                 await _workflowCustomInputDefinitionRepository.UpdateAsync(inputDefinition);
+            }
+        }
+
+        private async Task UpdateWorkflowDefinitionAsync(string defineJson)
+        {
+            var workflowDefinition = JsonConvert.DeserializeObject<WorkflowDefinition>(defineJson, new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+
+            var existingWorkflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
+
+            if (existingWorkflowDefinition != null)
+            {
+                workflowDefinition.IsPublished = false;
+                workflowDefinition.Version = existingWorkflowDefinition.Version + 1;
+                workflowDefinition.Id = existingWorkflowDefinition.Id;
+                await _workflowDefinitionStore.UpdateAsync(workflowDefinition);
             }
         }
 
