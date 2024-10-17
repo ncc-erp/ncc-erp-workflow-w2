@@ -25,6 +25,8 @@ using W2.WorkflowInstances;
 using W2.Utils;
 using System.Threading;
 using W2.Scripting;
+using System.Globalization;
+using IdentityServer4.Extensions;
 
 namespace W2.Tasks
 {
@@ -270,7 +272,7 @@ namespace W2.Tasks
                             OtherActionSignals = actionList.All(a => a != null) ? actionList : null
                         };
 
-         
+            var isCalendarView = !input.DateStart.IsNullOrWhiteSpace() && !input.DateEnd.IsNullOrWhiteSpace();
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
@@ -316,26 +318,27 @@ namespace W2.Tasks
                 .Select(group => group.FirstOrDefault())
                 .OrderByDescending(task => task.W2task.CreationTime)
                 .Skip(input.SkipCount)
-                .Take(input.MaxResultCount).Select(x => new W2TasksDto
-                {
-                    Author = x.W2task.Author,
-                    AuthorName = x.W2User.Name,
-                    CreationTime = x.W2task.CreationTime,
-                    Description = x.W2task.Description,
-                    RequestId = x.W2task.Id,// todo request id not task
-                    Title = "",
-                    Email = x.W2task.Email,
-                    Id = x.W2task.Id,
-                    Name = x.W2task.Name,
-                    EmailTo = x.EmailTo,
-                    DynamicActionData = x.W2task.DynamicActionData,
-                    OtherActionSignals = x.OtherActionSignals,
-                    Reason = x.W2task.Reason,
-                    Status = x.W2task.Status,
-                    WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
-                    WorkflowInstanceId = x.W2task.WorkflowInstanceId,
-                    Settings = new SettingsDto { Color = "#aabbcc", TitleTemplate = "" }
-                })
+                .Take(input.MaxResultCount).Select(x => 
+                new W2TasksDto
+                    {
+                        Author = x.W2task.Author,
+                        AuthorName = x.W2User.Name,
+                        CreationTime = x.W2task.CreationTime,
+                        Description = x.W2task.Description,
+                        RequestId = x.W2task.Id,// todo request id not task
+                        Title = "",
+                        Email = x.W2task.Email,
+                        Id = x.W2task.Id,
+                        Name = x.W2task.Name,
+                        EmailTo = x.EmailTo,
+                        DynamicActionData = x.W2task.DynamicActionData,
+                        OtherActionSignals = x.OtherActionSignals,
+                        Reason = x.W2task.Reason,
+                        Status = x.W2task.Status,
+                        WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
+                        WorkflowInstanceId = x.W2task.WorkflowInstanceId,
+                        Settings = new SettingsDto { Color = "#aabbcc", TitleTemplate = "" }
+                    })
                 .ToList();
             // todo refactor later 
             // get all defines
@@ -350,24 +353,69 @@ namespace W2.Tasks
                 .Where(i => listWorkflowInstanceId.Contains(i.WorkflowInstanceId))
                 .ToDictionary(x => x.WorkflowInstanceId, x => x);
 
-            foreach (var item in requestTasks)
+            var filteredRequestTasks = requestTasks
+            .Where(item =>
             {
-                if (allDefines.ContainsKey(item.WorkflowDefinitionId) && allCustomDefine.ContainsKey(item.WorkflowInstanceId))
-                {
-                    var titleFiled = allDefines.GetItem(item.WorkflowDefinitionId);
-                    var customInput = allCustomDefine.GetItem(item.WorkflowInstanceId);
-                    // render title by titleFiled.TitleTemplate
-                    var InputClone = new Dictionary<string, string>(customInput.Input)
-                    {
-                        { "RequestUser", item.AuthorName }
-                    };
-                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled?.Settings?.TitleTemplate ?? "", InputClone);
-                    item.Settings.TitleTemplate = title;
-                    item.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
-                }
-            }
+                if (!allDefines.ContainsKey(item.WorkflowDefinitionId) || !allCustomDefine.ContainsKey(item.WorkflowInstanceId)) return false;
+                if(!isCalendarView) return true;
 
-            return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
+                var inputDefinition = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId);
+
+                var startDayFieldName = inputDefinition?.PropertyDefinitions?.FirstOrDefault(el => el.IsStartDay)?.Name;
+
+                if (String.IsNullOrEmpty(startDayFieldName)) return false;
+                    
+                var customInput = allCustomDefine.GetItem(item.WorkflowInstanceId);
+                var InputClone = new Dictionary<string, string>(customInput.Input)
+                {
+                    { "RequestUser", item.AuthorName }
+                };
+
+                var parsedDateStart = DateTimeOffset.ParseExact(input.DateStart, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                var unixTimeStart = parsedDateStart.ToUnixTimeSeconds();
+
+                var parsedDateEnd = DateTimeOffset.ParseExact(input.DateEnd, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                var unixTimeEnd = parsedDateEnd.ToUnixTimeSeconds();
+
+                var currentStartDay = InputClone.ContainsKey(startDayFieldName) ? InputClone[startDayFieldName] : null;
+
+                if (String.IsNullOrEmpty(currentStartDay)) return false;
+
+                var parsedCurrentStartDate = DateTimeOffset.ParseExact(currentStartDay, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                var unixCurrentTimeStart = parsedCurrentStartDate.ToUnixTimeSeconds();
+
+                return unixCurrentTimeStart >= unixTimeStart 
+                && unixCurrentTimeStart <= unixTimeEnd;
+                    
+            })
+            .Select(item =>
+            {
+                var titleFiled = allDefines.GetItem(item.WorkflowDefinitionId);
+                var customInput = allCustomDefine.GetItem(item.WorkflowInstanceId);
+
+                // render title by titleFiled.TitleTemplate
+                var InputClone = new Dictionary<string, string>(customInput.Input)
+                {
+                    { "RequestUser", item.AuthorName }
+                };
+
+                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled?.Settings?.TitleTemplate ?? "", InputClone);
+                item.Settings.TitleTemplate = title;
+
+                var inputDefinition = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId);
+                item.Settings.Color = inputDefinition?.Settings?.Color ?? "#aabbcc";
+
+                var startDayFieldName = inputDefinition?.PropertyDefinitions?.FirstOrDefault(el => el.IsStartDay)?.Name;
+                if (startDayFieldName != null && InputClone.ContainsKey(startDayFieldName))
+                {
+                    item.StartDay = InputClone[startDayFieldName];
+                }
+
+                return item;
+            })
+            .ToList();
+
+            return new PagedResultDto<W2TasksDto>(totalItemCount, filteredRequestTasks);
         }
 
         public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
