@@ -132,7 +132,7 @@ namespace W2.WorkflowDefinitions
         {
             await _workflowPublisher.DeleteAsync(id, VersionOptions.All);
         }
-        public async Task<string> ChangeWorkflowStatusAsync(UpdateWorkflowPublishStatusDto input)
+        public async Task<object> ChangeWorkflowStatusAsync(UpdateWorkflowPublishStatusDto input)
         {
             var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { input.WorkflowId });
             var workflowDefinition = await _workflowDefinitionStore.FindAsync(specification);
@@ -153,7 +153,12 @@ namespace W2.WorkflowDefinitions
                 await _workflowPublisher.SaveDraftAsync(workflowDefinition);
             }
 
-            return $"Workflow with ID {input.WorkflowId} updated to published: {input.IsPublished}";
+            return new
+            {
+                WorkflowId = input.WorkflowId,
+                IsPublished = input.IsPublished,
+                Message = $"Workflow with ID {input.WorkflowId} updated to published: {input.IsPublished}"
+            };
         }
     }
 }
