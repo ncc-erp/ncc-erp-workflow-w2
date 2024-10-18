@@ -37,7 +37,6 @@ namespace W2.WorkflowDefinitions
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _workflowPublisher = workflowPublisher;
         }
-
         public async Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync(bool? isPublish)
         {
             var specification = Specification<WorkflowDefinition>.Identity;
@@ -163,6 +162,34 @@ namespace W2.WorkflowDefinitions
         public async Task DeleteAsync(string id)
         {
             await _workflowPublisher.DeleteAsync(id, VersionOptions.All);
+        }
+        public async Task<object> ChangeWorkflowStatusAsync(UpdateWorkflowPublishStatusDto input)
+        {
+            var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { input.WorkflowId });
+            var workflowDefinition = await _workflowDefinitionStore.FindAsync(specification);
+
+            if (workflowDefinition == null)
+            {
+                throw new UserFriendlyException(L["Exception:WorkflowDefinitionNotFound"]);
+            }
+
+            workflowDefinition.IsPublished = input.IsPublished;
+
+            if (input.IsPublished)
+            {
+                await _workflowPublisher.PublishAsync(workflowDefinition);
+            }
+            else
+            {
+                await _workflowPublisher.SaveDraftAsync(workflowDefinition);
+            }
+
+            return new
+            {
+                WorkflowId = input.WorkflowId,
+                IsPublished = input.IsPublished,
+                Message = $"Workflow with ID {input.WorkflowId} updated to published: {input.IsPublished}"
+            };
         }
     }
 }
