@@ -117,7 +117,7 @@ namespace W2.WorkflowDefinitions
         [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
         public async Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)
         {
-            if (input.DefineJson != null) await UpdateWorkflowDefinitionAsync(input.DefineJson);
+            if (input.DefineJson != null) await UpdateWorkflowDefinitionAsync(input.DefineJson, input.WorkflowDefinitionId);
 
             if (input.Id == default)
             {
@@ -133,11 +133,13 @@ namespace W2.WorkflowDefinitions
             }
         }
 
-        private async Task UpdateWorkflowDefinitionAsync(string defineJson)
+        private async Task UpdateWorkflowDefinitionAsync(string defineJson, string currentWorkflowDefineId)
         {
             var workflowDefinition = JsonConvert.DeserializeObject<WorkflowDefinition>(defineJson, new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
-            var existingWorkflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinition.DefinitionId, VersionOptions.Latest);
+            workflowDefinition.DefinitionId = currentWorkflowDefineId;
+
+            var existingWorkflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync( workflowDefinition.DefinitionId, VersionOptions.Latest);
 
             if (existingWorkflowDefinition != null)
             {
@@ -155,6 +157,13 @@ namespace W2.WorkflowDefinitions
 
             var workflowDraft = await _workflowPublisher.SaveDraftAsync(workflowDefinition);
 
+            if (input.workflowCreateData != null)
+            {
+                var workflowCreateData = input.workflowCreateData;
+                workflowCreateData.Id = default;
+                workflowCreateData.WorkflowDefinitionId = workflowDraft.DefinitionId;
+                await SaveWorkflowInputDefinitionAsync(workflowCreateData);
+            };
             return workflowDraft.DefinitionId;
         }
 
