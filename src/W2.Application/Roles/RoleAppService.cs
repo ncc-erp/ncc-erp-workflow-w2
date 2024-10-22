@@ -48,7 +48,7 @@ namespace W2.Roles
             );
         }
 
-        [HttpGet("roles/{id}")]
+        [HttpGet("{id}")]
         public async Task<RoleDetailDto> GetRoleById(Guid id)
         {
             // Get role
@@ -114,13 +114,13 @@ namespace W2.Roles
                     );
                     await _roleRepository.InsertAsync(role);
 
-                    // Get all permissions by names
+                    // Get all permissions by codes
                     var permissions = await _permissionRepository.GetListAsync(
-                        p => input.PermissionNames.Contains(p.Name)
+                        p => input.PermissionCodes.Contains(p.Code)
                     );
 
                     // Validate if all requested permissions exist
-                    if (permissions.Count != input.PermissionNames.Count)
+                    if (permissions.Count != input.PermissionCodes.Count)
                     {
                         throw new UserFriendlyException("Some permissions do not exist");
                     }
@@ -172,7 +172,7 @@ namespace W2.Roles
                     }
 
                     // Handle permissions if provided
-                    if (input.PermissionNames != null && input.PermissionNames.Any())
+                    if (input.PermissionCodes != null && input.PermissionCodes.Any())
                     {
                         // Get existing permission-role mappings
                         var existingPermissionRoles = await _permissionRoleRepository
@@ -180,10 +180,10 @@ namespace W2.Roles
 
                         // Get all requested permissions
                         var newPermissions = await _permissionRepository
-                            .GetListAsync(p => input.PermissionNames.Contains(p.Name));
+                            .GetListAsync(p => input.PermissionCodes.Contains(p.Code));
 
                         // Validate if all requested permissions exist
-                        if (newPermissions.Count != input.PermissionNames.Count)
+                        if (newPermissions.Count != input.PermissionCodes.Count)
                         {
                             throw new UserFriendlyException("Some permissions do not exist");
                         }
@@ -260,7 +260,7 @@ namespace W2.Roles
         //    return new OkObjectResult(createdPermissions);
         //}
 
-        [HttpGet("permissions/all")]
+        [HttpGet("permissions")]
         public async Task<List<PermissionDetailDto>> GetAllPermissions()
         {
             var allPermissions = await _permissionRepository.GetListAsync();
