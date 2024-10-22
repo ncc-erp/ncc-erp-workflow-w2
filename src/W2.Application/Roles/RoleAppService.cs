@@ -40,7 +40,7 @@ namespace W2.Roles
         }
 
         [HttpGet]
-        public async Task<ListResultDto<IdentityRoleDto>> GetAllRoles()
+        public async Task<ListResultDto<IdentityRoleDto>> GetRolesAsync()
         {
             var roles = await _roleRepository.GetListAsync();
             return new ListResultDto<IdentityRoleDto>(
@@ -49,193 +49,119 @@ namespace W2.Roles
         }
 
         [HttpGet("{id}")]
-        public async Task<RoleDetailDto> GetRoleById(Guid id)
+        public async Task<RoleDetailDto> GetRoleDetailsAsync(Guid id)
         {
-            // Get role
-            var role = await _roleRepository.GetAsync(id);
-            if (role == null)
-            {
-                throw new UserFriendlyException($"Role with id {id} not found");
-            }
+            var role = await _roleRepository.GetAsync(id)
+                ?? throw new UserFriendlyException($"Role with id {id} not found");
 
-            // Get all permissions of role
             var query = await _permissionRoleRepository.GetQueryableAsync();
-            var permissions = await query
+            var rolePermissions = await query
                 .Include(pr => pr.Permission)
                 .Where(pr => pr.RoleId == id)
                 .Select(pr => pr.Permission)
                 .ToListAsync();
+            var permissionHierarchy = BuildPermissionHierarchy(rolePermissions);
 
-            var permissionIds = permissions.Select(p => p.Id).ToList();
+            var roleDetailsDto = ObjectMapper.Map<IdentityRole, RoleDetailDto>(role);
+            roleDetailsDto.Permissions = permissionHierarchy;
 
-            // Get all permissions and organize them
-            //var allPermissions = await _permissionRepository.GetListAsync();
-
-            // Get parent permissions that role has access to
-            var parentPermissions = permissions
-                .Where(p => p.ParentId == null)
-                .Select(parent => new PermissionDetailDto
-                {
-                    Id = parent.Id,
-                    Name = parent.Name,
-                    Code = parent.Code,
-                    CreationTime = parent.CreationTime,
-                    Children = permissions
-                        .Where(c => c.ParentId == parent.Id)
-                        .Select(child => new PermissionDto
-                        {
-                            Id = child.Id,
-                            Name = child.Name,
-                            Code = child.Code,
-                            CreationTime = child.CreationTime,
-                        })
-                        .ToList(),
-                })
-                .ToList();
-
-            // Map to DTO
-            var roleDto = ObjectMapper.Map<IdentityRole, RoleDetailDto>(role);
-            roleDto.Permissions = parentPermissions;
-
-            return roleDto;
+            return roleDetailsDto;
         }
 
         [HttpPost]
-        public async Task<IdentityRoleDto> CreateRole(CreateRoleInput input)
+        public async Task<RoleDetailDto> CreateRoleAsync(CreateRoleInput input)
         {
-            using (var uow = UnitOfWorkManager.Begin())
+            if (input.PermissionCodes == null || !input.PermissionCodes.Any())
             {
-                try
+                throw new UserFriendlyException("At least one permission are required");
+            }
+
+            using var unitOfWork = UnitOfWorkManager.Begin();
+
+            try
+            {
+                var permissions = await _permissionRepository.GetListAsync(
+                    p => input.PermissionCodes.Contains(p.Code)
+                );
+                ValidatePermissions(permissions, input.PermissionCodes);
+
+                var role = new IdentityRole(
+                    GuidGenerator.Create(),
+                    input.Name,
+                    CurrentTenant.Id
+                );
+                await _roleRepository.InsertAsync(role);
+                
+                var rolePermissionMappings = permissions.Select(
+                    permission => new W2PermissionRole(permission.Id, role.Id, CurrentTenant.Id)
+                );
+                foreach (var mapping in rolePermissionMappings)
                 {
-                    // Create new role
-                    var role = new IdentityRole(
-                        GuidGenerator.Create(),
-                        input.Name
-                    );
-                    await _roleRepository.InsertAsync(role);
-
-                    // Get all permissions by codes
-                    var permissions = await _permissionRepository.GetListAsync(
-                        p => input.PermissionCodes.Contains(p.Code)
-                    );
-
-                    // Validate if all requested permissions exist
-                    if (permissions.Count != input.PermissionCodes.Count)
-                    {
-                        throw new UserFriendlyException("Some permissions do not exist");
-                    }
-
-                    // Create permission-role records
-                    var permissionRoles = permissions.Select(permission => new W2PermissionRole
-                    {
-                        PermissionId = permission.Id,
-                        RoleId = role.Id,
-                    }).ToList();
-
-                    // Insert permission-role records
-                    foreach (var permissionRole in permissionRoles)
-                    {
-                        await _permissionRoleRepository.InsertAsync(permissionRole);
-                    }
-
-                    await uow.CompleteAsync();
-
-                    return ObjectMapper.Map<IdentityRole, IdentityRoleDto>(role);
+                    await _permissionRoleRepository.InsertAsync(mapping);
                 }
-                catch (Exception ex)
-                {
-                    await uow.RollbackAsync();
-                    throw ex;
-                }
+                
+                await unitOfWork.CompleteAsync();
+
+                var roleDetailDto = ObjectMapper.Map<IdentityRole, RoleDetailDto>(role);
+                roleDetailDto.Permissions = BuildPermissionHierarchy(permissions);
+
+                return roleDetailDto;
+            }
+            catch (Exception)
+            {
+                await unitOfWork.RollbackAsync();
+                throw;
             }
         }
 
         [HttpPut("{roleId}")]
-        public async Task<IdentityRoleDto> UpdateRole(Guid roleId, UpdateRoleInput input)
+        public async Task<RoleDetailDto> UpdateRoleAsync(Guid roleId, UpdateRoleInput input)
         {
-            using (var uow = UnitOfWorkManager.Begin())
+            if (input.PermissionCodes == null || !input.PermissionCodes.Any())
             {
-                try
+                throw new UserFriendlyException("At least one permission are required");
+            }
+
+            using var unitOfWork = UnitOfWorkManager.Begin();
+
+            try
+            {
+                var role = await _roleRepository.GetAsync(roleId)
+                    ?? throw new UserFriendlyException($"Role with id {roleId} not found");
+
+                if (!string.IsNullOrEmpty(input.Name) && role.Name != input.Name)
                 {
-                    // Get and update role
-                    var role = await _roleRepository.GetAsync(roleId);
-                    if (role == null)
-                    {
-                        throw new UserFriendlyException($"Role with id {roleId} not found");
-                    }
-
-                    // Update role name if changed
-                    if (!string.IsNullOrEmpty(input.Name) && role.Name != input.Name)
-                    {
-                        role.ChangeName(input.Name);
-                        await _roleRepository.UpdateAsync(role);
-                    }
-
-                    // Handle permissions if provided
-                    if (input.PermissionCodes != null && input.PermissionCodes.Any())
-                    {
-                        // Get existing permission-role mappings
-                        var existingPermissionRoles = await _permissionRoleRepository
-                            .GetListAsync(pr => pr.RoleId == roleId);
-
-                        // Get all requested permissions
-                        var newPermissions = await _permissionRepository
-                            .GetListAsync(p => input.PermissionCodes.Contains(p.Code));
-
-                        // Validate if all requested permissions exist
-                        if (newPermissions.Count != input.PermissionCodes.Count)
-                        {
-                            throw new UserFriendlyException("Some permissions do not exist");
-                        }
-
-                        // Get permissions to remove and to add
-                        var newPermissionIds = newPermissions.Select(p => p.Id).ToList();
-                        var existingPermissionIds = existingPermissionRoles.Select(pr => pr.PermissionId).ToList();
-
-                        var permissionIdsToRemove = existingPermissionIds
-                            .Except(newPermissionIds)
-                            .ToList();
-
-                        var permissionIdsToAdd = newPermissionIds
-                            .Except(existingPermissionIds)
-                            .ToList();
-
-                        // Remove old permissions
-                        if (permissionIdsToRemove.Any())
-                        {
-                            await _permissionRoleRepository.DeleteAsync(
-                                pr => pr.RoleId == roleId && permissionIdsToRemove.Contains(pr.PermissionId)
-                            );
-                        }
-
-                        // Add new permissions
-                        if (permissionIdsToAdd.Any())
-                        {
-                            var permissionRolesToAdd = permissionIdsToAdd.Select(permissionId => new W2PermissionRole
-                            {
-                                PermissionId = permissionId,
-                                RoleId = roleId,
-                                TenantId = CurrentTenant.Id
-                            });
-
-                            foreach (var permissionRole in permissionRolesToAdd)
-                            {
-                                await _permissionRoleRepository.InsertAsync(permissionRole);
-                            }
-                        }
-                    }
-
-                    await uow.CompleteAsync();
-
-                    // Get updated role with permissions
-                    var updatedRole = await _roleRepository.GetAsync(roleId);
-                    return ObjectMapper.Map<IdentityRole, IdentityRoleDto>(updatedRole);
+                    role.ChangeName(input.Name);
+                    await _roleRepository.UpdateAsync(role);
                 }
-                catch (Exception ex)
-                {
-                    await uow.RollbackAsync();
-                    throw;
-                }
+
+                var newPermissions = await _permissionRepository
+                    .GetListAsync(p => input.PermissionCodes.Contains(p.Code));
+                ValidatePermissions(newPermissions, input.PermissionCodes);
+
+                var existingPermissionRoles = await _permissionRoleRepository
+                        .GetListAsync(pr => pr.RoleId == roleId);
+
+                var newPermissionIds = newPermissions.Select(p => p.Id).ToList();
+                var existingPermissionIds = existingPermissionRoles.Select(pr => pr.PermissionId).ToList();
+
+                var (permissionsToRemove, permissionsToAdd) = GetPermissionChanges(
+                    existingPermissionIds,
+                    newPermissionIds
+                );
+
+                await RemovePermissionsFromRoleAsync(roleId, permissionsToRemove);
+                await AddPermissionsToRoleAsync(roleId, permissionsToAdd);
+
+                var roleDetailDto = ObjectMapper.Map<IdentityRole, RoleDetailDto>(role);
+                roleDetailDto.Permissions = BuildPermissionHierarchy(newPermissions);
+
+                return roleDetailDto;
+            }
+            catch (Exception)
+            {
+                await unitOfWork.RollbackAsync();
+                throw;
             }
         }
 
@@ -261,24 +187,97 @@ namespace W2.Roles
         //}
 
         [HttpGet("permissions")]
-        public async Task<List<PermissionDetailDto>> GetAllPermissions()
+        public async Task<List<PermissionDetailDto>> GetPermissionsAsync()
         {
             var allPermissions = await _permissionRepository.GetListAsync();
+            return BuildPermissionHierarchy(allPermissions);
+        }
 
-            var result = allPermissions
+        private (List<Guid> ToRemove, List<Guid> ToAdd) GetPermissionChanges(
+            List<Guid> existingPermissionIds,
+            List<Guid> newPermissionIds)
+        {
+            var toRemove = existingPermissionIds.Except(newPermissionIds).ToList();
+            var toAdd = newPermissionIds.Except(existingPermissionIds).ToList();
+            return (toRemove, toAdd);
+        }
+
+        private void ValidatePermissions(List<W2Permission> permissions, List<string> requestedCodes)
+        {
+            if (permissions.Count != requestedCodes.Count)
+            {
+                throw new UserFriendlyException("Some requested permissions do not exist");
+            }
+
+            var parentPermissions = permissions.Count(p => p.ParentId == null);
+            var childPermissions = permissions.Count(p => p.ParentId != null);
+
+            if (parentPermissions == 0)
+            {
+                throw new UserFriendlyException("At least one permission is required");
+            }
+            if (childPermissions == 0)
+            {
+                throw new UserFriendlyException("At least one permission is required");
+            }
+
+            var parentIds = permissions
+                .Where(p => p.ParentId == null)
+                .Select(p => p.Id)
+                .ToHashSet();
+
+            var orphanedChildren = permissions
+                .Where(p => p.ParentId != null && !parentIds.Contains(p.ParentId.Value))
+                .ToList();
+
+            if (orphanedChildren.Any())
+            {
+                var orphanedCodes = string.Join(", ", orphanedChildren.Select(p => p.Code));
+                throw new UserFriendlyException(
+                    $"Child permissions must belong to selected parent permissions. Orphaned permissions: {orphanedCodes}"
+                );
+            }
+        }
+
+        private async Task AddPermissionsToRoleAsync(Guid roleId, List<Guid> permissionIds)
+        {
+            if (permissionIds.Any())
+            {
+                var newMappings = permissionIds.Select(
+                    permissionId => new W2PermissionRole(permissionId, roleId, CurrentTenant.Id)
+                );
+
+                foreach (var mapping in newMappings)
+                {
+                    await _permissionRoleRepository.InsertAsync(mapping);
+                }
+            }
+        }
+
+        private async Task RemovePermissionsFromRoleAsync(Guid roleId, List<Guid> permissionIds)
+        {
+            if (permissionIds.Any())
+            {
+                await _permissionRoleRepository.DeleteAsync(
+                    pr => pr.RoleId == roleId && permissionIds.Contains(pr.PermissionId)
+                );
+            }
+        }
+
+        private List<PermissionDetailDto> BuildPermissionHierarchy(List<W2Permission> permissions)
+        {
+            return permissions
                 .Where(p => p.ParentId == null)
                 .Select(parent =>
                 {
                     var parentDto = ObjectMapper.Map<W2Permission, PermissionDetailDto>(parent);
-                    parentDto.Children = allPermissions
+                    parentDto.Children = permissions
                         .Where(c => c.ParentId == parent.Id)
                         .Select(child => ObjectMapper.Map<W2Permission, PermissionDto>(child))
                         .ToList();
                     return parentDto;
                 })
                 .ToList();
-
-            return result;
         }
     }
 }

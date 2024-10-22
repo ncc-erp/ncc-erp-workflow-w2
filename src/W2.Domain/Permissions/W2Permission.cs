@@ -7,12 +7,20 @@ namespace W2.Permissions
 {
     public class W2Permission : CreationAuditedEntity<Guid>, IMultiTenant
     {
-        public string Name { get; set; }
-        public string Code { get; set; }
-        public Guid? ParentId { get; set; }
-        public Guid? TenantId { get; set; }
+        public string Name { get; protected set; }
+        public string Code { get; protected set; }
+        public Guid? ParentId { get; protected set; }
+        public Guid? TenantId { get; protected set; }
 
         public virtual ICollection<W2PermissionRole> PermissionRoles { get; protected set; }
         public virtual ICollection<W2PermissionUser> PermissionUsers { get; protected set; }
+
+        public W2Permission(string name, string code, Guid? parentId, Guid? tenantId) 
+        {
+            Name = name;
+            Code = code;
+            ParentId = parentId;
+            TenantId = tenantId;
+        }
     }
 }

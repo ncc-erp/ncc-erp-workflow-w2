@@ -13,5 +13,12 @@ namespace W2.Permissions
 
         public virtual W2Permission Permission { get; protected set; }
         public virtual IdentityUser User { get; protected set; }
+
+        public W2PermissionUser(Guid permissionId, Guid userId, Guid? tenantId)
+        {
+            PermissionId = permissionId;
+            UserId = userId;
+            TenantId = tenantId;
+        }
     }
 }
