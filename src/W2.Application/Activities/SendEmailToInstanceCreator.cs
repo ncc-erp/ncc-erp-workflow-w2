@@ -16,6 +16,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 using W2.Localization;
 using W2.Signals;
+using W2.Tasks;
 using W2.WorkflowInstances;
 
 namespace W2.Activities
@@ -30,8 +31,9 @@ namespace W2.Activities
         public SendEmailToInstanceCreatorAndOther(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
+            ITaskAppService taskAppService,
             IContentSerializer contentSerializer)
-            : base(smtpService, options, httpClientFactory, contentSerializer)
+            : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
         {
         }
 

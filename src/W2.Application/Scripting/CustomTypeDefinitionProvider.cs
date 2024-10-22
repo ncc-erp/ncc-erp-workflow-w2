@@ -28,6 +28,8 @@ namespace W2.Scripting
     {
         public string PMApproved { get; set; } = nameof(PMApproved);
         public string PMRejected { get; set; } = nameof(PMRejected);
+        public string HPMApproved { get; set; } = nameof(HPMApproved);
+        public string HPMRejected { get; set; } = nameof(HPMRejected);
         public string HoOApproved { get; set; } = nameof(HoOApproved);
         public string HoORejected { get; set; } = nameof(HoORejected);
         public string Approved { get; set; } = nameof(Approved);

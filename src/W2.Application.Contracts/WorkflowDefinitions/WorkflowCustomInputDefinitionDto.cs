@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Volo.Abp.Application.Dtos;
-using W2.WorkflowInstances;
 
 namespace W2.WorkflowDefinitions
 {
@@ -10,6 +9,7 @@ namespace W2.WorkflowDefinitions
         public string WorkflowDefinitionId { get; set; }
         public SettingsDto Settings { get; set; }
         public List<WorkflowCustomInputPropertyDefinitionDto> PropertyDefinitions { get; set; }
+        public string DefineJson { get; set; }
     }
     public class WorkflowCustomInputPropertyDefinitionDto
     {
