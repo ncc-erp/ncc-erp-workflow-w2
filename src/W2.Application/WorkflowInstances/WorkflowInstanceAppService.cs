@@ -166,7 +166,7 @@ namespace W2.WorkflowInstances
         }
 
         [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
-        public async Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
+        public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
         {
             var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(input.WorkflowDefinitionId, tenantId: CurrentTenantStrId);
 
@@ -180,6 +180,7 @@ namespace W2.WorkflowInstances
             var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
 
             var instance = executionResult.WorkflowInstance;
+            var workflowInstanceStarterResponse = new WorkflowInstanceStarter();
             using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
             {
                 var workflowInstanceStarter = new WorkflowInstanceStarter
@@ -190,13 +191,13 @@ namespace W2.WorkflowInstances
                     Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
                 };
 
-                await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+                workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
                 await uow.CompleteAsync();
 
                 _logger.LogInformation("Saved changes to database");
             }
 
-            return instance.Id;
+            return workflowInstanceStarterResponse;
         }
 
         [AllowAnonymous]
