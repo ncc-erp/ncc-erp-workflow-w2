@@ -112,16 +112,16 @@ namespace W2.Web.Pages.WorkflowDefinitions
             }
         }
 
-        public async Task<IActionResult> OnPostAsync()
-        {
-            var workflowInstanceId = await _workflowInstanceAppService.CreateNewInstanceAsync(new CreateNewWorkflowInstanceDto
-            {
-                WorkflowDefinitionId = WorkflowDefinitionId,
-                Input = WorkflowInput
-            });
+        //public async Task<IActionResult> OnPostAsync()
+        //{
+        //    var workflowInstance = await _workflowInstanceAppService.CreateNewInstanceAsync(new CreateNewWorkflowInstanceDto
+        //    {
+        //        WorkflowDefinitionId = WorkflowDefinitionId,
+        //        Input = WorkflowInput
+        //    });
 
-            _logger.LogInformation($"Return Id {workflowInstanceId} to client");
-            return Content(workflowInstanceId);
-        }
+        //    _logger.LogInformation($"Return Id {workflowInstance.id} to client");
+        //    return Content(workflowInstance.id);
+        //}
     }
 }
