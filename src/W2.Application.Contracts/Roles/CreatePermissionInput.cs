@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 
 namespace W2.Roles
 {
@@ -6,6 +7,7 @@ namespace W2.Roles
     {
         public string Name { get; set; }
         public string Code { get; set; }
-        public Guid? ParentId { get; set; }
+        [CanBeNull]
+        public Guid ParentId { get; set; }
     }
 }

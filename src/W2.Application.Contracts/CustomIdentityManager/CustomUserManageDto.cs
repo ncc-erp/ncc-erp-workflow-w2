@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using W2.Roles;
 using W2.TaskActions;
 using W2.Tasks;
 
@@ -30,5 +31,6 @@ namespace W2.CustomIdentityManager
         public Guid Id { get; set; }
         public Dictionary<string, object> ExtraProperties { get; set; }
         public List<string> Roles { get; set; }
+        public List<PermissionDetailDto> CustomPermissions { get; set; }
     }
 }

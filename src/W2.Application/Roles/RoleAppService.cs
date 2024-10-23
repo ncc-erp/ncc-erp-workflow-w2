@@ -100,10 +100,10 @@ namespace W2.Roles
                     await _permissionRoleRepository.InsertAsync(mapping);
                 }
                 
-                await unitOfWork.CompleteAsync();
-
                 var roleDetailDto = ObjectMapper.Map<IdentityRole, RoleDetailDto>(role);
                 roleDetailDto.Permissions = BuildPermissionHierarchy(permissions);
+
+                await unitOfWork.CompleteAsync();
 
                 return roleDetailDto;
             }
@@ -155,6 +155,8 @@ namespace W2.Roles
 
                 var roleDetailDto = ObjectMapper.Map<IdentityRole, RoleDetailDto>(role);
                 roleDetailDto.Permissions = BuildPermissionHierarchy(newPermissions);
+
+                await unitOfWork.CompleteAsync();
 
                 return roleDetailDto;
             }
