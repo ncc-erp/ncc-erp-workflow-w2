@@ -11,11 +11,13 @@
   <ItemGroup>
     <ProjectReference Include="..\W2.Domain\W2.Domain.csproj" />
     <ProjectReference Include="..\W2.Application.Contracts\W2.Application.Contracts.csproj" />
+    <ProjectReference Include="..\W2.EntityFrameworkCore\W2.EntityFrameworkCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Elsa.Activities.Email" Version="2.8.2" />
     <PackageReference Include="Google.Apis.Auth" Version="1.61.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     <PackageReference Include="Volo.Abp.Account.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.Identity.Application" Version="5.3.0" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Application" Version="5.3.0" />

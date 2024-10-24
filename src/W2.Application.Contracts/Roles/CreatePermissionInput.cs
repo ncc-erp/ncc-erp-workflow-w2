@@ -7,7 +7,6 @@ namespace W2.Roles
     {
         public string Name { get; set; }
         public string Code { get; set; }
-        [CanBeNull]
-        public Guid ParentId { get; set; }
+        public Guid? ParentId { get; set; }
     }
 }

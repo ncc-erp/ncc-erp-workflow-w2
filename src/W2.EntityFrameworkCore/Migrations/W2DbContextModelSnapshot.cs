@@ -459,6 +459,10 @@ namespace W2.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
@@ -494,6 +498,8 @@ namespace W2.Migrations
                     b.HasIndex("NormalizedName");
 
                     b.ToTable("AbpRoles", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityRole");
                 });
 
             modelBuilder.Entity("Volo.Abp.Identity.IdentityRoleClaim", b =>
@@ -631,6 +637,10 @@ namespace W2.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("DeletionTime");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -750,6 +760,8 @@ namespace W2.Migrations
                     b.HasIndex("UserName");
 
                     b.ToTable("AbpUsers", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
                 });
 
             modelBuilder.Entity("Volo.Abp.Identity.IdentityUserClaim", b =>
@@ -1981,61 +1993,9 @@ namespace W2.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ParentId");
+
                     b.ToTable("W2Permissions", (string)null);
-                });
-
-            modelBuilder.Entity("W2.Permissions.W2PermissionRole", b =>
-                {
-                    b.Property<Guid>("PermissionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("PermissionId", "RoleId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("W2PermissionRole", (string)null);
-                });
-
-            modelBuilder.Entity("W2.Permissions.W2PermissionUser", b =>
-                {
-                    b.Property<Guid>("PermissionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("PermissionId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("W2PermissionUser", (string)null);
                 });
 
             modelBuilder.Entity("W2.Settings.W2Setting", b =>
@@ -2178,6 +2138,9 @@ namespace W2.Migrations
                     b.Property<string>("PropertyDefinitions")
                         .HasColumnType("text");
 
+                    b.Property<string>("Settings")
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -2270,6 +2233,32 @@ namespace W2.Migrations
                     b.HasIndex("WorkflowInstanceId");
 
                     b.ToTable("WorkflowInstanceStarters", (string)null);
+                });
+
+            modelBuilder.Entity("W2.Identity.W2CustomIdentityRole", b =>
+                {
+                    b.HasBaseType("Volo.Abp.Identity.IdentityRole");
+
+                    b.Property<string>("Permissions")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.ToTable("AbpRoles", (string)null);
+
+                    b.HasDiscriminator().HasValue("W2CustomIdentityRole");
+                });
+
+            modelBuilder.Entity("W2.Identity.W2CustomIdentityUser", b =>
+                {
+                    b.HasBaseType("Volo.Abp.Identity.IdentityUser");
+
+                    b.Property<string>("CustomPermissions")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.ToTable("AbpUsers", (string)null);
+
+                    b.HasDiscriminator().HasValue("W2CustomIdentityUser");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
@@ -2549,42 +2538,14 @@ namespace W2.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("W2.Permissions.W2PermissionRole", b =>
+            modelBuilder.Entity("W2.Permissions.W2Permission", b =>
                 {
-                    b.HasOne("W2.Permissions.W2Permission", "Permission")
-                        .WithMany("PermissionRoles")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("W2.Permissions.W2Permission", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Volo.Abp.Identity.IdentityRole", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("W2.Permissions.W2PermissionUser", b =>
-                {
-                    b.HasOne("W2.Permissions.W2Permission", "Permission")
-                        .WithMany("PermissionUsers")
-                        .HasForeignKey("PermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Volo.Abp.Identity.IdentityUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Permission");
-
-                    b.Navigation("User");
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>
@@ -2675,9 +2636,7 @@ namespace W2.Migrations
 
             modelBuilder.Entity("W2.Permissions.W2Permission", b =>
                 {
-                    b.Navigation("PermissionRoles");
-
-                    b.Navigation("PermissionUsers");
+                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }

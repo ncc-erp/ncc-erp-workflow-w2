@@ -14,6 +14,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.Identity;
 using W2.Permissions;
 using W2.Settings;
 using W2.TaskActions;
@@ -62,16 +63,18 @@ public class W2DbContext :
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
+
     // tasks
     public DbSet<W2Task> Tasks { get; set; }
     public DbSet<W2Setting> W2Setting { get; set; }
     #endregion
     public DbSet<W2TaskEmail> W2TaskEmail { get; set; }
     public DbSet<W2TaskActions> W2TaskActions { get; set; }
-    // permissions
+
+    // roles
+    public DbSet<W2CustomIdentityRole> CustomIdentityRoles { get; set; }
+    public DbSet<W2CustomIdentityUser> CustomIdentityUsers { get; set; }
     public DbSet<W2Permission> Permissions { get; set; }
-    public DbSet<W2PermissionRole> PermissionRole { get; set; }
-    public DbSet<W2PermissionUser> PermissionUser { get; set; }
 
     public W2DbContext(DbContextOptions<W2DbContext> options)
         : base(options)
@@ -145,45 +148,30 @@ public class W2DbContext :
             b.HasIndex(x => x.WorkflowDefinitionId);
         });
 
+        builder.Entity<W2CustomIdentityRole>(b =>
+        {
+            b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "Roles");
+            b.Property(x => x.Permissions).HasColumnType("json").IsRequired();
+        });
+
+        builder.Entity<W2CustomIdentityUser>(b =>
+        {
+            b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "Users");
+            b.Property(x => x.CustomPermissions).HasColumnType("json").IsRequired();
+        });
+
         builder.Entity<W2Permission>(b =>
         {
             b.ToTable("W2Permissions");
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
-            b.Property(x => x.Code).IsRequired().HasMaxLength(128);            
-        });
+            b.Property(x => x.Code).IsRequired().HasMaxLength(128);
+            b.Property(x => x.ParentId).IsRequired(false);
 
-        builder.Entity<W2PermissionRole>(b =>
-        {
-            b.ToTable("W2PermissionRole");
-            b.Ignore(pr => pr.Id);
-            b.HasKey(pr => new { pr.PermissionId, pr.RoleId });
-            b.HasOne(x => x.Permission)
-                .WithMany(x => x.PermissionRoles)
-                .HasForeignKey(x => x.PermissionId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-            b.HasOne(x => x.Role)
-                .WithMany()
-                .HasForeignKey(x => x.RoleId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);            
-        });
-
-        builder.Entity<W2PermissionUser>(b =>
-        {
-            b.ToTable("W2PermissionUser");
-            b.Ignore(pr => pr.Id);
-            b.HasKey(pr => new { pr.PermissionId, pr.UserId });
-            b.HasOne(x => x.Permission)
-                .WithMany(x => x.PermissionUsers)
-                .HasForeignKey(x => x.PermissionId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);
-            b.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Cascade);            
+            b.HasOne(x => x.Parent)
+                .WithMany(x => x.Children)
+                .HasForeignKey(x => x.ParentId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
         });
     }
 }
