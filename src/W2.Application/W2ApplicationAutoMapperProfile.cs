@@ -5,6 +5,9 @@ using System.Linq;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
+using W2.Permissions;
+using W2.Roles;
+using Volo.Abp.Identity;
 
 namespace W2;
 
@@ -50,6 +53,11 @@ public class W2ApplicationAutoMapperProfile : Profile
             .ForMember(d => d.Status, options => options.MapFrom(s => GetMappedStatus(s.WorkflowStatus)));
         CreateMap<W2.WorkflowDefinitions.Settings, SettingsDto>();
         CreateMap<SettingsDto, W2.WorkflowDefinitions.Settings>();
+        CreateMap<W2Permission, PermissionDto>();
+        CreateMap<W2Permission, PermissionDetailDto>()
+            .ForMember(dest => dest.Children, opt => opt.Ignore());
+        CreateMap<IdentityRole, RoleDetailDto>()
+            .ForMember(dest => dest.Permissions, opt => opt.Ignore());
     }
     private int GetMappedStatus(WorkflowStatus workflowStatus)
     {
