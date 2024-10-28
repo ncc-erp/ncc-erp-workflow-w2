@@ -54,5 +54,23 @@ namespace W2.Permissions
                 })
                 .ToList();
         }
+
+        public static List<string> GetPermissionCodes(List<PermissionDetailDto> permissions)
+        {
+            if (permissions == null) return [];
+
+            var permissionCodes = new List<string>();
+
+            foreach (var permission in permissions)
+            {
+                permissionCodes.Add(permission.Code);
+                foreach (var child in permission.Children)
+                {
+                    permissionCodes.Add(child.Code);
+                }
+            }
+
+            return permissionCodes;
+        }
     }
 }

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using W2.Roles;
 using Volo.Abp;
 using Volo.Abp.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace W2.Users
 {
@@ -19,16 +20,19 @@ namespace W2.Users
     [Route("api/app/users")]
     public class UserAppService : W2AppService, IUserAppService
     {
+        private readonly IdentityUserManager _userManager;
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
         private readonly IRepository<W2CustomIdentityRole, Guid> _roleRepository;
         private readonly IRepository<W2Permission, Guid> _permissionRepository;
 
         public UserAppService(
+                IdentityUserManager userManager,
                 IRepository<W2CustomIdentityUser, Guid> userRepository,
                 IRepository<W2CustomIdentityRole, Guid> roleRepository,
                 IRepository<W2Permission, Guid> permissionRepository
             )
         {
+            _userManager = userManager;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _permissionRepository = permissionRepository;
@@ -109,7 +113,7 @@ namespace W2.Users
         }
 
         [HttpPut("{userId}")]
-        public async Task<UserDetailDto> UpdateUserAsync(Guid userId, UpdateUserInput input)
+        public async Task UpdateUserAsync(Guid userId, UpdateUserInput input)
         {
             // Get existing user
             var query = await _userRepository.GetQueryableAsync();
@@ -124,19 +128,27 @@ namespace W2.Users
             }
 
             // Update basic user properties
-            user.SetUsetName(input.UserName);
+            user.SetUserName(input.UserName);
             user.Name = input.Name;
             user.Surname = input.Surname;
             user.SetEmail(input.Email);
             user.SetPhoneNumber(input.PhoneNumber);
             user.SetLockoutEnabled(input.LockoutEnabled);
             user.SetIsActive(input.IsActive);
+            if (!input.Password.IsNullOrEmpty())
+            {
+                (await _userManager.RemovePasswordAsync(user)).CheckErrors();
+                (await _userManager.AddPasswordAsync(user, input.Password)).CheckErrors();
+            }
 
             // Update custom permissions
             var permissions = await _permissionRepository
                .GetListAsync(p => input.CustomPermissionCodes.Contains(p.Code));
-            var permissionHierarchy = W2Permission.BuildPermissionHierarchy(permissions);            
+            var permissionHierarchy = W2Permission.BuildPermissionHierarchy(permissions);
             user.CustomPermissionDtos = permissionHierarchy;
+
+            // Save changes
+            await _userRepository.UpdateAsync(user);
 
             // Clear old roles
             user.UserRoles.Clear();
@@ -148,12 +160,6 @@ namespace W2.Users
             {
                 user.UserRoles.Add(new W2CustomIdentityUserRole(user.Id, role.Id, CurrentTenant.Id));
             }
-
-            // Save changes
-            await _userRepository.UpdateAsync(user);
-
-            // Return updated user
-            return ObjectMapper.Map<W2CustomIdentityUser, UserDetailDto>(user);
         }
 
         private IQueryable<W2CustomIdentityUser> ApplySorting(IQueryable<W2CustomIdentityUser> query, string sorting)

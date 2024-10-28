@@ -14,6 +14,6 @@ namespace W2.Users
         Task<PagedResultDto<UserDto>> GetListAsync(ListUsersInput input);
         Task<List<IdentityRoleDto>> GetUserRolesAsync(Guid userId);
         Task<List<PermissionDetailDto>> GetUserPermissionsAsync(Guid userId);
-        Task<UserDetailDto> UpdateUserAsync(Guid userId, UpdateUserInput input);
+        Task UpdateUserAsync(Guid userId, UpdateUserInput input);
     }
 }

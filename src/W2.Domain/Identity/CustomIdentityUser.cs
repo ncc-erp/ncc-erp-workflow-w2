@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using System.Collections.Generic;
 using W2.Roles;
 using System.Text.Json;
+using Volo.Abp;
 
 namespace W2.Identity
 {
@@ -27,22 +28,24 @@ namespace W2.Identity
         {
         }
 
-        public void SetUsetName(string userName)
+        public virtual void SetUserName(string userName)
         {
+            Check.NotNullOrWhiteSpace(userName, nameof(userName));
             UserName = userName;
         }
 
-        public void SetEmail(string email)
+        public virtual void SetEmail(string email)
         {
+            Check.NotNullOrWhiteSpace(email, nameof(email));
             Email = email;
         }
 
-        public void SetPhoneNumber(string phoneNumber)
+        public virtual void SetPhoneNumber(string phoneNumber)
         {
             PhoneNumber = phoneNumber;
         }
 
-        public void SetLockoutEnabled(bool lockoutEnabled)
+        public virtual void SetLockoutEnabled(bool lockoutEnabled)
         {
             LockoutEnabled = lockoutEnabled;
         }

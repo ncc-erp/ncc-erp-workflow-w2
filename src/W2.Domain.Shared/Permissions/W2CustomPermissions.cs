@@ -27,6 +27,9 @@ public static class W2CustomPermissions
     public const string ViewListUsers = UsersManagement + ".View";
     public const string UpdateUser = UsersManagement + ".Update";
 
+    // Admin
+    public const string AdminManagement = "Admin";
+
     // Settings
     public const string SettingsManagement = "Settings";
     public const string ViewSettings = SettingsManagement + ".View";
