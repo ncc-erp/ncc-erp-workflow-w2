@@ -151,13 +151,34 @@ public class W2DbContext :
         builder.Entity<W2CustomIdentityRole>(b =>
         {
             b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "Roles");
-            b.Property(x => x.Permissions).HasColumnType("json").IsRequired();
+            b.Property(x => x.Permissions)
+                .HasColumnType("jsonb")
+                .HasDefaultValueSql("'[]'")
+                .IsRequired();
         });
 
         builder.Entity<W2CustomIdentityUser>(b =>
         {
             b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "Users");
-            b.Property(x => x.CustomPermissions).HasColumnType("json").IsRequired();
+            b.Property(x => x.CustomPermissions)
+                .HasColumnType("jsonb")
+                .HasDefaultValueSql("'[]'")
+                .IsRequired();
+        });
+
+        builder.Entity<W2CustomIdentityUserRole>(b =>
+        {
+            b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "UserRoles");
+            b.HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<W2Permission>(b =>

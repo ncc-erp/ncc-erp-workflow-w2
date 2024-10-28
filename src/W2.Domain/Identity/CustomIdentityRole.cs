@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Identity;
 using W2.Roles;
@@ -12,6 +12,11 @@ namespace W2.Identity
     {
         [Column(TypeName = "jsonb")]
         public string Permissions { get; protected internal set; }
+        public virtual ICollection<W2CustomIdentityUserRole> UserRoles { get; set; }
+
+        protected W2CustomIdentityRole()
+        {
+        }
 
         public W2CustomIdentityRole(
             Guid id,
@@ -19,6 +24,12 @@ namespace W2.Identity
             Guid? tenantId = null
         ): base (id, name, tenantId)
         {
+        }
+
+        public void SetName(string name)
+        {
+            Name = name;
+            NormalizedName = name.ToUpperInvariant();
         }
 
         [NotMapped]

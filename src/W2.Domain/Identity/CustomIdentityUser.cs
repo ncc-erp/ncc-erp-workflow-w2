@@ -12,11 +12,16 @@ namespace W2.Identity
     {
         [Column(TypeName = "jsonb")]
         public string CustomPermissions { get; protected internal set; }
+        public virtual ICollection<W2CustomIdentityUserRole> UserRoles { get; set; }
+
+        protected W2CustomIdentityUser()
+        {
+        }
 
         public W2CustomIdentityUser(
             Guid id,
             [NotNull] string userName,
-            [NotNull] string email,            
+            [NotNull] string email,
             Guid? tenantId = null
         ) : base(id, userName, email, tenantId)
         {

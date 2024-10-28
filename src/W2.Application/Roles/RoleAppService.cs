@@ -10,6 +10,7 @@ using System.Linq;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using W2.Identity;
+using System.Reflection;
 
 namespace W2.Roles
 {
@@ -39,15 +40,15 @@ namespace W2.Roles
         }
 
         [HttpGet("{id}")]
-        public async Task<RoleDetailDto> GetRoleDetailsAsync(Guid id)
+        public async Task<RoleDetailDto> GetRoleDetailAsync(Guid id)
         {
             var role = await _roleRepository.GetAsync(id)
                 ?? throw new UserFriendlyException($"Role with id {id} not found");
 
-            var roleDetailsDto = ObjectMapper.Map<W2CustomIdentityRole, RoleDetailDto>(role);
-            roleDetailsDto.Permissions = role.PermissionDtos;
+            var roleDetailDto = ObjectMapper.Map<W2CustomIdentityRole, RoleDetailDto>(role);
+            roleDetailDto.Permissions = role.PermissionDtos;
 
-            return roleDetailsDto;
+            return roleDetailDto;
         }
 
         [HttpPost]
@@ -74,10 +75,10 @@ namespace W2.Roles
             await _roleRepository.InsertAsync(role);
 
             // Response
-            var roleDetailsDto = ObjectMapper.Map<W2CustomIdentityRole, RoleDetailDto>(role);
-            roleDetailsDto.Permissions = permissionHierarchy;
+            var roleDetailDto = ObjectMapper.Map<W2CustomIdentityRole, RoleDetailDto>(role);
+            roleDetailDto.Permissions = permissionHierarchy;
 
-            return roleDetailsDto;
+            return roleDetailDto;
         }
 
         [HttpPut("{roleId}")]
@@ -92,18 +93,17 @@ namespace W2.Roles
             var role = await _roleRepository.GetAsync(roleId)
                     ?? throw new UserFriendlyException($"Role with id {roleId} not found");
 
-            // Set up permisisons
+            // Set up permissions
             var permissions = await _permissionRepository
                 .GetListAsync(p => input.PermissionCodes.Contains(p.Code));
             var permissionHierarchy = W2Permission.BuildPermissionHierarchy(permissions);
 
             // Update role
-            if (!string.IsNullOrEmpty(input.Name) && role.Name != input.Name)
-            {
-                role.ChangeName(input.Name);
-                role.PermissionDtos = permissionHierarchy;
-                await _roleRepository.UpdateAsync(role);
-            }
+            role.PermissionDtos = permissionHierarchy;
+            role.SetName(input.Name);
+
+            // Save changes
+            await _roleRepository.UpdateAsync(role);
 
             // Response
             var roleDetailDto = ObjectMapper.Map<W2CustomIdentityRole, RoleDetailDto>(role);
@@ -119,19 +119,70 @@ namespace W2.Roles
             return W2Permission.BuildPermissionHierarchy(allPermissions);
         }
 
-        //[HttpPost("permissions")]
-        //public async Task<IActionResult> CreatePermissionAsync(List<CreatePermissionInput> inputs)
-        //{
-        //    var permissions = inputs.Select(input => new W2Permission(
-        //        input.Name,
-        //        input.Code,
-        //        input.ParentId == Guid.Empty ? null : input.ParentId,
-        //        CurrentTenant.Id
-        //    )).ToList();
+        [HttpPost("all-permissions")]
+        public async Task<List<PermissionDetailDto>> SeedPermissionsAsync()
+        {
+            await _permissionRepository.DeleteAsync(p => true);
 
-        //    await _permissionRepository.InsertManyAsync(permissions);
+            var permissions = new List<W2Permission>();
+            var type = typeof(W2CustomPermissions);
+            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
 
-        //    return new OkObjectResult(permissions);
-        //}
+            var parentPermissions = new Dictionary<string, Guid>();
+            foreach (var field in fields)
+            {
+                if (field.IsLiteral && !field.IsInitOnly)
+                {
+                    var code = field.GetValue(null).ToString();
+                    if (!code.Contains(".")) 
+                    {
+                        var id = Guid.NewGuid();
+                        var permission = new W2Permission(
+                            FormatNameFromVariableName(field.Name),
+                            code,
+                            null,
+                            CurrentTenant.Id
+                        );
+                        permission.SetId(id);
+                        parentPermissions[code] = id;
+                        permissions.Add(permission);
+                    }
+                }
+            }
+
+            foreach (var field in fields)
+            {
+                if (field.IsLiteral && !field.IsInitOnly)
+                {
+                    var code = field.GetValue(null).ToString();
+                    if (code.Contains("."))
+                    {
+                        var parts = code.Split('.');
+                        var parentCode = parts[0];
+                        if (parentPermissions.TryGetValue(parentCode, out var parentId))
+                        {
+                            var permission = new W2Permission(
+                                FormatNameFromVariableName(field.Name),
+                                code,
+                                parentId,
+                                CurrentTenant.Id
+                            );
+                            permission.SetId(Guid.NewGuid());
+                            permissions.Add(permission);
+                        }
+                    }
+                }
+            }
+
+            await _permissionRepository.InsertManyAsync(permissions);
+
+            return await GetPermissionsAsync();
+        }
+
+        private string FormatNameFromVariableName(string variableName)
+        {
+            var words = System.Text.RegularExpressions.Regex.Replace(variableName, "([A-Z])", " $1").Trim().Split(' ');
+            return string.Join(" ", words);
+        }
     }
 }

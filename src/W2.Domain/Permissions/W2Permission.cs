@@ -17,7 +17,7 @@ namespace W2.Permissions
         public virtual W2Permission Parent { get; protected set; }
         public virtual ICollection<W2Permission> Children { get; protected set; }
 
-        public W2Permission(            
+        public W2Permission(
             string name,
             string code,
             Guid? parentId = null,
@@ -28,6 +28,11 @@ namespace W2.Permissions
             Code = code;
             ParentId = parentId;
             TenantId = tenantId;
+        }
+
+        public void SetId(Guid id)
+        {
+            Id = id;
         }
 
         public static List<PermissionDetailDto> BuildPermissionHierarchy(List<W2Permission> permissions)

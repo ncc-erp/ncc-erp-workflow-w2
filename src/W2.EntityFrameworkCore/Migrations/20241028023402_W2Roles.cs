@@ -12,8 +12,9 @@ namespace W2.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "CustomPermissions",
                 table: "AbpUsers",
-                type: "json",
-                nullable: true);
+                type: "jsonb",
+                nullable: true,
+                defaultValueSql: "'[]'");
 
             migrationBuilder.AddColumn<string>(
                 name: "Discriminator",
@@ -21,6 +22,21 @@ namespace W2.Migrations
                 type: "text",
                 nullable: false,
                 defaultValue: "");
+
+            migrationBuilder.Sql(
+                "UPDATE \"AbpUsers\" " +
+                "SET \"Discriminator\" = 'W2CustomIdentityUser'");
+
+            migrationBuilder.AddColumn<string>(
+                name: "Discriminator",
+                table: "AbpUserRoles",
+                type: "text",
+                nullable: false,
+                defaultValue: "");
+
+            migrationBuilder.Sql(
+                "UPDATE \"AbpUserRoles\" " +
+                "SET \"Discriminator\" = 'W2CustomIdentityUserRole'");
 
             migrationBuilder.AddColumn<string>(
                 name: "Discriminator",
@@ -32,8 +48,13 @@ namespace W2.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Permissions",
                 table: "AbpRoles",
-                type: "json",
-                nullable: true);
+                type: "jsonb",
+                nullable: true,
+                defaultValueSql: "'[]'");
+
+            migrationBuilder.Sql(
+                "UPDATE \"AbpRoles\" " +
+                "SET \"Discriminator\" = 'W2CustomIdentityRole'");
 
             migrationBuilder.CreateTable(
                 name: "W2Permissions",
@@ -76,6 +97,10 @@ namespace W2.Migrations
             migrationBuilder.DropColumn(
                 name: "Discriminator",
                 table: "AbpUsers");
+
+            migrationBuilder.DropColumn(
+                name: "Discriminator",
+                table: "AbpUserRoles");
 
             migrationBuilder.DropColumn(
                 name: "Discriminator",

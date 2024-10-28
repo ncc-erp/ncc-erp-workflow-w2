@@ -14,7 +14,7 @@ using W2.EntityFrameworkCore;
 namespace W2.Migrations
 {
     [DbContext(typeof(W2DbContext))]
-    [Migration("20241024093838_W2Roles")]
+    [Migration("20241028023402_W2Roles")]
     partial class W2Roles
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -858,6 +858,10 @@ namespace W2.Migrations
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -867,6 +871,8 @@ namespace W2.Migrations
                     b.HasIndex("RoleId", "UserId");
 
                     b.ToTable("AbpUserRoles", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUserRole");
                 });
 
             modelBuilder.Entity("Volo.Abp.Identity.IdentityUserToken", b =>
@@ -2243,7 +2249,9 @@ namespace W2.Migrations
 
                     b.Property<string>("Permissions")
                         .IsRequired()
-                        .HasColumnType("json");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'");
 
                     b.ToTable("AbpRoles", (string)null);
 
@@ -2256,11 +2264,22 @@ namespace W2.Migrations
 
                     b.Property<string>("CustomPermissions")
                         .IsRequired()
-                        .HasColumnType("json");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'");
 
                     b.ToTable("AbpUsers", (string)null);
 
                     b.HasDiscriminator().HasValue("W2CustomIdentityUser");
+                });
+
+            modelBuilder.Entity("W2.Identity.W2CustomIdentityUserRole", b =>
+                {
+                    b.HasBaseType("Volo.Abp.Identity.IdentityUserRole");
+
+                    b.ToTable("AbpUserRoles", (string)null);
+
+                    b.HasDiscriminator().HasValue("W2CustomIdentityUserRole");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
@@ -2550,6 +2569,25 @@ namespace W2.Migrations
                     b.Navigation("Parent");
                 });
 
+            modelBuilder.Entity("W2.Identity.W2CustomIdentityUserRole", b =>
+                {
+                    b.HasOne("W2.Identity.W2CustomIdentityRole", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("W2.Identity.W2CustomIdentityUser", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>
                 {
                     b.Navigation("Actions");
@@ -2639,6 +2677,16 @@ namespace W2.Migrations
             modelBuilder.Entity("W2.Permissions.W2Permission", b =>
                 {
                     b.Navigation("Children");
+                });
+
+            modelBuilder.Entity("W2.Identity.W2CustomIdentityRole", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("W2.Identity.W2CustomIdentityUser", b =>
+                {
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }
