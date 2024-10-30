@@ -58,7 +58,8 @@ public class W2ApplicationAutoMapperProfile : Profile
         CreateMap<W2Permission, PermissionDto>();
         CreateMap<W2Permission, PermissionDetailDto>()
             .ForMember(dest => dest.Children, opt => opt.Ignore());
-        CreateMap<IdentityRole, RoleDetailDto>()
+        CreateMap<W2CustomIdentityRole, RoleDto>();
+        CreateMap<W2CustomIdentityRole, RoleDetailDto>()
             .ForMember(dest => dest.Permissions, opt => opt.Ignore());
         CreateMap<W2CustomIdentityUser, UserDto>()
             .ForMember(dest => dest.Roles, opt => opt.MapFrom(src =>

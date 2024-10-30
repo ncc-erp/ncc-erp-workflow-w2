@@ -9,7 +9,7 @@ namespace W2.Roles
 {
     public interface IRoleAppService : IApplicationService
     {
-        Task<ListResultDto<IdentityRoleDto>> GetRolesAsync();
+        Task<ListResultDto<RoleDto>> GetRolesAsync();
         Task<RoleDetailDto> GetRoleDetailAsync(Guid id);
         Task<RoleDetailDto> CreateRoleAsync(CreateRoleInput input);
         Task<RoleDetailDto> UpdateRoleAsync(Guid roleId, UpdateRoleInput input);

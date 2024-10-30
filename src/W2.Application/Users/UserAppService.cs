@@ -13,11 +13,13 @@ using W2.Roles;
 using Volo.Abp;
 using Volo.Abp.Identity;
 using Microsoft.AspNetCore.Identity;
+using W2.Authorization.Attributes;
+using W2.Constants;
 
 namespace W2.Users
 {
-    [Authorize]
     [Route("api/app/users")]
+    [RequirePermission(W2ApiPermissions.UsersManagement)]
     public class UserAppService : W2AppService, IUserAppService
     {
         private readonly IdentityUserManager _userManager;
@@ -39,6 +41,7 @@ namespace W2.Users
         }
 
         [HttpGet]
+        [RequirePermission(W2ApiPermissions.ViewListUsers)]
         public async Task<PagedResultDto<UserDto>> GetListAsync(ListUsersInput input)
         {
             // Create query with eager loading of roles

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Identity;
-using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using W2.Permissions;
@@ -11,11 +9,14 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using W2.Identity;
 using System.Reflection;
+using W2.Authorization.Attributes;
+using W2.Constants;
+using Microsoft.EntityFrameworkCore;
 
 namespace W2.Roles
 {
-    [Authorize]
     [Route("api/app/roles")]
+    [RequirePermission(W2ApiPermissions.RolesManagement)]
     public class RoleAppService : W2AppService, IRoleAppService
     {
         private readonly IRepository<W2CustomIdentityRole, Guid> _roleRepository;
@@ -31,15 +32,21 @@ namespace W2.Roles
         }
 
         [HttpGet]
-        public async Task<ListResultDto<IdentityRoleDto>> GetRolesAsync()
+        [RequirePermission(W2ApiPermissions.ViewListRoles)]
+        public async Task<ListResultDto<RoleDto>> GetRolesAsync()
         {
-            var roles = await _roleRepository.GetListAsync();
-            return new ListResultDto<IdentityRoleDto>(
-                ObjectMapper.Map<List<W2CustomIdentityRole>, List<IdentityRoleDto>>(roles)
+            var query = await _roleRepository.GetQueryableAsync();
+            var roles = await query
+                .OrderByDescending(r => r.LastModificationTime)
+                .ToListAsync();
+
+            return new ListResultDto<RoleDto>(
+                ObjectMapper.Map<List<W2CustomIdentityRole>, List<RoleDto>>(roles)
             );
         }
 
         [HttpGet("{id}")]
+        [RequirePermission(W2ApiPermissions.ViewListRoles)]
         public async Task<RoleDetailDto> GetRoleDetailAsync(Guid id)
         {
             var role = await _roleRepository.GetAsync(id)
@@ -52,6 +59,7 @@ namespace W2.Roles
         }
 
         [HttpPost]
+        [RequirePermission(W2ApiPermissions.CreateRole)]
         public async Task<RoleDetailDto> CreateRoleAsync(CreateRoleInput input)
         {
             if (input.PermissionCodes == null || !input.PermissionCodes.Any())
@@ -82,6 +90,7 @@ namespace W2.Roles
         }
 
         [HttpPut("{roleId}")]
+        [RequirePermission(W2ApiPermissions.UpdateRole)]
         public async Task<RoleDetailDto> UpdateRoleAsync(Guid roleId, UpdateRoleInput input)
         {
             if (input.PermissionCodes == null || !input.PermissionCodes.Any())
@@ -100,6 +109,7 @@ namespace W2.Roles
 
             // Update role
             role.PermissionDtos = permissionHierarchy;
+            role.SetLastModificationTime(DateTime.UtcNow);
             role.SetName(input.Name);
 
             // Save changes
@@ -113,6 +123,7 @@ namespace W2.Roles
         }
 
         [HttpGet("permissions")]
+        [RequirePermission(W2ApiPermissions.ViewListRoles)]
         public async Task<List<PermissionDetailDto>> GetPermissionsAsync()
         {
             var allPermissions = await _permissionRepository.GetListAsync();
@@ -125,7 +136,7 @@ namespace W2.Roles
             await _permissionRepository.DeleteAsync(p => true);
 
             var permissions = new List<W2Permission>();
-            var type = typeof(W2CustomPermissions);
+            var type = typeof(W2ApiPermissions);
             var fields = type.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
 
             var parentPermissions = new Dictionary<string, Guid>();

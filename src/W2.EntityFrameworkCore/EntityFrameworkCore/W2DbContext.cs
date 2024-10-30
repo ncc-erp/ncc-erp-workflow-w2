@@ -155,6 +155,13 @@ public class W2DbContext :
                 .HasColumnType("jsonb")
                 .HasDefaultValueSql("'[]'")
                 .IsRequired();
+            b.Property(x => x.CreationTime)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .IsRequired();
+            b.Property(x => x.LastModificationTime)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         builder.Entity<W2CustomIdentityUser>(b =>

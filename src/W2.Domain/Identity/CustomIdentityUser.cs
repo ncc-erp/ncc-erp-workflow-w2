@@ -13,7 +13,7 @@ namespace W2.Identity
     {
         [Column(TypeName = "jsonb")]
         public string CustomPermissions { get; protected internal set; }
-        public virtual ICollection<W2CustomIdentityUserRole> UserRoles { get; set; }
+        public virtual ICollection<W2CustomIdentityUserRole> UserRoles { get; protected set; }
 
         protected W2CustomIdentityUser()
         {

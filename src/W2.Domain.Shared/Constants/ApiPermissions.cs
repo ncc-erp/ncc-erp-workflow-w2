@@ -1,6 +1,6 @@
-namespace W2.Permissions;
+namespace W2.Constants;
 
-public static class W2CustomPermissions
+public static class W2ApiPermissions
 {
     // Workflow Definitions
     public const string WorkflowDefinitionsManagement = "WorkflowDefinitions";
@@ -26,9 +26,6 @@ public static class W2CustomPermissions
     public const string UsersManagement = "Users";
     public const string ViewListUsers = UsersManagement + ".View";
     public const string UpdateUser = UsersManagement + ".Update";
-
-    // Admin
-    public const string AdminManagement = "Admin";
 
     // Settings
     public const string SettingsManagement = "Settings";
