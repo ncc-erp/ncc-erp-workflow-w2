@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 namespace W2.Roles
 {
     [Route("api/app/roles")]
+    //[Authorize]
     [RequirePermission(W2ApiPermissions.RolesManagement)]
     public class RoleAppService : W2AppService, IRoleAppService
     {

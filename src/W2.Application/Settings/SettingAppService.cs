@@ -6,13 +6,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Domain.Values;
 using Volo.Abp.SettingManagement;
+using W2.Authorization.Attributes;
+using W2.Constants;
 using W2.Permissions;
 
 namespace W2.Settings
 {
-    [Authorize]
+    //[Authorize]
+    [RequirePermission(W2ApiPermissions.SettingsManagement)]
     public class SettingAppService : W2AppService, ISettingAppService
     {
         private readonly ISettingManager _settingManager;
@@ -47,6 +49,7 @@ namespace W2.Settings
             await _settingManager.SetForTenantOrGlobalAsync(CurrentTenant.Id, W2Settings.SocialLoginSettingsEnableSocialLogin, input.EnableSocialLogin.ToString());
         }
 
+        [RequirePermission(W2ApiPermissions.ViewListSettings)]
         public async Task<W2SettingDto> GetW2SettingListAsync(string settingCode)
         {
             var w2Setting = await _settingRepository.FirstOrDefaultAsync(setting => setting.Code == settingCode);
@@ -56,6 +59,7 @@ namespace W2.Settings
             return w2settingDto;
         }
 
+        [RequirePermission(W2ApiPermissions.CreateSetting)]
         public async Task<W2SettingDto> CreateNewW2SettingValueAsync(CreateNewW2SettingValueDto input)
         {
             var setting = await _settingRepository.FirstOrDefaultAsync(u => u.Code == input.SettingCode);
@@ -109,6 +113,8 @@ namespace W2.Settings
                 return w2settingDto;
             }
         }
+
+        [RequirePermission(W2ApiPermissions.UpdateSetting)]
         public async Task<W2SettingDto> UpdateW2SettingValueAsync(CreateNewW2SettingValueDto input)
         {
             var setting = await _settingRepository.FirstOrDefaultAsync(u => u.Code == input.SettingCode);
@@ -139,6 +145,7 @@ namespace W2.Settings
             
         }
 
+        [RequirePermission(W2ApiPermissions.DeleteSetting)]
         public async Task<bool> DeleteW2SettingValueAsync(CreateNewW2SettingValueDto input)
         {
             var setting = await _settingRepository.FirstOrDefaultAsync(u => u.Code == input.SettingCode);

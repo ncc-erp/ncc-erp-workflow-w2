@@ -2,7 +2,6 @@
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
-using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,14 +9,15 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Users;
+using W2.Authorization.Attributes;
+using W2.Constants;
 using W2.Identity;
-using W2.Permissions;
 using W2.Specifications;
 
 namespace W2.WorkflowDefinitions
 {
-    [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitions)]
+    //[Authorize(W2Permissions.WorkflowManagementWorkflowDefinitions)]
+    [RequirePermission(W2ApiPermissions.WorkflowDefinitionsManagement)]
     public class WorkflowDefinitionAppService : W2AppService, IWorkflowDefinitionAppService
     {
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
@@ -33,6 +33,8 @@ namespace W2.WorkflowDefinitions
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _workflowPublisher = workflowPublisher;
         }
+
+        [RequirePermission(W2ApiPermissions.ViewListWorkflowDefinitions)]
         public async Task<PagedResultDto<WorkflowDefinitionSummaryDto>> ListAllAsync(bool? isPublish)
         {
             var specification = Specification<WorkflowDefinition>.Identity;
@@ -80,6 +82,7 @@ namespace W2.WorkflowDefinitions
             return new PagedResultDto<WorkflowDefinitionSummaryDto>(workflowDefinitionSummaries.Count, workflowDefinitionSummaries);
         }
 
+        [RequirePermission(W2ApiPermissions.ViewListWorkflowDefinitions)]
         public async Task<WorkflowDefinitionSummaryDto> GetByDefinitionIdAsync(string definitionId)
         {
             var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { definitionId });
@@ -100,7 +103,8 @@ namespace W2.WorkflowDefinitions
             return workflowDefinitionDto;
         }
 
-        [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        //[Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        [RequirePermission(W2ApiPermissions.DefineInputWorkflowDefinition)]
         public async Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)
         {
             if (input.Id == default)
@@ -117,7 +121,8 @@ namespace W2.WorkflowDefinitions
             }
         }
 
-        [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        //[Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        [RequirePermission(W2ApiPermissions.CreateWorkflowDefinition)]
         public async Task<string> CreateWorkflowDefinitionAsync(CreateWorkflowDefinitionDto input)
         {
             var workflowDefinition = ObjectMapper.Map<CreateWorkflowDefinitionDto, WorkflowDefinition>(input);
@@ -127,11 +132,14 @@ namespace W2.WorkflowDefinitions
             return workflowDraft.DefinitionId;
         }
 
-        [Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        //[Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
+        [RequirePermission(W2ApiPermissions.DeleteWorkflowDefinition)]
         public async Task DeleteAsync(string id)
         {
             await _workflowPublisher.DeleteAsync(id, VersionOptions.All);
         }
+
+        [RequirePermission(W2ApiPermissions.UpdateWorkflowDefinitionStatus)]
         public async Task<object> ChangeWorkflowStatusAsync(UpdateWorkflowPublishStatusDto input)
         {
             var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { input.WorkflowId });

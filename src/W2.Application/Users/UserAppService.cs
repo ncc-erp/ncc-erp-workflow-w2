@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,6 +18,7 @@ using W2.Constants;
 namespace W2.Users
 {
     [Route("api/app/users")]
+    //[Authorize]
     [RequirePermission(W2ApiPermissions.UsersManagement)]
     public class UserAppService : W2AppService, IUserAppService
     {
@@ -82,6 +82,7 @@ namespace W2.Users
         }
 
         [HttpGet("{userId}/roles")]
+        [RequirePermission(W2ApiPermissions.ViewListUsers)]
         public async Task<List<IdentityRoleDto>> GetUserRolesAsync(Guid userId)
         {
             var query = await _userRepository.GetQueryableAsync();
@@ -101,6 +102,7 @@ namespace W2.Users
         }
 
         [HttpGet("{userId}/permissions")]
+        [RequirePermission(W2ApiPermissions.ViewListUsers)]
         public async Task<List<PermissionDetailDto>> GetUserPermissionsAsync(Guid userId)
         {
             var query = await _userRepository.GetQueryableAsync();
@@ -116,6 +118,7 @@ namespace W2.Users
         }
 
         [HttpPut("{userId}")]
+        [RequirePermission(W2ApiPermissions.UpdateUser)]
         public async Task UpdateUserAsync(Guid userId, UpdateUserInput input)
         {
             // Get existing user

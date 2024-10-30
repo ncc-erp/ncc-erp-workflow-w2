@@ -9,6 +9,8 @@ public static class W2ApiPermissions
     // public const string ImportWorkflowDefinition = WorkflowDefinitionsManagement + ".Import";
     public const string UpdateWorkflowDefinitionStatus = WorkflowDefinitionsManagement + ".UpdateStatus";
     public const string DeleteWorkflowDefinition = WorkflowDefinitionsManagement + ".Delete";
+    public const string DefineInputWorkflowDefinition = WorkflowDefinitionsManagement + ".DefineInput";
+    public const string EditWorkflowDefinition = WorkflowDefinitionsManagement + ".Edit";
 
     // Workflow Instances
     public const string WorkflowInstancesManagement = "WorkflowInstances";
@@ -29,9 +31,10 @@ public static class W2ApiPermissions
 
     // Settings
     public const string SettingsManagement = "Settings";
-    public const string ViewSettings = SettingsManagement + ".View";
-    public const string CreateSettings = SettingsManagement + ".Create";
-    public const string UpdateSettings = SettingsManagement + ".Update";
+    public const string ViewListSettings = SettingsManagement + ".View";
+    public const string CreateSetting = SettingsManagement + ".Create";
+    public const string UpdateSetting = SettingsManagement + ".Update";
+    public const string DeleteSetting = SettingsManagement + ".Delete";
 
     // Roles
     public const string RolesManagement = "Roles";

@@ -1,23 +1,15 @@
 ﻿using Elsa;
-using Elsa.Activities.Http.Events;
-using Elsa.Activities.Signaling.Models;
-using Elsa.Activities.Signaling.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Namotion.Reflection;
-using NetBox.Extensions;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -29,23 +21,22 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Emailing;
 using Volo.Abp.Identity;
-using Volo.Abp.TextTemplating;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
+using W2.Authorization.Attributes;
+using W2.Constants;
 using W2.ExternalResources;
-using W2.Permissions;
 using W2.Specifications;
 using W2.TaskActions;
 using W2.Tasks;
 using W2.Utils;
 using W2.WorkflowDefinitions;
-using static IdentityServer4.Models.IdentityResources;
 
 namespace W2.WorkflowInstances
 {
-    [Authorize(W2Permissions.WorkflowManagementWorkflowInstances)]
+    //[Authorize(W2Permissions.WorkflowManagementWorkflowInstances)]
+    [RequirePermission(W2ApiPermissions.WorkflowInstancesManagement)]
     public class WorkflowInstanceAppService : W2AppService, IWorkflowInstanceAppService
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
@@ -107,6 +98,7 @@ namespace W2.WorkflowInstances
             _externalResourceAppService = externalResourceAppService;
         }
 
+        [RequirePermission(W2ApiPermissions.CancelWorkflowInstance)]
         public async Task<string> CancelAsync(string id)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
@@ -165,7 +157,8 @@ namespace W2.WorkflowInstances
             return "Cancel Request workflow successful";
         }
 
-        [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
+        //[Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
+        [RequirePermission(W2ApiPermissions.CreateWorkflowInstance)]
         public async Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
         {
             var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(input.WorkflowDefinitionId, tenantId: CurrentTenantStrId);
@@ -570,7 +563,7 @@ namespace W2.WorkflowInstances
             return new PagedResultDto<WFHDto>(totalCount, sortedList);
         }
 
-
+        [RequirePermission(W2ApiPermissions.ViewListWorkflowInstances)]
         public async Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input)
         {
             var specialStatus = new string[] { "approved", "rejected" };
