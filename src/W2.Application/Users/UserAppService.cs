@@ -8,7 +8,6 @@ using W2.Permissions;
 using Volo.Abp.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
-using W2.Roles;
 using Volo.Abp;
 using Volo.Abp.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -103,7 +102,7 @@ namespace W2.Users
 
         [HttpGet("{userId}/permissions")]
         [RequirePermission(W2ApiPermissions.ViewListUsers)]
-        public async Task<List<PermissionDetailDto>> GetUserPermissionsAsync(Guid userId)
+        public async Task<UserPermissionsDto> GetUserPermissionsAsync(Guid userId)
         {
             var query = await _userRepository.GetQueryableAsync();
             var user = await query
@@ -114,7 +113,10 @@ namespace W2.Users
                 throw new UserFriendlyException($"Could not find the user with id: {userId}");
             }
 
-            return user.CustomPermissionDtos;
+            return new UserPermissionsDto
+            {
+                Permissions = user.CustomPermissionDtos
+            };
         }
 
         [HttpPut("{userId}")]
