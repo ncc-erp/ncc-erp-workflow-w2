@@ -9,5 +9,6 @@ namespace W2.WorkflowDefinitions
         public string Name { get; set; }
         public string DisplayName { get; set; }
         public string Tag { get; set; }
+        public WorkflowCustomInputDefinitionDto workflowCreateData { get; set; }
     }
 }

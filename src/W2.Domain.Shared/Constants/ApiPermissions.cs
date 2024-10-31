@@ -6,7 +6,7 @@ public static class W2ApiPermissions
     public const string WorkflowDefinitionsManagement = "WorkflowDefinitions";
     public const string ViewListWorkflowDefinitions = WorkflowDefinitionsManagement + ".View";
     public const string CreateWorkflowDefinition = WorkflowDefinitionsManagement + ".Create";
-    // public const string ImportWorkflowDefinition = WorkflowDefinitionsManagement + ".Import";
+    public const string ImportWorkflowDefinition = WorkflowDefinitionsManagement + ".Import";
     public const string UpdateWorkflowDefinitionStatus = WorkflowDefinitionsManagement + ".UpdateStatus";
     public const string DeleteWorkflowDefinition = WorkflowDefinitionsManagement + ".Delete";
     public const string DefineInputWorkflowDefinition = WorkflowDefinitionsManagement + ".DefineInput";

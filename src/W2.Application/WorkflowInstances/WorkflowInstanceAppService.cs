@@ -27,6 +27,7 @@ using Volo.Abp.Users;
 using W2.Authorization.Attributes;
 using W2.Constants;
 using W2.ExternalResources;
+using W2.Permissions;
 using W2.Specifications;
 using W2.TaskActions;
 using W2.Tasks;
@@ -156,10 +157,10 @@ namespace W2.WorkflowInstances
 
             return "Cancel Request workflow successful";
         }
-
+                
         //[Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
         [RequirePermission(W2ApiPermissions.CreateWorkflowInstance)]
-        public async Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
+        public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
         {
             var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(input.WorkflowDefinitionId, tenantId: CurrentTenantStrId);
 
@@ -173,6 +174,7 @@ namespace W2.WorkflowInstances
             var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
 
             var instance = executionResult.WorkflowInstance;
+            var workflowInstanceStarterResponse = new WorkflowInstanceStarter();
             using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
             {
                 var workflowInstanceStarter = new WorkflowInstanceStarter
@@ -183,13 +185,13 @@ namespace W2.WorkflowInstances
                     Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
                 };
 
-                await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+                workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
                 await uow.CompleteAsync();
 
                 _logger.LogInformation("Saved changes to database");
             }
 
-            return instance.Id;
+            return workflowInstanceStarterResponse;
         }
 
         [AllowAnonymous]
@@ -989,6 +991,7 @@ namespace W2.WorkflowInstances
             return posts;
         }
 
+        [RequirePermission(W2ApiPermissions.ViewListWorkflowInstances)]
         public async Task<WorkflowInstanceDetailDto> GetDetailByIdAsync(string id)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);

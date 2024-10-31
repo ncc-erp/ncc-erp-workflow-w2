@@ -13,5 +13,6 @@ namespace W2.WorkflowDefinitions
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public WorkflowCustomInputDefinitionDto InputDefinition { get; set; }
+        public string DefineJson { get; set;}
     }
 }
