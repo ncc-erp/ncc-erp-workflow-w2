@@ -1,18 +1,15 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using W2.Identity;
-using W2.Roles;
-using Volo.Abp.Identity;
 
 namespace W2.Users
 {
     public interface IUserAppService : IApplicationService
     {
         Task<PagedResultDto<UserDto>> GetListAsync(ListUsersInput input);
-        Task<List<IdentityRoleDto>> GetUserRolesAsync(Guid userId);
+        Task<UserRolesDto> GetUserRolesAsync(Guid userId);
         Task<UserPermissionsDto> GetUserPermissionsAsync(Guid userId);
         Task UpdateUserAsync(Guid userId, UpdateUserInput input);
     }

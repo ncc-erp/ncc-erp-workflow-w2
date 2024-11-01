@@ -18,7 +18,6 @@ namespace W2.Roles
 {
     [Route("api/app/roles")]
     //[Authorize]
-    [RequirePermission(W2ApiPermissions.RolesManagement)]
     public class RoleAppService : W2AppService, IRoleAppService
     {
         private readonly IRepository<W2CustomIdentityRole, Guid> _roleRepository;
@@ -125,7 +124,7 @@ namespace W2.Roles
         }
 
         [HttpGet("permissions")]
-        [RequirePermission(W2ApiPermissions.ViewListRoles)]
+        [AllowAnonymous]
         public async Task<List<PermissionDetailDto>> GetPermissionsAsync()
         {
             var allPermissions = await _permissionRepository.GetListAsync();
@@ -133,6 +132,7 @@ namespace W2.Roles
         }
 
         [HttpPost("all-permissions")]
+        [RequirePermission(W2ApiPermissions.RolesManagement)]
         public async Task<List<PermissionDetailDto>> SeedPermissionsAsync()
         {
             await _permissionRepository.DeleteAsync(p => true);

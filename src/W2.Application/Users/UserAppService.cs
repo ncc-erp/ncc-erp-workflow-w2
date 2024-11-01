@@ -13,6 +13,7 @@ using Volo.Abp.Identity;
 using Microsoft.AspNetCore.Identity;
 using W2.Authorization.Attributes;
 using W2.Constants;
+using W2.Roles;
 
 namespace W2.Users
 {
@@ -82,7 +83,7 @@ namespace W2.Users
 
         [HttpGet("{userId}/roles")]
         [RequirePermission(W2ApiPermissions.ViewListUsers)]
-        public async Task<List<IdentityRoleDto>> GetUserRolesAsync(Guid userId)
+        public async Task<UserRolesDto> GetUserRolesAsync(Guid userId)
         {
             var query = await _userRepository.GetQueryableAsync();
             var user = await query
@@ -95,9 +96,14 @@ namespace W2.Users
                 throw new UserFriendlyException($"Could not find the user with id: {userId}");
             }
 
-            return user.UserRoles.Select(
-                ur => ObjectMapper.Map<W2CustomIdentityRole, IdentityRoleDto>(ur.Role)
+            var rolesDto = user.UserRoles.Select(
+                ur => ObjectMapper.Map<W2CustomIdentityRole, RoleDto>(ur.Role)
             ).ToList();
+
+            return new UserRolesDto
+            {
+                Items = rolesDto
+            };
         }
 
         [HttpGet("{userId}/permissions")]
