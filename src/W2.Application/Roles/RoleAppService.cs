@@ -12,6 +12,7 @@ using System.Reflection;
 using W2.Authorization.Attributes;
 using W2.Constants;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace W2.Roles
 {
@@ -33,7 +34,7 @@ namespace W2.Roles
         }
 
         [HttpGet]
-        [RequirePermission(W2ApiPermissions.ViewListRoles)]
+        [AllowAnonymous]
         public async Task<ListResultDto<RoleDto>> GetRolesAsync()
         {
             var query = await _roleRepository.GetQueryableAsync();
