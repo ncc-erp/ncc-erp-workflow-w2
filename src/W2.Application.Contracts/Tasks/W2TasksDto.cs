@@ -27,6 +27,7 @@ namespace W2.Tasks
         public string AuthorName { get; set; }
         public string UpdatedBy { get; set; }
         public SettingsDto Settings { get; set; }
+        public string StartDay { get; set; }
 
     }
 }
