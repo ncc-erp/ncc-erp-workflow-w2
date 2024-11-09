@@ -20,12 +20,11 @@ using Newtonsoft.Json;
 using Volo.Abp.Identity;
 using W2.TaskEmail;
 using W2.TaskActions;
-using System.Collections;
-using Elsa.Models;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 using W2.Utils;
 using System.Threading;
+using W2.Scripting;
 
 namespace W2.Tasks
 {
@@ -249,13 +248,10 @@ namespace W2.Tasks
 
             var query = from task in tasks
                         join user in users on task.Author equals user.Id
-                        join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
-                        join action in taskAction on new { TaskID = task.Id.ToString() } equals new { TaskID = action.TaskId } into actionGroup
-                        let emailList = (
-                            from email in taskEmail
-                            where email.TaskId == task.Id.ToString()
-                            select email.Email
-                        ).ToList()
+                        join emailGroup in taskEmail on task.Id.ToString() equals emailGroup.TaskId into groupedEmails
+                        join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
+                        from email in groupedEmails
+                        let emailList = groupedEmails.Select(e => e.Email).ToList()
                         let actionList = (
                             from action in actionGroup.DefaultIfEmpty()
                             select action != null ? new TaskActionsDto
@@ -264,6 +260,7 @@ namespace W2.Tasks
                                 Status = action.Status
                             } : null
                         ).OrderBy(action => action?.OtherActionSignal).ToList()
+                        where groupedEmails.Any()
                         select new
                         {
                             W2TaskEmail = email,
@@ -273,7 +270,7 @@ namespace W2.Tasks
                             OtherActionSignals = actionList.All(a => a != null) ? actionList : null
                         };
 
-
+         
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
@@ -337,7 +334,7 @@ namespace W2.Tasks
                     Status = x.W2task.Status,
                     WorkflowDefinitionId = x.W2task.WorkflowDefinitionId,
                     WorkflowInstanceId = x.W2task.WorkflowInstanceId,
-                    Settings = new SettingsDto { Color = "#aabbcc" }
+                    Settings = new SettingsDto { Color = "#aabbcc", TitleTemplate = "" }
                 })
                 .ToList();
             // todo refactor later 
@@ -348,7 +345,7 @@ namespace W2.Tasks
             var listWorkflowInstanceId = requestTasks.Select(x => x.WorkflowInstanceId).ToList();
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
-                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
             var allCustomDefine = (await _instanceStarterRepository.GetQueryableAsync())
                 .Where(i => listWorkflowInstanceId.Contains(i.WorkflowInstanceId))
                 .ToDictionary(x => x.WorkflowInstanceId, x => x);
@@ -364,8 +361,8 @@ namespace W2.Tasks
                     {
                         { "RequestUser", item.AuthorName }
                     };
-                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
-                    item.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled?.Settings?.TitleTemplate ?? "", InputClone);
+                    item.Settings.TitleTemplate = title;
                     item.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == item.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
                 }
             }
@@ -412,7 +409,7 @@ namespace W2.Tasks
             // get all defines
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => i.WorkflowDefinitionId == taskDto.WorkflowDefinitionId)
-                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
             var customInput = (await _instanceStarterRepository.GetQueryableAsync())
                 .Where(i => i.WorkflowInstanceId == taskDto.WorkflowInstanceId).FirstOrDefault();
 
@@ -424,8 +421,8 @@ namespace W2.Tasks
                     {
                         { "RequestUser", taskDto.AuthorName }
                     };
-                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
-                taskDto.Title = title.IsNullOrEmpty() ? customInput.Input.GetItem(titleFiled.Name) : title;
+                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings.TitleTemplate, InputClone);
+                taskDto.Title = title;
             }
 
             var taskDetailDto = new TaskDetailDto
@@ -501,6 +498,34 @@ namespace W2.Tasks
             );
 
             return dynamicData;
+        }
+
+        [RemoteService(IsEnabled = false)]
+        public async Task<List<DynamicDataDto>> GetDynamicRawData(TaskDynamicDataInput input)
+        {
+            List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
+            List<DynamicDataDto> dynamicDataList = new List<DynamicDataDto>();
+
+            foreach (var task in tasks)
+            {
+                var dynamicActionDataJson = task.DynamicActionData;
+
+                if (dynamicActionDataJson.IsNullOrEmpty())
+                {
+                    continue;
+                }
+
+                try
+                {
+                    dynamicDataList.Add(new DynamicDataDto { DynamicDataList = JsonConvert.DeserializeObject<List<DynamicData>>(dynamicActionDataJson), Description = task.Description });
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+
+            return dynamicDataList;
         }
 
         private void UpdateDynamicData(Dictionary<string, string> dynamicData, List<Dictionary<string, object>> data)

@@ -166,7 +166,7 @@ namespace W2.WorkflowInstances
         }
 
         [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
-        public async Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
+        public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
         {
             var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(input.WorkflowDefinitionId, tenantId: CurrentTenantStrId);
 
@@ -180,6 +180,7 @@ namespace W2.WorkflowInstances
             var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, new WorkflowInput(httpRequestModel));
 
             var instance = executionResult.WorkflowInstance;
+            var workflowInstanceStarterResponse = new WorkflowInstanceStarter();
             using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
             {
                 var workflowInstanceStarter = new WorkflowInstanceStarter
@@ -190,13 +191,13 @@ namespace W2.WorkflowInstances
                     Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(JsonConvert.SerializeObject(input.Input))
                 };
 
-                await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+                workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
                 await uow.CompleteAsync();
 
                 _logger.LogInformation("Saved changes to database");
             }
 
-            return instance.Id;
+            return workflowInstanceStarterResponse;
         }
 
         [AllowAnonymous]
@@ -726,7 +727,7 @@ namespace W2.WorkflowInstances
 
             var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
                 .Where(i => listDefineIds.Contains(i.WorkflowDefinitionId))
-                .ToDictionary(x => x.WorkflowDefinitionId, x => x.PropertyDefinitions.Where(p => p.IsTitle).FirstOrDefault());
+                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
 
             foreach (var res in totalResults)
             {
@@ -757,8 +758,9 @@ namespace W2.WorkflowInstances
                 workflowInstanceDto.CurrentStates = new List<string>();
 
                 workflowInstanceDto.Status = res.instanceStarter.Status.ToString();
-                workflowInstanceDto.Settings = new SettingsDto { Color = "#aabbcc" };
+                workflowInstanceDto.Settings = new SettingsDto { Color = "#aabbcc", TitleTemplate = "" };
                 workflowInstanceDto.Settings.Color = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId)?.Settings?.Color ?? "#aabbcc";
+                workflowInstanceDto.Settings.TitleTemplate = inputDefinitions.FirstOrDefault(i => i.WorkflowDefinitionId == workflowInstanceDto.WorkflowDefinitionId)?.Settings?.TitleTemplate ?? "";
                 //if (instance.WorkflowStatus == WorkflowStatus.Finished)
                 //{
                 //    var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
@@ -797,8 +799,8 @@ namespace W2.WorkflowInstances
                     {
                         { "RequestUser", workflowInstanceDto.UserRequestName }
                     };                                                                                          
-                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.TitleTemplate, InputClone);
-                    workflowInstanceDto.ShortTitle = title.IsNullOrEmpty() ? workflowInstanceStarter.Input.GetItem(titleFiled.Name) : title;
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings?.TitleTemplate ?? "", InputClone);
+                    workflowInstanceDto.ShortTitle = title;
                     //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
                 }
                 foreach (var blockingActitvity in instance.BlockingActivities)

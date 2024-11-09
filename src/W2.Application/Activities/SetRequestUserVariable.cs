@@ -2,7 +2,6 @@
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Humanizer;
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -11,6 +10,8 @@ using Volo.Abp.Users;
 using W2.ExternalResources;
 using W2.Permissions;
 using W2.Scripting;
+using Volo.Abp.Domain.Repositories;
+using W2.Settings;
 
 namespace W2.Activities
 {
@@ -24,14 +25,17 @@ namespace W2.Activities
         private readonly ICurrentUser _currentUser;
         private readonly IProjectClientApi _projectClientApi;
         private readonly IExternalResourceAppService _externalResourceAppService;
+        private readonly IRepository<W2Setting, Guid> _settingRepository;
 
         public SetRequestUserVariable(ICurrentUser currentUser,
             IProjectClientApi projectClientApi,
-            IExternalResourceAppService externalResourceAppService)
+            IExternalResourceAppService externalResourceAppService,
+            IRepository<W2Setting, Guid> settingRepository)
         {
             _currentUser = currentUser;
             _projectClientApi = projectClientApi;
             _externalResourceAppService = externalResourceAppService;
+            _settingRepository = settingRepository;
         }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -49,6 +53,8 @@ namespace W2.Activities
                     if (bodyProperty != null)
                     {
                         var instanceInput = bodyProperty.GetValue(context.Input);
+
+                        context.SetVariable("Request", instanceInput);
 
                         if (instanceInput is IDictionary<string, string> valueDictionary && valueDictionary.ContainsKey("Staff"))
                         {
@@ -73,6 +79,16 @@ namespace W2.Activities
             {
                 project = userProjectsResult.Result.First();
             }
+
+            var w2Setting = await _settingRepository.GetListAsync();
+            var emailDict = new Dictionary<string, List<string>>();
+
+            w2Setting.ForEach(setting => {
+                var settingValue = setting.ValueObject;
+                var emailArr = settingValue.items.Select(item => item.email).ToList();
+                emailDict[setting.Code.ToString()] = emailArr;
+            });
+
             var requestUser = new RequestUser
             {
                 Id = _currentUser.Id,
@@ -86,8 +102,21 @@ namespace W2.Activities
                 ProjectCode = project?.Code,
                 PM = project?.PM?.EmailAddress
             };
+
+            foreach (var emailGroup in emailDict)
+            {
+                var propertyName = $"{emailGroup.Key}Emails";
+                var property = requestUser.GetType().GetProperty(propertyName);
+
+                if (property != null && property.CanWrite)
+                {
+                    property.SetValue(requestUser, emailGroup.Value);
+                }
+            }
+
             context.SetVariable(nameof(RequestUser), requestUser);
-            return Done();
+
+            return Done(); 
         }
     }
 }

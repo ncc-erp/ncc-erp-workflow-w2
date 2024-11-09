@@ -8,7 +8,7 @@ namespace W2.WorkflowInstances
 {
     public interface IWorkflowInstanceAppService : IApplicationService
     {
-        Task<string> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input);
+        Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input);
         Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input);
         Task<string> CancelAsync(string id);
         Task<WorkflowInstanceDto> GetByIdAsync(string id);

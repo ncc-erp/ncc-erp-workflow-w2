@@ -13,9 +13,11 @@ sed "s/DB_PORT/$DB_PORT/g" -i appsettings.json
 sed "s/DB_USER/$DB_USER/g" -i appsettings.json
 sed "s/PASSPHRASE/$PASSPHRASE/g" -i appsettings.json
 sed "s/SES_HOST/$SES_HOST/g" -i appsettings.json
+sed "s/SES_PORT/$SES_PORT/g" -i appsettings.json
 sed "s/SES_SENDER/$SES_SENDER/g" -i appsettings.json
 sed "s/SES_USER/$SES_USER/g" -i appsettings.json
 sed "s/SES_PASS/$SES_PASS/g" -i appsettings.json
+sed "s/SES_REQ_CRE/$SES_REQ_CRE/g" -i appsettings.json
 sed "s/GG_CLIENT/$GG_CLIENT/g" -i appsettings.json
 sed "s/GG_SECRET/$GG_SECRET/g" -i appsettings.json
 sed "s/TALENT_DF/$TALENT_DF/g" -i appsettings.json

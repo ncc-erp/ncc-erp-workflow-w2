@@ -13,7 +13,7 @@
 <form method="post" asp-page="/WorkflowDefinitions/NewWorkflowInstanceModal"
     data-check-form-on-close="false"
     onsubmit="return validate()">
-    <abp-modal size="Large">
+    @* <abp-modal size="Large">
         <abp-modal-header title="@Model.WorkflowDefinitionSummaryDto.DisplayName"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="WorkflowDefinitionId" type="hidden" />
@@ -145,7 +145,7 @@
             <abp-validation-summary></abp-validation-summary>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel|AbpModalButtons.Save)"></abp-modal-footer>
-    </abp-modal>
+    </abp-modal> *@
 </form>
 
 <script type="text/javascript">
