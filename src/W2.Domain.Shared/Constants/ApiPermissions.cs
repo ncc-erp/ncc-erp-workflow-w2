@@ -15,12 +15,14 @@ public static class W2ApiPermissions
     // Workflow Instances
     public const string WorkflowInstancesManagement = "WorkflowInstances";
     public const string ViewListWorkflowInstances = WorkflowInstancesManagement + ".View";
+    public const string ViewAllWorkflowInstances = WorkflowInstancesManagement + ".ViewAll";
     public const string CreateWorkflowInstance = WorkflowInstancesManagement + ".Create";
     public const string CancelWorkflowInstance = WorkflowInstancesManagement + ".Cancel";
 
     // Tasks
     public const string TasksManagement = "Tasks";
     public const string ViewListTasks = TasksManagement + ".View";
+    public const string ViewAllTasks = TasksManagement + ".ViewAll";
     public const string UpdateTaskStatus = TasksManagement + ".UpdateStatus";
     public const string AssignTask = TasksManagement + ".Assign";
 
