@@ -13,6 +13,7 @@ using W2.Authorization.Attributes;
 using W2.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using W2.Users;
 
 namespace W2.Roles
 {
@@ -50,11 +51,19 @@ namespace W2.Roles
         [RequirePermission(W2ApiPermissions.ViewListRoles)]
         public async Task<RoleDetailDto> GetRoleDetailAsync(Guid id)
         {
-            var role = await _roleRepository.GetAsync(id)
+            var query = await _roleRepository.GetQueryableAsync();
+            var role = await query.Include(r => r.UserRoles)
+                .ThenInclude(ur => ur.User)
+                .FirstOrDefaultAsync(r => r.Id == id)
                 ?? throw new UserFriendlyException($"Role with id {id} not found");
 
             var roleDetailDto = ObjectMapper.Map<W2CustomIdentityRole, RoleDetailDto>(role);
             roleDetailDto.Permissions = role.PermissionDtos;
+
+            // Map users from UserRoles
+            roleDetailDto.Users = role.UserRoles
+                .Select(ur => ObjectMapper.Map<W2CustomIdentityUser, UserDto>(ur.User))
+                .ToList();
 
             return roleDetailDto;
         }
@@ -197,5 +206,16 @@ namespace W2.Roles
             var words = System.Text.RegularExpressions.Regex.Replace(variableName, "([A-Z])", " $1").Trim().Split(' ');
             return string.Join(" ", words);
         }
+
+        [HttpDelete("{roleId}")]
+        public async Task DeleteAsync(Guid roleId)
+        {
+            // Lấy thông tin role
+            var role = await _roleRepository.GetAsync(roleId)
+                ?? throw new UserFriendlyException($"Role with id {roleId} not found");
+            // Xóa role
+            await _roleRepository.DeleteAsync(role);
+        }
+
     }
 }
