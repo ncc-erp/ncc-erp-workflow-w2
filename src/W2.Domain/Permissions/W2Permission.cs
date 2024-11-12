@@ -57,7 +57,7 @@ namespace W2.Permissions
 
         public static List<string> GetPermissionCodes(List<PermissionDetailDto> permissions)
         {
-            if (permissions == null) return [];
+            if (permissions == null) return new List<string>();
 
             var permissionCodes = new List<string>();
 
