@@ -83,21 +83,6 @@ namespace W2.Roles
             return new StatusCodeResult(204);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         [HttpPost]
         [RequirePermission(W2ApiPermissions.CreateRole)]
         public async Task<RoleDetailDto> CreateRoleAsync(CreateRoleInput input)
