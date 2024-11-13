@@ -59,6 +59,45 @@ namespace W2.Roles
             return roleDetailDto;
         }
 
+        [HttpDelete("{roleId}/users/{userId}")]
+        public async Task<IActionResult> RemoveUserFromRoleAsync(Guid roleId, Guid userId)
+        {
+            var dbContext = await _roleRepository.GetDbContextAsync();
+
+            var role = await dbContext.Set<W2CustomIdentityRole>()
+                .Include(r => r.UserRoles)
+                .FirstOrDefaultAsync(r => r.Id == roleId)
+                ?? throw new UserFriendlyException($"Role with id {roleId} not found");
+
+            var userRole = role.UserRoles.FirstOrDefault(ur => ur.UserId == userId);
+
+            if (userRole == null)
+            {
+                throw new UserFriendlyException($"User with id {userId} not found in role with id {roleId}");
+            }
+
+            role.UserRoles.Remove(userRole);
+            dbContext.Update(role);
+            await dbContext.SaveChangesAsync();
+
+            return new StatusCodeResult(204);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         [HttpPost]
         [RequirePermission(W2ApiPermissions.CreateRole)]
         public async Task<RoleDetailDto> CreateRoleAsync(CreateRoleInput input)
