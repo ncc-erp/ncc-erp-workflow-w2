@@ -52,7 +52,6 @@ namespace W2.Users
             // Apply role filter
             if (input.Role == "empty")
             {
-
                 query = query.Where(u => !u.UserRoles.Any());
             }
             else if (!string.IsNullOrWhiteSpace(input.Role))
