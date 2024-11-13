@@ -50,7 +50,12 @@ namespace W2.Users
                 .ThenInclude(ur => ur.Role);
 
             // Apply role filter
-            if (!string.IsNullOrWhiteSpace(input.Role))
+            if (input.Role == "empty")
+            {
+
+                query = query.Where(u => !u.UserRoles.Any());
+            }
+            else if (!string.IsNullOrWhiteSpace(input.Role))
             {
                 query = query.Where(u => u.UserRoles.Any(ur => ur.Role.Name == input.Role));
             }
