@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
+using W2.Komu;
 using W2.Localization;
 using W2.Signals;
 using W2.Tasks;
@@ -32,8 +33,9 @@ namespace W2.Activities
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
+            IKomuService komuService,
             IContentSerializer contentSerializer)
-            : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
+            : base(smtpService, options, httpClientFactory, taskAppService, komuService, contentSerializer)
         {
         }
 

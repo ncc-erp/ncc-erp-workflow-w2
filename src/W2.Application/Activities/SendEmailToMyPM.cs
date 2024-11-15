@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using W2.ExternalResources;
+using W2.Komu;
 using W2.Signals;
 using W2.Tasks;
 
@@ -31,7 +32,8 @@ namespace W2.Activities
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
-            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
+            IKomuService komuService,
+            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, komuService, contentSerializer)
         {
             _projectClientApi = projectClientApi;
         }

@@ -4,6 +4,8 @@ using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Serialization;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
@@ -11,8 +13,10 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using W2.Komu;
 using W2.Scripting;
 using W2.Tasks;
+using static IdentityServer4.Models.IdentityResources;
 
 namespace W2.Activities
 {
@@ -24,17 +28,23 @@ namespace W2.Activities
     public class CustomEmail : SendEmail
     {
         private readonly ITaskAppService _taskAppService;
+        private IKomuService _komuService;
         public CustomEmail(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
+            IKomuService komuService,
             IContentSerializer contentSerializer)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
+            _komuService = komuService;
         }
 
         public new string From => string.Empty;
+
+        [ActivityInput(Label = "Komu message", Hint = "The message that you want to send by KOMU to request users", UIHint = ActivityInputUIHints.MultiLine, DefaultSyntax = SyntaxNames.Literal, SupportedSyntaxes = new string[] { SyntaxNames.JavaScript, SyntaxNames.Literal })]
+        public string KomuMessage { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -51,6 +61,15 @@ namespace W2.Activities
             {
                 await base.OnExecuteAsync(context);
             });
+
+            foreach (var email in this.To)
+            {
+                _ = Task.Run(async () =>
+                {
+                    var emailPrefix = email?.Split('@')[0];
+                    await _komuService.KomuSendMessageAsync(emailPrefix, KomuMessage);
+                });
+            }
 
             return Done();
         }

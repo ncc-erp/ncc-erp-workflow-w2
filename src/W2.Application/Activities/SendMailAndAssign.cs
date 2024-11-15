@@ -4,23 +4,22 @@ using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Serialization;
 using Elsa.Services.Models;
-using Humanizer;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Volo.Abp;
-using Volo.Abp.Domain.Repositories;
+using W2.Komu;
+using W2.Scripting;
 using W2.Signals;
 using W2.Tasks;
-using W2.WorkflowInstances;
 
 namespace W2.Activities
 {
@@ -32,14 +31,17 @@ namespace W2.Activities
     public class SendMailAndAssign : SendEmail
     {
         private ITaskAppService _taskAppService;
+        private IKomuService _komuService;
         public SendMailAndAssign(ISmtpService smtpService, 
             IOptions<SmtpOptions> options, 
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
+            IKomuService komuService,
             IContentSerializer contentSerializer) 
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
+            _komuService = komuService;
         }
 
         public new string From => string.Empty;
@@ -53,6 +55,9 @@ namespace W2.Activities
         [ActivityInput(Hint = "The dynamic form data", SupportedSyntaxes = new string[] { "JavaScript", "Liquid" })]
         public string DynamicActionData { get; set; }
 
+        [ActivityInput(Label = "Komu message", Hint = "The message that you want to send by KOMU to request users", UIHint = ActivityInputUIHints.MultiLine, DefaultSyntax = SyntaxNames.Literal, SupportedSyntaxes = new string[] { SyntaxNames.JavaScript, SyntaxNames.Literal })]
+        public string KomuMessage { get; set; }
+
         [ActivityInput(Hint = "Other action for signal", UIHint = "multi-text", DefaultSyntax = "Json", SupportedSyntaxes = new string[] { "Json", "JavaScript" })]
         public List<string> OtherActionSignals { get; set; }
 
@@ -61,6 +66,16 @@ namespace W2.Activities
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
+            List<DynamicDataDto> dynamicDataByTask = await _taskAppService.GetDynamicRawData(new TaskDynamicDataInput
+            {
+                WorkflowInstanceId = context.WorkflowInstance.Id,
+            });
+
+            if (dynamicDataByTask != null)
+            {
+                context.SetVariable("DynamicDataByTask", dynamicDataByTask);
+            }
+
             if (To == null)
             {
                 throw new UserFriendlyException("Exception:No Email address To send");
@@ -95,6 +110,13 @@ namespace W2.Activities
                 foreach (var key in listDynamicData.Keys)
                 {
                     this.Body = this.Body.Replace("{" + key + "}", listDynamicData[key]);
+
+                    if(this.KomuMessage != null)
+                    {
+                        string transString = listDynamicData[key].Replace("</p><p>", "\n");
+                        transString = Regex.Replace(transString, @"<\/?p>", "");
+                        this.KomuMessage = this.KomuMessage?.Replace("{" + key + "}", transString);
+                    }
                 }
             }
 
@@ -121,7 +143,15 @@ namespace W2.Activities
             {
                 await base.OnExecuteAsync(context);
             });
-            
+
+            foreach (var email in EmailTo)
+            {
+                _ = Task.Run(async () =>
+                {
+                    var emailPrefix = email?.Split('@')[0];
+                    await _komuService.KomuSendMessageAsync(emailPrefix, KomuMessage);
+                });
+            }
 
             return Done();
         }

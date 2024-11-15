@@ -8,10 +8,10 @@ using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using W2.ExternalResources;
+using W2.Komu;
 using W2.Signals;
 using W2.Tasks;
 using static IdentityServer4.Models.IdentityResources;
@@ -32,7 +32,8 @@ namespace W2.Activities
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
-            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
+            IKomuService komuService,
+            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, komuService, contentSerializer)
         {
             _externalResourceAppService = externalResourceAppService;
         }
