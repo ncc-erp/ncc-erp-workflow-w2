@@ -32,9 +32,9 @@ namespace W2.Activities
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
-            IKomuService komuService,
+            IKomuAppService komuAppService,
             IWorkflowDefinitionAppService workflowDefinitionAppService,
-            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, komuService, workflowDefinitionAppService, contentSerializer)
+            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, komuAppService, workflowDefinitionAppService, contentSerializer)
         {
             _externalResourceAppService = externalResourceAppService;
         }

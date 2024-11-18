@@ -33,9 +33,9 @@ namespace W2.Activities
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
-            IKomuService komuService,
+            IKomuAppService komuAppService,
             IWorkflowDefinitionAppService workflowDefinitionAppService,
-            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, komuService, workflowDefinitionAppService, contentSerializer)
+            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, komuAppService, workflowDefinitionAppService, contentSerializer)
         {
             _projectClientApi = projectClientApi;
         }

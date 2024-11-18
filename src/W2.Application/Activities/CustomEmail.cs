@@ -28,19 +28,19 @@ namespace W2.Activities
     public class CustomEmail : SendEmail
     {
         private readonly ITaskAppService _taskAppService;
-        private IKomuService _komuService;
+        private IKomuAppService _komuAppService;
         private IWorkflowDefinitionAppService _workflowDefinitionAppService;
         public CustomEmail(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
-            IKomuService komuService,
+            IKomuAppService komuAppService,
             IWorkflowDefinitionAppService workflowDefinitionAppService,
             IContentSerializer contentSerializer)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
-            _komuService = komuService;
+            _komuAppService = komuAppService;
             _workflowDefinitionAppService = workflowDefinitionAppService;
         }
 
@@ -74,7 +74,7 @@ namespace W2.Activities
                     _ = Task.Run(async () =>
                     {
                         var emailPrefix = email?.Split('@')[0];
-                        await _komuService.KomuSendMessageAsync(emailPrefix, KomuMessage);
+                        await _komuAppService.KomuSendMessageAsync(emailPrefix, KomuMessage);
                     });
                 }
             }

@@ -13,15 +13,15 @@ using Volo.Abp.Domain.Repositories;
 namespace W2.Komu
 {
     [Authorize]
-    public class KomuService: W2AppService, IKomuService
+    public class KomuAppService: W2AppService, IKomuAppService
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly Configurations.KomuConfiguration _komuConfiguration;
-        private readonly ILogger<KomuService> _logger;
+        private readonly ILogger<KomuAppService> _logger;
         private readonly IRepository<W2KomuMessageLogs, Guid> _W2KomuMessageLogsRepository;
 
-        public KomuService(
+        public KomuAppService(
             HttpClient httpClient, 
             IConfiguration configuration, 
             IOptions<Configurations.KomuConfiguration> komuConfigurationOptions, 

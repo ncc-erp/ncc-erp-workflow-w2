@@ -29,10 +29,10 @@ namespace W2.Activities
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
-            IKomuService komuService,
+            IKomuAppService komuAppService,
             IWorkflowDefinitionAppService workflowDefinitionAppService,
             IContentSerializer contentSerializer)
-            : base(smtpService, options, httpClientFactory, taskAppService, komuService, workflowDefinitionAppService, contentSerializer)
+            : base(smtpService, options, httpClientFactory, taskAppService, komuAppService, workflowDefinitionAppService, contentSerializer)
         {
         }
 

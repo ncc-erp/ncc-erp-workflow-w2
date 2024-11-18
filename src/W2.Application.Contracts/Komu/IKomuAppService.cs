@@ -7,7 +7,7 @@ using W2.Settings;
 
 namespace W2.Komu
 {
-    public interface IKomuService : IApplicationService
+    public interface IKomuAppService : IApplicationService
     {
         Task KomuSendMessageAsync(string userName, string message);
     }
