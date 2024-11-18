@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Domain.Repositories;
 
 namespace W2.Komu
 {
@@ -18,12 +19,18 @@ namespace W2.Komu
         private readonly IConfiguration _configuration;
         private readonly Configurations.KomuConfiguration _komuConfiguration;
         private readonly ILogger<KomuService> _logger;
+        private readonly IRepository<W2KomuMessageLogs, Guid> _W2KomuMessageLogsRepository;
 
-        public KomuService(HttpClient httpClient, IConfiguration configuration, IOptions<Configurations.KomuConfiguration> komuConfigurationOptions)
+        public KomuService(
+            HttpClient httpClient, 
+            IConfiguration configuration, 
+            IOptions<Configurations.KomuConfiguration> komuConfigurationOptions, 
+            IRepository<W2KomuMessageLogs, Guid> W2KomuMessageLogsRepository)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _komuConfiguration = komuConfigurationOptions.Value;
+            _W2KomuMessageLogsRepository = W2KomuMessageLogsRepository;
         }
 
         [RemoteService(IsEnabled = false)]
@@ -51,11 +58,29 @@ namespace W2.Komu
 
                 try
                 {
-                    await _httpClient.SendAsync(request);
+                    var systemResponse = await _httpClient.SendAsync(request);
+                    await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs {
+                        SendTo = username,
+                        Message = message,
+                        SystemResponse = systemResponse.ToString(),
+                        Status = 1,
+                        CreatorId = CurrentUser.Id,
+                        CreationTime = DateTime.Now
+                    });
+
                 }
                 catch (Exception ex)
                 {
                     _logger.LogException(ex);
+                    await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
+                    {
+                        SendTo = username,
+                        Message = message,
+                        SystemResponse = ex.Message,
+                        Status = 0,
+                        CreatorId = CurrentUser.Id,
+                        CreationTime = DateTime.Now
+                    });
                 }
             }
         }

@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 using W2.Komu;
 using W2.Scripting;
 using W2.Tasks;
-using static IdentityServer4.Models.IdentityResources;
+using W2.WorkflowDefinitions;
 
 namespace W2.Activities
 {
@@ -29,16 +29,19 @@ namespace W2.Activities
     {
         private readonly ITaskAppService _taskAppService;
         private IKomuService _komuService;
+        private IWorkflowDefinitionAppService _workflowDefinitionAppService;
         public CustomEmail(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
             IKomuService komuService,
+            IWorkflowDefinitionAppService workflowDefinitionAppService,
             IContentSerializer contentSerializer)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
             _komuService = komuService;
+            _workflowDefinitionAppService = workflowDefinitionAppService;
         }
 
         public new string From => string.Empty;
@@ -57,18 +60,23 @@ namespace W2.Activities
                 context.SetVariable("DynamicDataByTask", dynamicDataByTask); 
             }
 
+            WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
+
             _ = Task.Run(async () =>
             {
                 await base.OnExecuteAsync(context);
             });
 
-            foreach (var email in this.To)
+            if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
             {
-                _ = Task.Run(async () =>
+                foreach (var email in this.To)
                 {
-                    var emailPrefix = email?.Split('@')[0];
-                    await _komuService.KomuSendMessageAsync(emailPrefix, KomuMessage);
-                });
+                    _ = Task.Run(async () =>
+                    {
+                        var emailPrefix = email?.Split('@')[0];
+                        await _komuService.KomuSendMessageAsync(emailPrefix, KomuMessage);
+                    });
+                }
             }
 
             return Done();

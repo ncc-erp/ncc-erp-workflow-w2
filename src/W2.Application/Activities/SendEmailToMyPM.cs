@@ -15,6 +15,7 @@ using W2.ExternalResources;
 using W2.Komu;
 using W2.Signals;
 using W2.Tasks;
+using W2.WorkflowDefinitions;
 
 namespace W2.Activities
 {
@@ -33,7 +34,8 @@ namespace W2.Activities
             ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
             IKomuService komuService,
-            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, komuService, contentSerializer)
+            IWorkflowDefinitionAppService workflowDefinitionAppService,
+            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, komuService, workflowDefinitionAppService, contentSerializer)
         {
             _projectClientApi = projectClientApi;
         }

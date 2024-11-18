@@ -14,7 +14,7 @@ using W2.ExternalResources;
 using W2.Komu;
 using W2.Signals;
 using W2.Tasks;
-using static IdentityServer4.Models.IdentityResources;
+using W2.WorkflowDefinitions;
 
 namespace W2.Activities
 {
@@ -33,7 +33,8 @@ namespace W2.Activities
             ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
             IKomuService komuService,
-            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, komuService, contentSerializer)
+            IWorkflowDefinitionAppService workflowDefinitionAppService,
+            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, komuService, workflowDefinitionAppService, contentSerializer)
         {
             _externalResourceAppService = externalResourceAppService;
         }
