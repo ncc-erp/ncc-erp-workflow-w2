@@ -10,6 +10,9 @@ namespace W2.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
+                DO $$
+                BEGIN
+                IF NOT EXISTS (SELECT 1 FROM ""W2Permissions"") THEN
                 INSERT INTO ""W2Permissions"" (""Id"", ""Name"", ""Code"", ""ParentId"", ""CreatorId"", ""CreationTime"")
                 VALUES 
                     ('353896e7-9516-4313-a5ce-3b8bec18a279', 'Requests', 'WorkflowInstances', NULL, NULL, '2024-11-19T07:35:52.981453Z'),
@@ -50,6 +53,8 @@ namespace W2.Migrations
                     ('643d855c-8846-4586-aeb4-3299a72e2813', 'Import Request Templates', 'WorkflowDefinitions.Import', '6734d713-cd5c-4c9d-880f-dc0e3955d8b1', NULL, '2024-11-19T07:35:52.985121Z'),
                     ('6dc377be-198f-4a81-869d-b1c8666d2706', 'Edit Request Templates', 'WorkflowDefinitions.Edit', '6734d713-cd5c-4c9d-880f-dc0e3955d8b1', NULL, '2024-11-19T07:35:52.985892Z'),
                     ('9cefeb05-62cf-4c58-8157-5f6c82fbe9e1', 'Create Request Templates', 'WorkflowDefinitions.Create', '6734d713-cd5c-4c9d-880f-dc0e3955d8b1', NULL, '2024-11-19T07:35:52.985389Z');
+                END IF;
+                END $$;
             ");
             migrationBuilder.Sql(@"
                 UPDATE ""AbpRoles""
