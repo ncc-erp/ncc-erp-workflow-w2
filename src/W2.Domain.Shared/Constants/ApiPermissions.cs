@@ -43,4 +43,7 @@ public static class W2ApiPermissions
     public const string ViewListRoles = RolesManagement + ".View";
     public const string CreateRole = RolesManagement + ".Create";
     public const string UpdateRole = RolesManagement + ".Update";
+    public const string DeleteRole = RolesManagement + ".Delete";
+    public const string DeleteUserOnRole = RolesManagement + ".DeleteUserOnRole";
+
 }
