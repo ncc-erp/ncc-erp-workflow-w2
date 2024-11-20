@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using W2.HostedService;
 using W2.Scripting;
 using W2.Tasks;
 
@@ -24,14 +25,17 @@ namespace W2.Activities
     public class CustomEmail : SendEmail
     {
         private readonly ITaskAppService _taskAppService;
+        private readonly ITaskQueue _taskQueue;
         public CustomEmail(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
+            ITaskQueue taskQueue,
             IContentSerializer contentSerializer)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
+            _taskQueue = taskQueue;
         }
 
         public new string From => string.Empty;
@@ -47,8 +51,7 @@ namespace W2.Activities
                 context.SetVariable("DynamicDataByTask", dynamicDataByTask); 
             }
 
-            _ = Task.Run(async () =>
-            {
+            _taskQueue.EnqueueAsync(async (cancellationToken) => {
                 await base.OnExecuteAsync(context);
             });
 

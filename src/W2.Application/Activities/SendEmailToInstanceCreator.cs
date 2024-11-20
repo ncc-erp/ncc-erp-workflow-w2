@@ -5,19 +5,15 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Serialization;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Users;
-using W2.Localization;
+using W2.HostedService;
 using W2.Signals;
 using W2.Tasks;
-using W2.WorkflowInstances;
 
 namespace W2.Activities
 {
@@ -32,8 +28,9 @@ namespace W2.Activities
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
+            ITaskQueue taskQueue,
             IContentSerializer contentSerializer)
-            : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
+            : base(smtpService, options, httpClientFactory, taskAppService, taskQueue, contentSerializer)
         {
         }
 

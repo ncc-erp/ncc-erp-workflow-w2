@@ -6,21 +6,17 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Serialization;
 using Elsa.Services.Models;
-using Humanizer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using Volo.Abp;
-using Volo.Abp.Domain.Repositories;
+using W2.HostedService;
 using W2.Signals;
 using W2.Tasks;
-using W2.WorkflowInstances;
 
 namespace W2.Activities
 {
@@ -32,14 +28,18 @@ namespace W2.Activities
     public class SendMailAndAssign : SendEmail
     {
         private ITaskAppService _taskAppService;
+        private readonly ITaskQueue _taskQueue;
+
         public SendMailAndAssign(ISmtpService smtpService, 
             IOptions<SmtpOptions> options, 
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
+            ITaskQueue taskQueue,
             IContentSerializer contentSerializer) 
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
+            _taskQueue = taskQueue;
         }
 
         public new string From => string.Empty;
@@ -117,11 +117,9 @@ namespace W2.Activities
                 this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
             }
 
-            _ = Task.Run(async () =>
-            {
+            _taskQueue.EnqueueAsync(async (cancellationToken) => {
                 await base.OnExecuteAsync(context);
             });
-            
 
             return Done();
         }
