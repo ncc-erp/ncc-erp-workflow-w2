@@ -69,6 +69,7 @@ namespace W2.Roles
         }
 
         [HttpDelete("{roleId}/users/{userId}")]
+        [RequirePermission(W2ApiPermissions.DeleteUserOnRole)]
         public async Task<IActionResult> RemoveUserFromRoleAsync(Guid roleId, Guid userId)
         {
             var dbContext = await _roleRepository.GetDbContextAsync();
@@ -232,12 +233,11 @@ namespace W2.Roles
         }
 
         [HttpDelete("{roleId}")]
+        [RequirePermission(W2ApiPermissions.DeleteRole)]
         public async Task DeleteAsync(Guid roleId)
         {
-            // Lấy thông tin role
             var role = await _roleRepository.GetAsync(roleId)
                 ?? throw new UserFriendlyException($"Role with id {roleId} not found");
-            // Xóa role
             await _roleRepository.DeleteAsync(role);
         }
 
