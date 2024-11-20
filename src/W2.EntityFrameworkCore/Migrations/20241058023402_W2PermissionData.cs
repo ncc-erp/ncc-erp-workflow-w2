@@ -23,6 +23,8 @@ namespace W2.Migrations
                     ('54e8008c-6d2d-4c00-873f-39c33c3ed705', 'View List Roles', 'Roles.View', '6990fbaf-5a00-40cf-a3a1-13b85d1f6099', NULL, '2024-11-19T07:35:52.987715Z'),
                     ('8eb0cb9b-7cab-4d38-9163-a9a4cc8ea7e0', 'Update Role', 'Roles.Update', '6990fbaf-5a00-40cf-a3a1-13b85d1f6099', NULL, '2024-11-19T07:35:52.988002Z'),
                     ('9c41b0c6-fcae-49c0-94d1-146f392fda3f', 'Create Role', 'Roles.Create', '6990fbaf-5a00-40cf-a3a1-13b85d1f6099', NULL, '2024-11-19T07:35:52.987866Z'),
+                    ('e117cd9c-2cde-4ec6-8d51-1fc37b0a282a', 'Delete User On Role', 'Roles.DeleteUserOnRole', '6990fbaf-5a00-40cf-a3a1-13b85d1f6099', NULL, '2024-11-19T07:35:52.987866Z'),
+                    ('e18dd7ad-ecc1-4ef6-9574-efa55f4fcd18', 'Delete Role', 'Roles.Delete', '6990fbaf-5a00-40cf-a3a1-13b85d1f6099', NULL, '2024-11-19T07:35:52.987866Z'),
 
                     -- Children Permissions for Tasks
                     ('881263f8-95d7-4410-88e5-d3873f99b53e', 'Tasks Management', 'Tasks', NULL, NULL, '2024-11-19T07:35:52.981659Z'),
@@ -219,6 +221,18 @@ namespace W2.Migrations
                         ""Id"": ""ee42c1e5-6c8a-4366-bce6-9a95a7a51514"",
                         ""Code"": ""Roles.View"",
                         ""Name"": ""View List Roles"",
+                        ""CreationTime"": ""2024-11-08T06:19:05.861291Z""
+                        },
+                        {
+                        ""Id"": ""ee42c1e5-6c8a-4366-bce6-9a95a7a51514"",
+                        ""Code"": ""Roles.Delete"",
+                        ""Name"": ""Delete Roles"",
+                        ""CreationTime"": ""2024-11-08T06:19:05.861291Z""
+                        },
+                        {
+                        ""Id"": ""ee42c1e5-6c8a-4366-bce6-9a95a7a51514"",
+                        ""Code"": ""Roles.DeleteUserOnRole"",
+                        ""Name"": ""Delete User On Role"",
                         ""CreationTime"": ""2024-11-08T06:19:05.861291Z""
                         }
                     ],
