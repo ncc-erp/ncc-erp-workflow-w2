@@ -150,7 +150,6 @@ namespace W2.WorkflowDefinitions
 
             if (existingWorkflowDefinition != null)
             {
-                workflowDefinition.IsPublished = false;
                 workflowDefinition.Version = existingWorkflowDefinition.Version + 1;
                 workflowDefinition.Id = existingWorkflowDefinition.Id;
                 await _workflowDefinitionStore.UpdateAsync(workflowDefinition);
