@@ -77,6 +77,8 @@ jobs:
         SES_USER: ${{ secrets.SES_USER_DEV }}
         SES_PASS: ${{ secrets.SES_PASS_DEV }}
         SES_REQ_CRE: ${{ secrets.SES_REQ_CRE_DEV }}
+        KOMU_API_URL: ${{ secrets.KOMU_API_URL_DEV }}
+        KOMU_X_SK: ${{ secrets.KOMU_X_SK_DEV }}
         GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
         GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
         TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
