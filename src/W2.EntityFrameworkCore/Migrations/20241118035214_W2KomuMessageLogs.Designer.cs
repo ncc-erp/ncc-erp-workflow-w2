@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -13,9 +14,10 @@ using W2.EntityFrameworkCore;
 namespace W2.Migrations
 {
     [DbContext(typeof(W2DbContext))]
-    partial class W2DbContextModelSnapshot : ModelSnapshot
+    [Migration("20241118035214_W2KomuMessageLogs")]
+    partial class W2KomuMessageLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -459,10 +461,6 @@ namespace W2.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("ExtraProperties")
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
@@ -498,8 +496,6 @@ namespace W2.Migrations
                     b.HasIndex("NormalizedName");
 
                     b.ToTable("AbpRoles", (string)null);
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityRole");
                 });
 
             modelBuilder.Entity("Volo.Abp.Identity.IdentityRoleClaim", b =>
@@ -637,10 +633,6 @@ namespace W2.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("DeletionTime");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -760,8 +752,6 @@ namespace W2.Migrations
                     b.HasIndex("UserName");
 
                     b.ToTable("AbpUsers", (string)null);
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
                 });
 
             modelBuilder.Entity("Volo.Abp.Identity.IdentityUserClaim", b =>
@@ -856,10 +846,6 @@ namespace W2.Migrations
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -869,8 +855,6 @@ namespace W2.Migrations
                     b.HasIndex("RoleId", "UserId");
 
                     b.ToTable("AbpUserRoles", (string)null);
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUserRole");
                 });
 
             modelBuilder.Entity("Volo.Abp.Identity.IdentityUserToken", b =>
@@ -1995,43 +1979,6 @@ namespace W2.Migrations
                     b.ToTable("W2KomuMessageLogs", (string)null);
                 });
 
-            modelBuilder.Entity("W2.Permissions.W2Permission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentId");
-
-                    b.ToTable("W2Permissions", (string)null);
-                });
-
             modelBuilder.Entity("W2.Settings.W2Setting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2267,55 +2214,6 @@ namespace W2.Migrations
                     b.HasIndex("WorkflowInstanceId");
 
                     b.ToTable("WorkflowInstanceStarters", (string)null);
-                });
-
-            modelBuilder.Entity("W2.Identity.W2CustomIdentityRole", b =>
-                {
-                    b.HasBaseType("Volo.Abp.Identity.IdentityRole");
-
-                    b.Property<DateTime>("CreationTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("Permissions")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasDefaultValueSql("'[]'");
-
-                    b.ToTable("AbpRoles", (string)null);
-
-                    b.HasDiscriminator().HasValue("W2CustomIdentityRole");
-                });
-
-            modelBuilder.Entity("W2.Identity.W2CustomIdentityUser", b =>
-                {
-                    b.HasBaseType("Volo.Abp.Identity.IdentityUser");
-
-                    b.Property<string>("CustomPermissions")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("jsonb")
-                        .HasDefaultValueSql("'[]'");
-
-                    b.ToTable("AbpUsers", (string)null);
-
-                    b.HasDiscriminator().HasValue("W2CustomIdentityUser");
-                });
-
-            modelBuilder.Entity("W2.Identity.W2CustomIdentityUserRole", b =>
-                {
-                    b.HasBaseType("Volo.Abp.Identity.IdentityUserRole");
-
-                    b.ToTable("AbpUserRoles", (string)null);
-
-                    b.HasDiscriminator().HasValue("W2CustomIdentityUserRole");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
@@ -2595,35 +2493,6 @@ namespace W2.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("W2.Permissions.W2Permission", b =>
-                {
-                    b.HasOne("W2.Permissions.W2Permission", "Parent")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Parent");
-                });
-
-            modelBuilder.Entity("W2.Identity.W2CustomIdentityUserRole", b =>
-                {
-                    b.HasOne("W2.Identity.W2CustomIdentityRole", "Role")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("W2.Identity.W2CustomIdentityUser", "User")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>
                 {
                     b.Navigation("Actions");
@@ -2708,21 +2577,6 @@ namespace W2.Migrations
             modelBuilder.Entity("Volo.Abp.TenantManagement.Tenant", b =>
                 {
                     b.Navigation("ConnectionStrings");
-                });
-
-            modelBuilder.Entity("W2.Permissions.W2Permission", b =>
-                {
-                    b.Navigation("Children");
-                });
-
-            modelBuilder.Entity("W2.Identity.W2CustomIdentityRole", b =>
-                {
-                    b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("W2.Identity.W2CustomIdentityUser", b =>
-                {
-                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

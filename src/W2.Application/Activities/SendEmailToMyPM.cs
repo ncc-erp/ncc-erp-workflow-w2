@@ -12,8 +12,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using W2.ExternalResources;
+using W2.Komu;
 using W2.Signals;
 using W2.Tasks;
+using W2.WorkflowDefinitions;
 
 namespace W2.Activities
 {
@@ -31,7 +33,9 @@ namespace W2.Activities
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
             IContentSerializer contentSerializer,
-            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, contentSerializer)
+            IKomuAppService komuAppService,
+            IWorkflowDefinitionAppService workflowDefinitionAppService,
+            IProjectClientApi projectClientApi) : base(smtpService, options, httpClientFactory, taskAppService, komuAppService, workflowDefinitionAppService, contentSerializer)
         {
             _projectClientApi = projectClientApi;
         }

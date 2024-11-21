@@ -4,6 +4,8 @@ using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Serialization;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Options;
@@ -11,8 +13,10 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using W2.Komu;
 using W2.Scripting;
 using W2.Tasks;
+using W2.WorkflowDefinitions;
 
 namespace W2.Activities
 {
@@ -24,17 +28,26 @@ namespace W2.Activities
     public class CustomEmail : SendEmail
     {
         private readonly ITaskAppService _taskAppService;
+        private IKomuAppService _komuAppService;
+        private IWorkflowDefinitionAppService _workflowDefinitionAppService;
         public CustomEmail(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
+            IKomuAppService komuAppService,
+            IWorkflowDefinitionAppService workflowDefinitionAppService,
             IContentSerializer contentSerializer)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
+            _komuAppService = komuAppService;
+            _workflowDefinitionAppService = workflowDefinitionAppService;
         }
 
         public new string From => string.Empty;
+
+        [ActivityInput(Label = "Komu message", Hint = "The message that you want to send by KOMU to request users", UIHint = ActivityInputUIHints.MultiLine, DefaultSyntax = SyntaxNames.Literal, SupportedSyntaxes = new string[] { SyntaxNames.JavaScript, SyntaxNames.Literal })]
+        public string KomuMessage { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -47,10 +60,24 @@ namespace W2.Activities
                 context.SetVariable("DynamicDataByTask", dynamicDataByTask); 
             }
 
+            WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
+
             _ = Task.Run(async () =>
             {
                 await base.OnExecuteAsync(context);
             });
+
+            if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
+            {
+                foreach (var email in this.To)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        var emailPrefix = email?.Split('@')[0];
+                        await _komuAppService.KomuSendMessageAsync(emailPrefix, KomuMessage);
+                    });
+                }
+            }
 
             return Done();
         }

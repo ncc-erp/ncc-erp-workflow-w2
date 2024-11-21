@@ -14,6 +14,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.Komu;
 using W2.Identity;
 using W2.Permissions;
 using W2.Settings;
@@ -67,6 +68,7 @@ public class W2DbContext :
     // tasks
     public DbSet<W2Task> Tasks { get; set; }
     public DbSet<W2Setting> W2Setting { get; set; }
+    public DbSet<W2KomuMessageLogs> W2KomuMessageLogs { get; set; }
     #endregion
     public DbSet<W2TaskEmail> W2TaskEmail { get; set; }
     public DbSet<W2TaskActions> W2TaskActions { get; set; }
@@ -118,6 +120,12 @@ public class W2DbContext :
             b.ToTable("W2Settings");
             b.Property(e => e.Value)
              .HasColumnType("jsonb");
+            b.HasKey(e => e.Id);
+        });
+
+        builder.Entity<W2KomuMessageLogs>(b =>
+        {
+            b.ToTable("W2KomuMessageLogs");
             b.HasKey(e => e.Id);
         });
 

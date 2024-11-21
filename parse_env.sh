@@ -18,6 +18,8 @@ sed "s/SES_SENDER/$SES_SENDER/g" -i appsettings.json
 sed "s/SES_USER/$SES_USER/g" -i appsettings.json
 sed "s/SES_PASS/$SES_PASS/g" -i appsettings.json
 sed "s/SES_REQ_CRE/$SES_REQ_CRE/g" -i appsettings.json
+sed "s/KOMU_API_URL/$KOMU_API_URL/g" -i appsettings.json
+sed "s/KOMU_X_SK/$KOMU_X_SK/g" -i appsettings.json
 sed "s/GG_CLIENT/$GG_CLIENT/g" -i appsettings.json
 sed "s/GG_SECRET/$GG_SECRET/g" -i appsettings.json
 sed "s/TALENT_DF/$TALENT_DF/g" -i appsettings.json

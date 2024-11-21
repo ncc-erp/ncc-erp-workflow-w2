@@ -1,4 +1,5 @@
-﻿using Volo.Abp.Account;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -27,5 +28,8 @@ public class W2ApplicationModule : AbpModule
         {
             options.AddMaps<W2ApplicationModule>();
         });
+
+        var configuration = context.Services.GetConfiguration();
+        Configure<Configurations.KomuConfiguration>(configuration.GetSection(nameof(Configurations.KomuConfiguration)));
     }
 }

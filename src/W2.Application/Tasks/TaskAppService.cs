@@ -144,7 +144,8 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{myTask.ApproveSignal}" },
-                { "TriggeredBy", $"{_currentUser.Email}" }
+                { "TriggeredBy", $"{_currentUser.Email}" },
+                { "TriggeredByName", $"{_currentUser.Name}" }
             };
 
             if (!string.IsNullOrEmpty(input.DynamicActionData))
@@ -185,7 +186,8 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{reason}" },
-                { "TriggeredBy", $"{_currentUser.Email}" }
+                { "TriggeredBy", $"{_currentUser.Email}" },
+                { "TriggeredByName", $"{_currentUser.Name}" }
             };
 
             myTask.Status = W2TaskStatus.Reject;
@@ -228,7 +230,8 @@ namespace W2.Tasks
             var Inputs = new Dictionary<string, string>
             {
                 { "Reason", $"{input.Action}" },
-                { "TriggeredBy", $"{_currentUser.Email}" }
+                { "TriggeredBy", $"{_currentUser.Email}" },
+                { "TriggeredByName", $"{_currentUser.Name}" }
             };
 
             actions.Status = W2TaskActionsStatus.Approve;
