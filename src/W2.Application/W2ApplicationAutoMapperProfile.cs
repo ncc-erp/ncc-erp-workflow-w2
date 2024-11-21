@@ -1,10 +1,15 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Elsa.Models;
 using System;
 using System.Linq;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
+using W2.Permissions;
+using W2.Roles;
+using Volo.Abp.Identity;
+using W2.Identity;
+using W2.Users;
 
 namespace W2;
 
@@ -50,6 +55,20 @@ public class W2ApplicationAutoMapperProfile : Profile
             .ForMember(d => d.Status, options => options.MapFrom(s => GetMappedStatus(s.WorkflowStatus)));
         CreateMap<W2.WorkflowDefinitions.Settings, SettingsDto>();
         CreateMap<SettingsDto, W2.WorkflowDefinitions.Settings>();
+        CreateMap<W2Permission, PermissionDto>();
+        CreateMap<W2Permission, PermissionDetailDto>()
+            .ForMember(dest => dest.Children, opt => opt.Ignore());
+        CreateMap<W2CustomIdentityRole, RoleDto>();
+        CreateMap<W2CustomIdentityRole, RoleDetailDto>()
+            .ForMember(dest => dest.Permissions, opt => opt.Ignore());
+        CreateMap<W2CustomIdentityUser, UserDto>()
+            .ForMember(dest => dest.Roles, opt => opt.MapFrom(src =>
+                src.UserRoles.Select(ur => ur.Role.Name).ToList()));
+        CreateMap<W2CustomIdentityUser, UserDetailDto>()
+            .ForMember(dest => dest.Roles, opt => opt.MapFrom(src =>
+                src.UserRoles.Select(ur => ur.Role.Name).ToList()))
+            .ForMember(dest => dest.CustomPermissions, opt => opt.MapFrom(src =>
+                src.CustomPermissionDtos));
     }
     private int GetMappedStatus(WorkflowStatus workflowStatus)
     {

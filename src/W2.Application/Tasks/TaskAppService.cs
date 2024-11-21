@@ -1,5 +1,4 @@
-﻿using Elsa.Activities.Http.Events;
-using Elsa.Activities.Signaling.Models;
+﻿using Elsa.Activities.Signaling.Models;
 using Elsa.Activities.Signaling.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -25,10 +24,13 @@ using W2.WorkflowInstances;
 using W2.Utils;
 using System.Threading;
 using W2.Scripting;
+using W2.Authorization.Attributes;
+using W2.Constants;
 
 namespace W2.Tasks
 {
-    [Authorize]
+    //[Authorize]
+    [RequirePermission(W2ApiPermissions.TasksManagement)]
     public class TaskAppService : W2AppService, ITaskAppService, ITaskEmailService
     {
         private readonly IRepository<W2Task, Guid> _taskRepository;
@@ -121,6 +123,7 @@ namespace W2.Tasks
 
         public async Task createTask(string id) { }
 
+        [RequirePermission(W2ApiPermissions.UpdateTaskStatus)]
         public async Task<string> ApproveAsync(ApproveTasksInput input, CancellationToken cancellationToken)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
@@ -161,6 +164,7 @@ namespace W2.Tasks
             return "Approval successful";
         }
 
+        [RequirePermission(W2ApiPermissions.UpdateTaskStatus)]
         public async Task<string> RejectAsync([Required] string id, [Required] string reason, CancellationToken cancellationToken)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
@@ -238,6 +242,7 @@ namespace W2.Tasks
             return "Send Action successful";
         }
 
+        [RequirePermission(W2ApiPermissions.ViewListTasks)]
         public async Task<PagedResultDto<W2TasksDto>> ListAsync(ListTaskstInput input)
         {
             var users = await _userRepository.GetListAsync();
@@ -370,6 +375,7 @@ namespace W2.Tasks
             return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
         }
 
+        [RequirePermission(W2ApiPermissions.ViewListTasks)]
         public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
