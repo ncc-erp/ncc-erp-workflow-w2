@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -13,9 +14,10 @@ using W2.EntityFrameworkCore;
 namespace W2.Migrations
 {
     [DbContext(typeof(W2DbContext))]
-    partial class W2DbContextModelSnapshot : ModelSnapshot
+    [Migration("20241028023402_W2Roles")]
+    partial class W2Roles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1967,34 +1969,6 @@ namespace W2.Migrations
                     b.ToTable("AbpTenantConnectionStrings", (string)null);
                 });
 
-            modelBuilder.Entity("W2.Komu.W2KomuMessageLogs", b =>
-                {
-                    b.Property<Guid?>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Message")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SendTo")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SystemResponse")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("W2KomuMessageLogs", (string)null);
-                });
-
             modelBuilder.Entity("W2.Permissions.W2Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2272,16 +2246,6 @@ namespace W2.Migrations
             modelBuilder.Entity("W2.Identity.W2CustomIdentityRole", b =>
                 {
                     b.HasBaseType("Volo.Abp.Identity.IdentityRole");
-
-                    b.Property<DateTime>("CreationTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("Permissions")
                         .IsRequired()

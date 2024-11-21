@@ -11,6 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="..\W2.Domain\W2.Domain.csproj" />
     <ProjectReference Include="..\W2.Application.Contracts\W2.Application.Contracts.csproj" />
+    <ProjectReference Include="..\W2.EntityFrameworkCore\W2.EntityFrameworkCore.csproj" />
+	  <ProjectReference Include="..\W2.Domain.Shared\W2.Domain.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

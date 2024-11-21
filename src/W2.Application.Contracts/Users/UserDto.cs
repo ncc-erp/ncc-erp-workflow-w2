@@ -1,12 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Text;
-using W2.TaskActions;
-using W2.Tasks;
+using W2.Roles;
 
-namespace W2.CustomIdentityManager
+namespace W2.Users
 {
-    public class CustomUserManageDto
+    public class UserDto
     {
         public Guid? TenantId { get; set; }
         public string UserName { get; set; }
