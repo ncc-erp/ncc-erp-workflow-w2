@@ -145,6 +145,7 @@ namespace W2.WorkflowDefinitions
             var workflowDefinition = JsonConvert.DeserializeObject<WorkflowDefinition>(defineJson, new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
 
             workflowDefinition.DefinitionId = currentWorkflowDefineId;
+            workflowDefinition.IsPublished = false;
 
             var existingWorkflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync( workflowDefinition.DefinitionId, VersionOptions.Latest);
 
