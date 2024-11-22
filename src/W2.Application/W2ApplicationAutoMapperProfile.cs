@@ -2,6 +2,7 @@ using AutoMapper;
 using Elsa.Models;
 using System;
 using System.Linq;
+using W2.Komu;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
@@ -55,6 +56,7 @@ public class W2ApplicationAutoMapperProfile : Profile
             .ForMember(d => d.Status, options => options.MapFrom(s => GetMappedStatus(s.WorkflowStatus)));
         CreateMap<W2.WorkflowDefinitions.Settings, SettingsDto>();
         CreateMap<SettingsDto, W2.WorkflowDefinitions.Settings>();
+        CreateMap<W2KomuMessageLogs, KomuMessageLogDto>();
         CreateMap<W2Permission, PermissionDto>();
         CreateMap<W2Permission, PermissionDetailDto>()
             .ForMember(dest => dest.Children, opt => opt.Ignore());
