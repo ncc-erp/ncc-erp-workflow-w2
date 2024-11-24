@@ -12,8 +12,8 @@ public abstract class W2AppService : ApplicationService
 {
     private readonly JsonSerializerSettings _jsonSerializerSettings;
 
-    protected string CurrentTenantStrId => CurrentTenant?.Id?.ToString();    
-
+    protected string CurrentTenantStrId => CurrentTenant?.Id?.ToString();
+ 
     protected W2AppService()
     {
         LocalizationResource = typeof(W2Resource);
