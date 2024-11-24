@@ -510,6 +510,7 @@ namespace W2.Tasks
         }
 
         [RemoteService(IsEnabled = false)]
+        [AllowAnonymous]
         public async Task<List<DynamicDataDto>> GetDynamicRawData(TaskDynamicDataInput input)
         {
             List<W2TasksDto> tasks = (List<W2TasksDto>)(await DynamicDataByIdAsync(input)).Items;
