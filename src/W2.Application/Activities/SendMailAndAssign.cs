@@ -75,7 +75,7 @@ namespace W2.Activities
                 WorkflowInstanceId = context.WorkflowInstance.Id,
             });
 
-            WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
+            WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.WfGetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
 
             if (dynamicDataByTask != null)
             {

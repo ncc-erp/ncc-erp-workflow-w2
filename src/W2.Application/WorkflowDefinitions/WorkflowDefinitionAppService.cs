@@ -18,6 +18,7 @@ using W2.Authorization.Attributes;
 using W2.Constants;
 using W2.Identity;
 using W2.Specifications;
+using Microsoft.AspNetCore.Authorization;
 
 namespace W2.WorkflowDefinitions
 {
@@ -100,6 +101,14 @@ namespace W2.WorkflowDefinitions
         [RequirePermission(W2ApiPermissions.ViewListWorkflowDefinitions)]
         public async Task<WorkflowDefinitionSummaryDto> GetByDefinitionIdAsync(string definitionId)
         {
+            return await WfGetByDefinitionIdAsync(definitionId);
+        }
+
+        [RemoteService(isEnabled: false)]
+        [AllowAnonymous]
+
+        public async Task<WorkflowDefinitionSummaryDto> WfGetByDefinitionIdAsync(string definitionId)
+        {
             var specification = new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, new string[] { definitionId });
             var workflowDefinition = await _workflowDefinitionStore.FindAsync(specification);
             if (workflowDefinition == null)
@@ -117,7 +126,6 @@ namespace W2.WorkflowDefinitions
 
             return workflowDefinitionDto;
         }
-
         //[Authorize(W2Permissions.WorkflowManagementWorkflowDefinitionsDesign)]
         [RequirePermission(W2ApiPermissions.DefineInputWorkflowDefinition)]
         public async Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)

@@ -34,6 +34,7 @@ namespace W2.Komu
         }
 
         [RemoteService(IsEnabled = false)]
+        [AllowAnonymous]
         public async Task KomuSendMessageAsync(string username, string message = "")
         {
             if(!String.IsNullOrEmpty(username))
