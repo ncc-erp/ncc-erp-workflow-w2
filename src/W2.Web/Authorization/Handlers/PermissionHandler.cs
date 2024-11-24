@@ -11,6 +11,13 @@ public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
+
+        if (context?.User == null)
+        {
+            context.Succeed(requirement);
+            return Task.CompletedTask;
+        }
+
         if (!context.User.Identity.IsAuthenticated)
         {
             return Task.CompletedTask;
