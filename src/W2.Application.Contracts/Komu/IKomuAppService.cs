@@ -10,6 +10,6 @@ namespace W2.Komu
     public interface IKomuAppService : IApplicationService
     {
         Task KomuSendMessageAsync(string userName, string message);
-        Task<List<KomuMessageLogDto>> GetKomuMessageLogListAsync(string userName);
+        Task<List<KomuMessageLogDto>> GetKomuMessageLogListAsync(string userName, string fromTime, string toTime);
     }
 }

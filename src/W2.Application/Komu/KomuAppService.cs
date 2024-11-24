@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net.Http;
@@ -37,13 +38,30 @@ namespace W2.Komu
         }
 
         [AllowAnonymous]
-        public async Task<List<KomuMessageLogDto>> GetKomuMessageLogListAsync(string userName)
+        public async Task<List<KomuMessageLogDto>> GetKomuMessageLogListAsync(
+            string userName, 
+            [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string fromTime,
+            [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string toTime)
         {
             IQueryable<W2KomuMessageLogs> queryableLogs = await _W2KomuMessageLogsRepository.GetQueryableAsync();
 
             if (!string.IsNullOrEmpty(userName))
             {
                 queryableLogs = queryableLogs.Where(log => log.SendTo == userName);
+            }
+
+            if (!string.IsNullOrEmpty(fromTime) && DateTime.TryParse(fromTime, out DateTime fromDateTime))
+            {
+                fromDateTime = fromDateTime.Date;
+                queryableLogs = queryableLogs.Where(log => log.CreationTime >= fromDateTime);
+            }
+
+            if (!string.IsNullOrEmpty(toTime) && DateTime.TryParse(toTime, out DateTime toDateTime))
+            {
+                toDateTime = toDateTime.Date.AddDays(1).AddTicks(-1);
+                queryableLogs = queryableLogs.Where(log => log.CreationTime <= toDateTime);
             }
 
             List<W2KomuMessageLogs> filteredLogs = await queryableLogs.ToDynamicListAsync<W2KomuMessageLogs>();
