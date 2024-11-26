@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace W2.Files
+﻿namespace W2.Files
 {
     public class DownloadFileDto
     {

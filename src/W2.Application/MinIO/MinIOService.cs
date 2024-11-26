@@ -33,35 +33,26 @@ namespace W2.MinIO
             {
                 throw new UserFriendlyException("File is null or empty");
             }
-            try
+            var urlList = new List<string>();
+            foreach (var file in files)
             {
-                var urlList = new List<string>();
-                foreach (var file in files)
-                {
-                    var objectName = $"w2/upload/{file.FileName}";
-                    var bucketName = _minIOConfiguration.BucketName;
-                    var contentType = file.ContentType;
-                    var filestream = file.OpenReadStream();
-                    var putObjectArgs = new PutObjectArgs()
-                        .WithBucket(bucketName)
-                        .WithObject(objectName)
-                        .WithStreamData(filestream)
-                        .WithObjectSize(filestream.Length)
-                        .WithContentType(contentType);
-                    var result = await _minioClient.PutObjectAsync(putObjectArgs);
-                    urlList.Add($"{_minIOConfiguration.PublicImageUrl}/{bucketName}/{objectName}");
-                }
-                return new
-                { 
-                    urls = string.Join(",", urlList)
-                };
-
-
+                var objectName = $"w2/upload/{file.FileName}";
+                var bucketName = _minIOConfiguration.BucketName;
+                var contentType = file.ContentType;
+                var filestream = file.OpenReadStream();
+                var putObjectArgs = new PutObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithObject(objectName)
+                    .WithStreamData(filestream)
+                    .WithObjectSize(filestream.Length)
+                    .WithContentType(contentType);
+                var result = await _minioClient.PutObjectAsync(putObjectArgs);
+                urlList.Add($"{_minIOConfiguration.PublicImageUrl}/{bucketName}/{objectName}");
             }
-            catch (MinioException ex)
+            return new
             {
-                throw ex;
-            }
+                urls = string.Join(",", urlList)
+            };
         }
 
         public async Task<string> GetPresignedObject(string FileName)
