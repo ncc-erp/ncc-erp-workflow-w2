@@ -4,6 +4,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,13 +28,47 @@ namespace W2.Komu
         public KomuAppService(
             HttpClient httpClient, 
             IConfiguration configuration, 
-            IOptions<Configurations.KomuConfiguration> komuConfigurationOptions, 
+            IOptions<Configurations.KomuConfiguration> komuConfigurationOptions,
             IRepository<W2KomuMessageLogs, Guid> W2KomuMessageLogsRepository)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _komuConfiguration = komuConfigurationOptions.Value;
             _W2KomuMessageLogsRepository = W2KomuMessageLogsRepository;
+        }
+
+        [AllowAnonymous]
+        public async Task<List<KomuMessageLogDto>> GetKomuMessageLogListAsync(
+            string userName, 
+            [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string fromTime,
+            [RegularExpression("^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$", ErrorMessage = "Invalid Date yyyy-MM-dd")]
+            string toTime)
+        {
+            IQueryable<W2KomuMessageLogs> queryableLogs = await _W2KomuMessageLogsRepository.GetQueryableAsync();
+
+            if (!string.IsNullOrEmpty(userName))
+            {
+                queryableLogs = queryableLogs.Where(log => log.SendTo == userName);
+            }
+
+            if (!string.IsNullOrEmpty(fromTime) && DateTime.TryParse(fromTime, out DateTime fromDateTime))
+            {
+                fromDateTime = fromDateTime.Date;
+                queryableLogs = queryableLogs.Where(log => log.CreationTime >= fromDateTime);
+            }
+
+            if (!string.IsNullOrEmpty(toTime) && DateTime.TryParse(toTime, out DateTime toDateTime))
+            {
+                toDateTime = toDateTime.Date.AddDays(1).AddTicks(-1);
+                queryableLogs = queryableLogs.Where(log => log.CreationTime <= toDateTime);
+            }
+
+            List<W2KomuMessageLogs> filteredLogs = await queryableLogs.ToDynamicListAsync<W2KomuMessageLogs>();
+
+            List<KomuMessageLogDto> komuMessageLogDto = ObjectMapper.Map<List<W2KomuMessageLogs>, List<KomuMessageLogDto>>(filteredLogs);
+
+            return komuMessageLogDto;
         }
 
         [RemoteService(IsEnabled = false)]
@@ -72,7 +110,6 @@ namespace W2.Komu
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogException(ex);
                     await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
                     {
                         SendTo = username,
@@ -82,6 +119,8 @@ namespace W2.Komu
                         CreatorId = CurrentUser.Id,
                         CreationTime = DateTime.Now
                     });
+
+                    _logger.LogException(ex);
                 }
             }
         }
