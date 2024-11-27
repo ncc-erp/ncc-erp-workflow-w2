@@ -75,7 +75,7 @@ namespace W2.Komu
 
         [RemoteService(IsEnabled = false)]
         [AllowAnonymous]
-        public async Task KomuSendMessageAsync(string username, string message = "")
+        public async Task KomuSendMessageAsync(string username, Guid creatorId, string message = "")
         {
             if(!String.IsNullOrEmpty(username))
             {
@@ -105,7 +105,7 @@ namespace W2.Komu
                         Message = message,
                         SystemResponse = systemResponse.ToString(),
                         Status = 1,
-                        CreatorId = CurrentUser.Id,
+                        CreatorId = creatorId,
                         CreationTime = DateTime.Now
                     });
 
@@ -118,7 +118,7 @@ namespace W2.Komu
                         Message = message,
                         SystemResponse = ex.Message,
                         Status = 0,
-                        CreatorId = CurrentUser.Id,
+                        CreatorId = creatorId,
                         CreationTime = DateTime.Now
                     });
 

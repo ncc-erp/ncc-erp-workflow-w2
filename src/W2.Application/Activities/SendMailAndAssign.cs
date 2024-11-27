@@ -162,7 +162,7 @@ namespace W2.Activities
                     _taskQueue.EnqueueAsync(async (cancellationToken) =>
                     {
                         var emailPrefix = email?.Split('@')[0];
-                        await _komuAppService.KomuSendMessageAsync(emailPrefix, KomuMessage);
+                        await _komuAppService.KomuSendMessageAsync(emailPrefix, input.UserId, KomuMessage);
                     });
                 }
             }
