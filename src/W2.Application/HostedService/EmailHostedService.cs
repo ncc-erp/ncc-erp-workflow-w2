@@ -28,7 +28,7 @@ namespace W2.HostedService
                 {
                     await emailTask(stoppingToken);
 
-                    await Task.Delay(1000, stoppingToken);
+                    await Task.Delay(3000, stoppingToken);
                 }
                 catch (Exception ex)
                 {

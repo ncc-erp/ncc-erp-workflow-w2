@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,6 +34,7 @@ namespace W2.Komu
             IRepository<W2KomuMessageLogs, Guid> W2KomuMessageLogsRepository)
         {
             _httpClient = httpClient;
+            _httpClient.Timeout = TimeSpan.FromSeconds(15);
             _configuration = configuration;
             _logger = logger;
             _komuConfiguration = komuConfigurationOptions.Value;
@@ -104,7 +106,7 @@ namespace W2.Komu
                         SendTo = username,
                         Message = message,
                         SystemResponse = systemResponse.ToString(),
-                        Status = 1,
+                        Status = systemResponse?.StatusCode == HttpStatusCode.OK ? 1 : 0,
                         CreatorId = creatorId,
                         CreationTime = DateTime.Now
                     });
