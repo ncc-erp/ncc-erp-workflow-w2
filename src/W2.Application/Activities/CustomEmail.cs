@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using W2.Komu;
+using W2.HostedService;
 using W2.Scripting;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
@@ -30,18 +31,21 @@ namespace W2.Activities
         private readonly ITaskAppService _taskAppService;
         private IKomuAppService _komuAppService;
         private IWorkflowDefinitionAppService _workflowDefinitionAppService;
+        private readonly ITaskQueue _taskQueue;
         public CustomEmail(ISmtpService smtpService,
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
             IKomuAppService komuAppService,
             IWorkflowDefinitionAppService workflowDefinitionAppService,
+            ITaskQueue taskQueue,
             IContentSerializer contentSerializer)
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
             _komuAppService = komuAppService;
             _workflowDefinitionAppService = workflowDefinitionAppService;
+            _taskQueue = taskQueue;
         }
 
         public new string From => string.Empty;
@@ -59,11 +63,9 @@ namespace W2.Activities
             if (dynamicDataByTask != null) { 
                 context.SetVariable("DynamicDataByTask", dynamicDataByTask); 
             }
-
             WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
 
-            _ = Task.Run(async () =>
-            {
+            _taskQueue.EnqueueAsync(async (cancellationToken) => {
                 await base.OnExecuteAsync(context);
             });
 
@@ -71,8 +73,7 @@ namespace W2.Activities
             {
                 foreach (var email in this.To)
                 {
-                    _ = Task.Run(async () =>
-                    {
+                    _taskQueue.EnqueueAsync(async (cancellationToken) => {
                         var emailPrefix = email?.Split('@')[0];
                         await _komuAppService.KomuSendMessageAsync(emailPrefix, KomuMessage);
                     });
