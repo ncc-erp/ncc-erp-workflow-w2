@@ -11,9 +11,11 @@ namespace W2.HostedService
         private readonly ITaskQueue _taskQueue;
         private readonly ILogger<EmailHostedService> _logger;
 
-        public EmailHostedService(ITaskQueue taskQueue)
+        public EmailHostedService(ITaskQueue taskQueue,
+            ILogger<EmailHostedService> logger)
         {
             _taskQueue = taskQueue;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
