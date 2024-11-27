@@ -8,6 +8,7 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using W2.HostedService;
+using W2.Komu;
 
 namespace W2;
 
@@ -26,6 +27,7 @@ public class W2ApplicationModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddSingleton<ITaskQueue, TaskQueue>();
+        context.Services.AddSingleton<IKomuAppService, KomuAppService>();
         context.Services.AddHostedService<EmailHostedService>();
 
         Configure<AbpAutoMapperOptions>(options =>

@@ -27,12 +27,14 @@ namespace W2.Komu
 
         public KomuAppService(
             HttpClient httpClient, 
-            IConfiguration configuration, 
+            IConfiguration configuration,
+            ILogger<KomuAppService> logger,
             IOptions<Configurations.KomuConfiguration> komuConfigurationOptions,
             IRepository<W2KomuMessageLogs, Guid> W2KomuMessageLogsRepository)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _logger = logger;
             _komuConfiguration = komuConfigurationOptions.Value;
             _W2KomuMessageLogsRepository = W2KomuMessageLogsRepository;
         }
