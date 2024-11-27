@@ -18,6 +18,7 @@ using W2.HostedService;
 using W2.Scripting;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
+using W2.Signals;
 
 namespace W2.Activities
 {
@@ -71,11 +72,13 @@ namespace W2.Activities
 
             if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
             {
+                var currentUser = context.GetRequestUserVariable();
+
                 foreach (var email in this.To)
                 {
                     _taskQueue.EnqueueAsync(async (cancellationToken) => {
                         var emailPrefix = email?.Split('@')[0];
-                        await _komuAppService.KomuSendMessageAsync(emailPrefix, KomuMessage);
+                        await _komuAppService.KomuSendMessageAsync(emailPrefix, (Guid)currentUser.Id, KomuMessage);
                     });
                 }
             }
