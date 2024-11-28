@@ -15,7 +15,6 @@ using W2.Komu;
 using W2.Signals;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
-using W2.HostedService;
 
 namespace W2.Activities
 {
@@ -32,11 +31,10 @@ namespace W2.Activities
             IOptions<SmtpOptions> options,
             IHttpClientFactory httpClientFactory,
             ITaskAppService taskAppService,
-            ITaskQueue taskQueue,
             IContentSerializer contentSerializer,
             IKomuAppService komuAppService,
             IWorkflowDefinitionAppService workflowDefinitionAppService,
-            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, komuAppService, workflowDefinitionAppService, taskQueue, contentSerializer)
+            IExternalResourceAppService externalResourceAppService) : base(smtpService, options, httpClientFactory, taskAppService, komuAppService, workflowDefinitionAppService, contentSerializer)
         {
             _externalResourceAppService = externalResourceAppService;
         }
