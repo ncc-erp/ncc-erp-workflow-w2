@@ -70,7 +70,6 @@ namespace W2.ExternalResources
 
         public async Task<List<ReleaseContent>> GetGithubReleaseContentAsync()
         {
-            // URLs cần gọi
             var urls = new[]
             {
                 "https://api.github.com/repos/ncc-erp/ncc-erp-workflow-w2-ui/releases",
@@ -94,7 +93,6 @@ namespace W2.ExternalResources
 
                 var responseContent = await response.Content.ReadAsStringAsync();
 
-                // Deserialize và thêm vào danh sách chung
                 var releases = JsonConvert.DeserializeObject<List<ReleaseContent>>(responseContent);
                 if (releases != null)
                 {
