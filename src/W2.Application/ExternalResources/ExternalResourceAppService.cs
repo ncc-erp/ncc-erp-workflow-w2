@@ -70,20 +70,39 @@ namespace W2.ExternalResources
 
         public async Task<List<ReleaseContent>> GetGithubReleaseContentAsync()
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/ncc-erp/ncc-erp-workflow-w2-ui/releases");
-            request.Headers.Add("User-Agent", "HttpClient");
-            request.Headers.Remove("RequestVerificationToken");
-
-            var response = await _httpClient.SendAsync(request);
-
-            if (!response.IsSuccessStatusCode)
+            // URLs cần gọi
+            var urls = new[]
             {
-                throw new HttpRequestException($"Failed to get releases: {response.StatusCode}");
+                "https://api.github.com/repos/ncc-erp/ncc-erp-workflow-w2-ui/releases",
+                "https://api.github.com/repos/ncc-erp/ncc-erp-workflow-w2/releases"
+            };
+
+            var allReleases = new List<ReleaseContent>();
+
+            foreach (var url in urls)
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("User-Agent", "HttpClient");
+                request.Headers.Remove("RequestVerificationToken");
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"Failed to get releases from {url}: {response.StatusCode}");
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                // Deserialize và thêm vào danh sách chung
+                var releases = JsonConvert.DeserializeObject<List<ReleaseContent>>(responseContent);
+                if (releases != null)
+                {
+                    allReleases.AddRange(releases);
+                }
             }
 
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            return JsonConvert.DeserializeObject<List<ReleaseContent>>(responseContent);
+            return allReleases;
         }
 
 
