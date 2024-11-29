@@ -29,6 +29,25 @@ namespace W2.Permissions
             ParentId = parentId;
             TenantId = tenantId;
         }
+        public void SetName(string name)
+        {
+            Name = name;
+        }
+
+        public void SetCode(string code)
+        {
+            Code = code;
+        }
+
+        public void SetParentId(Guid? parentId)
+        {
+            ParentId = parentId;
+        }
+
+        public void SetTenantId(Guid? tenantId)
+        {
+            TenantId = tenantId;
+        }
 
         public void SetId(Guid id)
         {
