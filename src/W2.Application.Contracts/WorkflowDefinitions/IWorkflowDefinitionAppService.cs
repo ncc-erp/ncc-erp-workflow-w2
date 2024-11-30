@@ -12,5 +12,6 @@ namespace W2.WorkflowDefinitions
         Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input);
         Task<string> CreateWorkflowDefinitionAsync(CreateWorkflowDefinitionDto input);
         Task DeleteAsync(string id);
+        Task<WorkflowDefinitionSummaryDto> WfGetByDefinitionIdAsync(string definitionId);
     }
 }

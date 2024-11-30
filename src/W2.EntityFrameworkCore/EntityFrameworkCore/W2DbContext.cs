@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Namotion.Reflection;
 using System.Collections.Generic;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -15,6 +14,9 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using W2.Komu;
+using W2.Identity;
+using W2.Permissions;
 using W2.Settings;
 using W2.TaskActions;
 using W2.TaskEmail;
@@ -62,17 +64,23 @@ public class W2DbContext :
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
+
     // tasks
     public DbSet<W2Task> Tasks { get; set; }
     public DbSet<W2Setting> W2Setting { get; set; }
+    public DbSet<W2KomuMessageLogs> W2KomuMessageLogs { get; set; }
     #endregion
     public DbSet<W2TaskEmail> W2TaskEmail { get; set; }
     public DbSet<W2TaskActions> W2TaskActions { get; set; }
 
+    // roles
+    public DbSet<W2CustomIdentityRole> CustomIdentityRoles { get; set; }
+    public DbSet<W2CustomIdentityUser> CustomIdentityUsers { get; set; }
+    public DbSet<W2Permission> Permissions { get; set; }
+
     public W2DbContext(DbContextOptions<W2DbContext> options)
         : base(options)
     {
-
     }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -115,6 +123,12 @@ public class W2DbContext :
             b.HasKey(e => e.Id);
         });
 
+        builder.Entity<W2KomuMessageLogs>(b =>
+        {
+            b.ToTable("W2KomuMessageLogs");
+            b.HasKey(e => e.Id);
+        });
+
         builder.Entity<W2TaskEmail>(b =>
         {
             b.ToTable("W2TaskEmail");
@@ -140,6 +154,60 @@ public class W2DbContext :
             b.Property(x => x.Settings).HasConversion(new ElsaEFJsonValueConverter<W2.WorkflowDefinitions.Settings>(), ValueComparer.CreateDefault(typeof(W2.WorkflowDefinitions.Settings), false));
             b.Property(x => x.WorkflowDefinitionId).IsRequired();
             b.HasIndex(x => x.WorkflowDefinitionId);
+        });
+
+        builder.Entity<W2CustomIdentityRole>(b =>
+        {
+            b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "Roles");
+            b.Property(x => x.Permissions)
+                .HasColumnType("jsonb")
+                .HasDefaultValueSql("'[]'")
+                .IsRequired();
+            b.Property(x => x.CreationTime)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .IsRequired();
+            b.Property(x => x.LastModificationTime)
+                .HasColumnType("timestamp with time zone")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        builder.Entity<W2CustomIdentityUser>(b =>
+        {
+            b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "Users");
+            b.Property(x => x.CustomPermissions)
+                .HasColumnType("jsonb")
+                .HasDefaultValueSql("'[]'")
+                .IsRequired();
+        });
+
+        builder.Entity<W2CustomIdentityUserRole>(b =>
+        {
+            b.ToTable(AbpIdentityDbProperties.DbTablePrefix + "UserRoles");
+            b.HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<W2Permission>(b =>
+        {
+            b.ToTable("W2Permissions");
+            b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Code).IsRequired().HasMaxLength(128);
+            b.Property(x => x.ParentId).IsRequired(false);
+
+            b.HasOne(x => x.Parent)
+                .WithMany(x => x.Children)
+                .HasForeignKey(x => x.ParentId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
         });
     }
 }

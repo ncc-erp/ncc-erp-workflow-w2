@@ -1,20 +1,15 @@
 ﻿using Elsa;
-using Elsa.Activities.Http.Events;
-using Elsa.Activities.Signaling.Models;
-using Elsa.Activities.Signaling.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using MediatR;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Namotion.Reflection;
-using NetBox.Extensions;
 using Newtonsoft.Json;
+using NodaTime;
 using Open.Linq.AsyncExtensions;
 using System;
 using System.Collections;
@@ -29,23 +24,24 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Emailing;
 using Volo.Abp.Identity;
-using Volo.Abp.TextTemplating;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
+using W2.Authorization.Attributes;
+using W2.Constants;
 using W2.ExternalResources;
+using W2.Identity;
 using W2.Permissions;
 using W2.Specifications;
 using W2.TaskActions;
 using W2.Tasks;
 using W2.Utils;
 using W2.WorkflowDefinitions;
-using static IdentityServer4.Models.IdentityResources;
 
 namespace W2.WorkflowInstances
 {
-    [Authorize(W2Permissions.WorkflowManagementWorkflowInstances)]
+    //[Authorize(W2Permissions.WorkflowManagementWorkflowInstances)]
+    [RequirePermission(W2ApiPermissions.WorkflowInstancesManagement)]
     public class WorkflowInstanceAppService : W2AppService, IWorkflowInstanceAppService
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
@@ -107,6 +103,7 @@ namespace W2.WorkflowInstances
             _externalResourceAppService = externalResourceAppService;
         }
 
+        [RequirePermission(W2ApiPermissions.CancelWorkflowInstance)]
         public async Task<string> CancelAsync(string id)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);
@@ -164,8 +161,9 @@ namespace W2.WorkflowInstances
 
             return "Cancel Request workflow successful";
         }
-
-        [Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
+                
+        //[Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
+        [RequirePermission(W2ApiPermissions.CreateWorkflowInstance)]
         public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
         {
             var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(input.WorkflowDefinitionId, tenantId: CurrentTenantStrId);
@@ -408,170 +406,57 @@ namespace W2.WorkflowInstances
             return result;
         }
 
-        public async Task<PagedResultDto<WFHDto>> GetWfhListAsync(ListAllWFHRequestInput input)
+        [RequirePermission(W2ApiPermissions.ViewListWFHReport)]
+        public async Task<PagedResultDto<WFHRequestDto>> GetWfhListAsync(ListAllWFHRequestInput input)
         {
             string defaultWFHDefinitionsId = _configuration.GetValue<string>("DefaultWFHDefinitionsId");
+            var wfhCountObject = await GetWfhCount("2000-01-01", "3000-01-01", 100, 0);
 
-            var specification = Specification<WorkflowInstance>.Identity;
-            specification = specification.WithWorkflowDefinition(defaultWFHDefinitionsId)
-                .WithStatus(WorkflowStatus.Finished);
+            var wfhQuery = await _wfhHistoryRepository.GetQueryableAsync();
+            var wfInstanceQueryJoin = (await _instanceStarterRepository.GetQueryableAsync()).Where(x => x.WorkflowDefinitionId == defaultWFHDefinitionsId);
 
-            var instances = (await _workflowInstanceStore.FindManyAsync(specification));
-            var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(
-                new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, instances.Select(i => i.DefinitionId).ToArray())
-            )).ToList();
+            var dateFromArray = input.StartDate.IsNullOrEmpty() ? "2000-01-01".Split("-") : input.StartDate.Split("-");
+            var dateFromDb = Int64.Parse($"{dateFromArray[0]}{dateFromArray[1]}{dateFromArray[2]}");
+            var dateToArray = input.EndDate.IsNullOrEmpty() ? "3000-01-01".Split("-") : input.EndDate.Split("-");
+            var dateToDb = Int64.Parse($"{dateToArray[0]}{dateToArray[1]}{dateToArray[2]}");
 
-            instances = instances.Where(instance =>
-            {
-                var workflowDefinition = workflowDefinitions.FirstOrDefault(x => x.DefinitionId == instance.DefinitionId);
-                var lastExecutedActivity = workflowDefinition.Activities.FirstOrDefault(x => x.ActivityId == instance.LastExecutedActivityId);
+            var totalCountQuery = wfhQuery.Where(w => w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb)
+            .Join(wfInstanceQueryJoin,
+              x => x.WorkflowInstanceStarterId,
+              y => y.Id,
+              (h, wf) => new { history = h, wf })
+            .Where(wf => input.Status == WorkflowInstancesStatus.All || wf.wf.Status == input.Status);
 
-                return GetFinalStatus(lastExecutedActivity) == "Approved";
-            });
-
-            var instancesIds = instances.Select(x => x.Id);
-            var tasks = (await _taskRepository.GetListAsync());
-            var workflowInstanceStarters = new List<WorkflowInstanceStarter>();
-            var workflowInstanceStartersQuery = await _instanceStarterRepository.GetQueryableAsync();
-            workflowInstanceStartersQuery = workflowInstanceStartersQuery
-                .Where(x => instancesIds.Contains(x.WorkflowInstanceId));
-            workflowInstanceStarters = await AsyncExecuter.ToListAsync(workflowInstanceStartersQuery);
-
-            var instancesQuery = workflowInstanceStarters
-                .Join(instances, x => x.WorkflowInstanceId, x => x.Id,
-                (WorkflowInstanceStarter, WorkflowInstance) => new
-                {
-                    WorkflowInstanceStarter,
-                    WorkflowInstance
-                })
-                .GroupJoin(tasks, x => x.WorkflowInstance.Id, x => x.WorkflowInstanceId,
-                (joinedEntities, W2task) => new
-                {
-                    joinedEntities.WorkflowInstanceStarter,
-                    joinedEntities.WorkflowInstance,
-                    W2task = W2task.FirstOrDefault()
-                })
-                .AsQueryable();
-
-            var requestUserIds = workflowInstanceStarters.Select(x => (Guid)x.CreatorId);
-            var totalCount = (await _userRepository.GetListAsync())
-                .Where(x => x.Id.IsIn(requestUserIds))
-                .Count();
-
-            var query = (await _userRepository.GetListAsync())
-                .Where(x => x.Id.IsIn(requestUserIds))
-                .AsQueryable();
+            var joinQuery = (from w in wfhQuery
+                         where w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb
+                         join wf in wfInstanceQueryJoin on w.WorkflowInstanceStarterId equals wf.Id
+                             let status = wf.Status
+                             where input.Status == WorkflowInstancesStatus.All || status == input.Status
+                             select new WFHRequestDto
+                             {
+                                 Id = w.Id,
+                                 Branch = w.Branch,
+                                 RemoteDate = w.RemoteDate,
+                                 Email = w.Email,
+                                 CreationTime = w.CreationTime,
+                                 Reason = wf.Input["Reason"].ToString(),
+                                 Status = wf.Status
+                             });
 
             if (!string.IsNullOrEmpty(input.KeySearch))
             {
-                query = query.Where(x => x.Email.Contains(input.KeySearch));
+                totalCountQuery = totalCountQuery.Where(wf => wf.history.Email.Contains(input.KeySearch));
+                joinQuery = joinQuery.Where(w => w.Email.Contains(input.KeySearch));
             }
 
-            var requestUsers = query
-                .Skip(input.SkipCount)
-                .Take(input.MaxResultCount)
-                .ToList();
+            var totalCount = totalCountQuery.Count();
 
-            var WFHList = new List<WFHDto>();
-            foreach (var requestUser in requestUsers)
-            {
-                var totalDays = 0;
-                List<string> totalDaysStr = new List<string>();
-                var totalPosts = 0;
-                List<string> totalPostStr = new List<string>();
-                List<object> newPostList = new List<object>();
+            var result = ApplySorting(joinQuery, input.Sorting).Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
 
-                var workflowInstanceStarterList = workflowInstanceStarters.Where(x => x.CreatorId == requestUser.Id).ToList();
-
-                foreach (var workflowInstanceStarter in workflowInstanceStarterList)
-                {
-                    var workflowInstance = instances.FirstOrDefault(x => x.Id == workflowInstanceStarter.WorkflowInstanceId);
-
-                    var data = workflowInstance.Variables.Data;
-                    foreach (KeyValuePair<string, object> kvp in data)
-                    {
-                        var value = kvp.Value;
-                        if (value is Dictionary<string, string> dateDictionary && dateDictionary.ContainsKey("Dates"))
-                        {
-                            string dateStr = dateDictionary["Dates"];
-                            char[] separator = new char[] { ',' };
-                            string[] dateArray = dateStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-                            if (input.StartDate != DateTime.MinValue && input.EndDate != DateTime.MinValue)
-                            {
-                                foreach (string dateString in dateArray)
-                                {
-                                    if (DateTime.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date))
-                                    {
-                                        if (date >= input.StartDate && date <= input.EndDate)
-                                        {
-                                            totalDays++;
-                                            totalDaysStr.Add(date.ToString("dd/MM/yyyy"));
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                totalDays += dateArray.Length;
-                                totalDaysStr.AddRange(dateArray);
-                            }
-                        }
-                    }
-                }
-
-                if (totalDays == 0) {
-                    continue;
-                }
-
-                var users = await GetUserInfoBySlug(ConvertEmailToSlug(requestUser.Email));
-                List<PostItem> posts = (users.Count > 0) ? await GetPostByAuthor(users[0].id) : new List<PostItem>();
-
-                foreach (var post in posts)
-                {
-                    if (DateTime.TryParseExact(post.date, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date) &&
-                        (input.StartDate == DateTime.MinValue || (date >= input.StartDate && date <= input.EndDate)))
-                    {
-                        totalPosts++;
-                        totalPostStr.Add(date.ToString("dd/MM/yyyy"));
-                        newPostList.Add(post);
-                    }
-                }
-
-                var sortedRequestDates = SortAndRemoveDuplicates(totalDaysStr);
-                var sortedPostsDates = Sort(totalPostStr);
-
-                int totalMissingPosts = sortedRequestDates.Count;
-                foreach (string request in sortedRequestDates)
-                {
-                    for (int i = 0; i < sortedPostsDates.Count; i++)
-                    {
-                        if (IsDateGreaterOrEqual(sortedPostsDates[i], request))
-                        {
-                            totalMissingPosts--;
-                            sortedPostsDates.RemoveAt(i);
-                            break;
-                        }
-                    }
-                }
-
-                var wfhDto = new WFHDto
-                {
-                    email = requestUser.Email,
-                    posts = newPostList,
-                    totalPosts = totalPosts,
-                    requests = workflowInstanceStarterList,
-                    requestDates = sortedRequestDates,
-                    totalDays = sortedRequestDates.Count,
-                    totalMissingPosts = totalMissingPosts,
-                };
-                WFHList.Add(wfhDto);
-            }
-
-            List<WFHDto> sortedList = SortWFHDtos(WFHList, input.Sorting);
-            return new PagedResultDto<WFHDto>(totalCount, sortedList);
+            return new PagedResultDto<WFHRequestDto>(totalCount, result);
         }
 
-
+        [RequirePermission(W2ApiPermissions.ViewListWorkflowInstances)]
         public async Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input)
         {
             var specialStatus = new string[] { "approved", "rejected" };
@@ -930,73 +815,47 @@ namespace W2.WorkflowInstances
             return "WorkflowInstance.CreatedAt DESC";
         }
 
-        public List<WFHDto> SortWFHDtos(List<WFHDto> wfhList, string sortExpression)
+        private IQueryable<WFHRequestDto> ApplySorting(IQueryable<WFHRequestDto> query, string sorting)
         {
-            if (string.IsNullOrWhiteSpace(sortExpression))
+            if (string.IsNullOrEmpty(sorting))
             {
-                return wfhList;
+                return query.OrderBy(u => u.CreationTime);
             }
 
-            string[] parts = sortExpression.Split(' ');
-            string fieldName = parts[0];
-            string sortOrder = parts.Length > 1 ? parts[1] : "asc";
-
-            IOrderedEnumerable<WFHDto> sortedList = null;
-
-            switch (fieldName)
+            var sortingParts = sorting.Trim().Split(' ');
+            if (sortingParts.Length != 2)
             {
-                case "email":
-                    sortedList = sortOrder.ToLower() == "asc"
-                        ? wfhList.OrderBy(dto => dto.email)
-                        : wfhList.OrderByDescending(dto => dto.email);
-                    break;
-                case "totalPosts":
-                    sortedList = sortOrder.ToLower() == "asc"
-                        ? wfhList.OrderBy(dto => dto.totalPosts)
-                        : wfhList.OrderByDescending(dto => dto.totalPosts);
-                    break;
-                case "totalDays":
-                    sortedList = sortOrder.ToLower() == "asc"
-                        ? wfhList.OrderBy(dto => dto.totalDays)
-                        : wfhList.OrderByDescending(dto => dto.totalDays);
-                    break;
-                case "totalMissingPosts":
-                    sortedList = sortOrder.ToLower() == "asc"
-                        ? wfhList.OrderBy(dto => dto.totalMissingPosts)
-                        : wfhList.OrderByDescending(dto => dto.totalMissingPosts);
-                    break;
-                default:
-                    return wfhList;
+                return query.OrderBy(u => u.CreationTime);
             }
 
-            return sortedList.ToList();
+            var property = sortingParts[0].ToLower();
+            var isAscending = sortingParts[1].ToLower() == "asc";
+
+            query = property switch
+            {
+                "email" => isAscending
+                    ? query.OrderBy(u => u.Email)
+                    : query.OrderByDescending(u => u.Email),
+
+                "reason" => isAscending
+                    ? query.OrderBy(u => u.Reason)
+                    : query.OrderByDescending(u => u.Reason),
+
+                "remotedate" => isAscending
+                    ? query.OrderBy(u => u.RemoteDate)
+                    : query.OrderByDescending(u => u.RemoteDate),
+
+                "creationtime" => isAscending
+                    ? query.OrderBy(u => u.CreationTime)
+                    : query.OrderByDescending(u => u.CreationTime),
+
+                _ => query.OrderBy(u => u.CreationTime)
+            };
+
+            return query;
         }
 
-        private string ConvertEmailToSlug(string email)
-        {
-            string cleanedUsername = email.Split("@")[0].Replace(".", "-");
-
-            return cleanedUsername;
-        }
-
-        public async Task<List<UserInfoBySlug>> GetUserInfoBySlug(string slug)
-        {
-            var response = await _antClientApi.GetUsersBySlugAsync(slug);
-            var users = response != null ? response
-                .OrderBy(x => x.id)
-                .ToList() : new List<UserInfoBySlug>();
-            return users;
-        }
-
-        public async Task<List<PostItem>> GetPostByAuthor(int author)
-        {
-            var response = await _antClientApi.GetPostsByUserIdAsync(author);
-            var posts = response != null ? response
-                .OrderBy(x => x.id)
-                .ToList() : new List<PostItem>();
-            return posts;
-        }
-
+        [RequirePermission(W2ApiPermissions.ViewListWorkflowInstances)]
         public async Task<WorkflowInstanceDetailDto> GetDetailByIdAsync(string id)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id);

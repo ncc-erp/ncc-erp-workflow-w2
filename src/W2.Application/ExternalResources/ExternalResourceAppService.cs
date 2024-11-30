@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,6 +29,7 @@ namespace W2.ExternalResources
     public class ExternalResourceAppService : W2AppService, IExternalResourceAppService
     {
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
         private readonly IdentityUserManager _userManager;
         private readonly SimpleGuidGenerator _simpleGuidGenerator;
         private readonly IDistributedCache<AllUserInfoCacheItem> _userInfoCache;
@@ -36,6 +39,7 @@ namespace W2.ExternalResources
         //private readonly IHrmClientApi _hrmClient;
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
+            HttpClient httpClient,
             //IHrmClientApi hrmClient,
             IProjectClientApi projectClient,
             ITimesheetClientApi timesheetClient,
@@ -47,6 +51,7 @@ namespace W2.ExternalResources
             _userInfoCache = userInfoCache;
             _projectClient = projectClient;
             _timesheetClient = timesheetClient;
+            _httpClient = httpClient;
             //_hrmClient = hrmClient;
             _configuration = configuration;
             _userManager = userManager;
@@ -62,6 +67,42 @@ namespace W2.ExternalResources
                 async () => await GetAllUsersInfoFromApiAsync()
             );
         }
+
+        public async Task<List<ReleaseContent>> GetGithubReleaseContentAsync()
+        {
+            var urls = new[]
+            {
+                "https://api.github.com/repos/ncc-erp/ncc-erp-workflow-w2-ui/releases",
+                "https://api.github.com/repos/ncc-erp/ncc-erp-workflow-w2/releases"
+            };
+
+            var allReleases = new List<ReleaseContent>();
+
+            foreach (var url in urls)
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("User-Agent", "HttpClient");
+                request.Headers.Remove("RequestVerificationToken");
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"Failed to get releases from {url}: {response.StatusCode}");
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                var releases = JsonConvert.DeserializeObject<List<ReleaseContent>>(responseContent);
+                if (releases != null)
+                {
+                    allReleases.AddRange(releases);
+                }
+            }
+
+            return allReleases;
+        }
+
 
         public async Task<List<TimesheetProjectItem>> GetCurrentUserProjectsAsync(string email)
         {

@@ -18,5 +18,6 @@ namespace W2.WorkflowDefinitions
     {
         public string Color { get; set; }
         public string TitleTemplate { get; set; }
+        public bool IsSendKomuMessage { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -58,6 +58,11 @@ using System.Text;
 using System.Collections.Generic;
 using W2.Web.Workflows;
 using Microsoft.AspNetCore.HttpOverrides;
+using Autofac.Core;
+using Microsoft.EntityFrameworkCore.Internal;
+using W2.Authorization.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text.Json;
 
 namespace W2.Web;
 
@@ -126,6 +131,8 @@ public class W2WebModule : AbpModule
             options.AssumeDefaultVersionWhenUnspecified = true;
         });
 
+        context.Services.AddPermissionAuthorization();
+
         Configure<SettingManagementPageOptions>(options =>
         {
             options.Contributors.Add(new SocialLoginSettingsPageContributor());
@@ -182,8 +189,8 @@ public class W2WebModule : AbpModule
                 {
                     ValidIssuer = configuration["Jwt:Issuer"],
                     ValidAudience = configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey
-       (Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = false,
@@ -380,11 +387,13 @@ public class W2WebModule : AbpModule
         app.UseIdentityServer();
         app.UseCookiePolicy();
         app.UseAuthorization();
+
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "W2 API");
         });
+
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();

@@ -1,29 +1,32 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using Elsa.Activities.Signaling.Models;
+using System;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
+using W2.HostedService;
 
-namespace W2.HostedService
+public class TaskQueue : ITaskQueue
 {
-    public class TaskQueue : ITaskQueue
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(2); // Limit to 10 concurrent tasks
+    private readonly Channel<Func<CancellationToken, Task>> _queue = Channel.CreateUnbounded<Func<CancellationToken, Task>>();
+
+    public async Task EnqueueAsync(Func<CancellationToken, Task> task)
     {
-        private readonly ConcurrentQueue<Func<CancellationToken, Task>> _tasks = new();
-        private readonly SemaphoreSlim _signal = new(0);
+        await _queue.Writer.WriteAsync(task);
+    }
 
-        public void EnqueueAsync(Func<CancellationToken, Task> task)
-        {
-            if (task == null)
-                throw new ArgumentNullException(nameof(task));
+    public async Task<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken); // Wait for a free slot
+        return await _queue.Reader.ReadAsync(cancellationToken);
+    }
 
-            _tasks.Enqueue(task);
-            _signal.Release();
-        }
-
-        public async Task<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken)
-        {
-            await _signal.WaitAsync(cancellationToken);
-            _tasks.TryDequeue(out var task);
-            return task;
-        }
+    public void TaskCompleted()
+    {
+        _semaphore.Release(); // Release a slot
+    }
+    public int GetQueueCount()
+    {
+        return _queue.Reader.Count;
     }
 }
