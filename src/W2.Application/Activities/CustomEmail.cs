@@ -69,17 +69,16 @@ namespace W2.Activities
             _ = _taskQueue.EnqueueAsync(async (cancellationToken) =>
             {
                 await base.OnExecuteAsync(context);
-                if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
-                {
-                    foreach (var email in this.To)
-                    {
-                        var emailPrefix = email?.Split('@')[0];
-                        await _komuAppService.KomuSendMessageAsync(emailPrefix, (Guid)currentUser.Id, KomuMessage);
-                    }
-
-                }
             });
 
+            if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
+            {
+                foreach (var email in this.To)
+                {
+                    var emailPrefix = email?.Split('@')[0];
+                    _ = _komuAppService.KomuSendMessageAsync(emailPrefix, (Guid)currentUser.Id, KomuMessage);
+                }
+            }
             return Done();
         }
     }

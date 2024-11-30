@@ -153,15 +153,15 @@ namespace W2.Activities
             _ = _taskQueue.EnqueueAsync(async (cancellationToken) =>
             {
                 await base.OnExecuteAsync(context);
-                if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
-                {
-                    foreach (var email in EmailTo)
-                    {
-                        var emailPrefix = email?.Split('@')[0];
-                        await _komuAppService.KomuSendMessageAsync(emailPrefix, input.UserId, KomuMessage);
-                    }
-                }
             });
+            if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
+            {
+                foreach (var email in EmailTo)
+                {
+                    var emailPrefix = email?.Split('@')[0];
+                    _ = _komuAppService.KomuSendMessageAsync(emailPrefix, input.UserId, KomuMessage);
+                }
+            }
 
             return Done();
         }
