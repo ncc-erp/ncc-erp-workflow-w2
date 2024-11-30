@@ -19,7 +19,6 @@ using W2.Scripting;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.Signals;
-
 namespace W2.Activities
 {
     [Action(
@@ -66,22 +65,20 @@ namespace W2.Activities
             }
             WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
 
-            _taskQueue.EnqueueAsync(async (cancellationToken) => {
-                await base.OnExecuteAsync(context);
-            });
-
-            if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
+            var currentUser = context.GetRequestUserVariable();
+            _ = _taskQueue.EnqueueAsync(async (cancellationToken) =>
             {
-                var currentUser = context.GetRequestUserVariable();
-
-                foreach (var email in this.To)
+                await base.OnExecuteAsync(context);
+                if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
                 {
-                    _taskQueue.EnqueueAsync(async (cancellationToken) => {
+                    foreach (var email in this.To)
+                    {
                         var emailPrefix = email?.Split('@')[0];
                         await _komuAppService.KomuSendMessageAsync(emailPrefix, (Guid)currentUser.Id, KomuMessage);
-                    });
+                    }
+
                 }
-            }
+            });
 
             return Done();
         }

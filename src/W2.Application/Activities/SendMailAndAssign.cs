@@ -23,7 +23,6 @@ using W2.Signals;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.HostedService;
-
 namespace W2.Activities
 {
     [Action(
@@ -151,21 +150,18 @@ namespace W2.Activities
                 this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
             }
 
-            _taskQueue.EnqueueAsync(async (cancellationToken) => {
-                await base.OnExecuteAsync(context);
-            });
-
-            if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
+            _ = _taskQueue.EnqueueAsync(async (cancellationToken) =>
             {
-                foreach (var email in EmailTo)
+                await base.OnExecuteAsync(context);
+                if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
                 {
-                    _taskQueue.EnqueueAsync(async (cancellationToken) =>
+                    foreach (var email in EmailTo)
                     {
                         var emailPrefix = email?.Split('@')[0];
                         await _komuAppService.KomuSendMessageAsync(emailPrefix, input.UserId, KomuMessage);
-                    });
+                    }
                 }
-            }
+            });
 
             return Done();
         }
