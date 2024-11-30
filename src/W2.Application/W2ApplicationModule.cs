@@ -26,9 +26,7 @@ public class W2ApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddSingleton<ITaskQueue, TaskQueue>();
         context.Services.AddSingleton<IKomuAppService, KomuAppService>();
-        context.Services.AddHostedService<EmailHostedService>();
 
         Configure<AbpAutoMapperOptions>(options =>
         {

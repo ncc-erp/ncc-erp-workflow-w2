@@ -8,7 +8,6 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Serialization;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -22,7 +21,6 @@ using W2.Scripting;
 using W2.Signals;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
-using W2.HostedService;
 
 namespace W2.Activities
 {
@@ -36,7 +34,6 @@ namespace W2.Activities
         private ITaskAppService _taskAppService;
         private IKomuAppService _komuAppService;
         private IWorkflowDefinitionAppService _workflowDefinitionAppService;
-        private readonly ITaskQueue _taskQueue;
 
         public SendMailAndAssign(ISmtpService smtpService, 
             IOptions<SmtpOptions> options, 
@@ -44,14 +41,12 @@ namespace W2.Activities
             ITaskAppService taskAppService,
             IKomuAppService komuAppService,
             IWorkflowDefinitionAppService workflowDefinitionAppService,
-            ITaskQueue taskQueue,
             IContentSerializer contentSerializer) 
             : base(smtpService, options, httpClientFactory, contentSerializer)
         {
             _taskAppService = taskAppService;
             _komuAppService = komuAppService;
             _workflowDefinitionAppService = workflowDefinitionAppService;
-            _taskQueue = taskQueue;
         }
 
         public new string From => string.Empty;
@@ -151,19 +146,14 @@ namespace W2.Activities
                 this.Body = this.Body.Replace("${input}", HttpUtility.UrlEncode(DynamicActionData) ?? "");
             }
 
-            _taskQueue.EnqueueAsync(async (cancellationToken) => {
-                await base.OnExecuteAsync(context);
-            });
+            await base.OnExecuteAsync(context);
 
             if ((bool)workflowDefinitionSummaryDto?.InputDefinition.Settings.IsSendKomuMessage)
             {
                 foreach (var email in EmailTo)
                 {
-                    _taskQueue.EnqueueAsync(async (cancellationToken) =>
-                    {
-                        var emailPrefix = email?.Split('@')[0];
-                        await _komuAppService.KomuSendMessageAsync(emailPrefix, input.UserId, KomuMessage);
-                    });
+                    var emailPrefix = email?.Split('@')[0];
+                    await _komuAppService.KomuSendMessageAsync(emailPrefix, input.UserId, KomuMessage);
                 }
             }
 
