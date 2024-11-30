@@ -27,13 +27,17 @@ namespace W2.HostedService
                 try
                 {
                     await emailTask(stoppingToken);
-
-                    await Task.Delay(1000, stoppingToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex.Message);
                 }
+                finally
+                {
+                    _taskQueue.TaskCompleted();
+                }
+                // Add a delay to reduce CPU usage
+                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken);
             }
         }
     }
