@@ -9,6 +9,7 @@ namespace W2.WorkflowInstances
         Pending,
         Approved,
         Rejected,
-        Canceled
+        Canceled,
+        All = -1
     }
 }

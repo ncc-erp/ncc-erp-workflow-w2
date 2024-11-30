@@ -19,6 +19,10 @@ public static class W2ApiPermissions
     public const string CreateWorkflowInstance = WorkflowInstancesManagement + ".Create";
     public const string CancelWorkflowInstance = WorkflowInstancesManagement + ".Cancel";
 
+    // WFH Reporst
+    public const string WFHReport = "WFHReport";
+    public const string ViewListWFHReport = WFHReport + ".View";
+
     // Tasks
     public const string TasksManagement = "Tasks";
     public const string ViewListTasks = TasksManagement + ".View";

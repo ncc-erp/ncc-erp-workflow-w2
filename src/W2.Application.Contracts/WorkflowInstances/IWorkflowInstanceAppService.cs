@@ -12,7 +12,7 @@ namespace W2.WorkflowInstances
         Task<PagedResultDto<WorkflowInstanceDto>> ListAsync(ListAllWorkflowInstanceInput input);
         Task<string> CancelAsync(string id);
         Task<WorkflowInstanceDto> GetByIdAsync(string id);
-        Task<PagedResultDto<WFHDto>> GetWfhListAsync(ListAllWFHRequestInput input);
+        Task<PagedResultDto<WFHRequestDto>> GetWfhListAsync(ListAllWFHRequestInput input);
         Task<WorkflowInstanceDetailDto> GetDetailByIdAsync(string id);
     }
 }
