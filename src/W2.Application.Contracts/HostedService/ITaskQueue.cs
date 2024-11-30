@@ -6,7 +6,9 @@ namespace W2.HostedService
 {
     public interface ITaskQueue
     {
-        void EnqueueAsync(Func<CancellationToken, Task> task);
+        Task EnqueueAsync(Func<CancellationToken, Task> task);
         Task<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken);
+        void TaskCompleted();
+        int GetQueueCount();
     }
 }
