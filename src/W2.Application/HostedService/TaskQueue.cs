@@ -25,4 +25,8 @@ public class TaskQueue : ITaskQueue
     {
         _semaphore.Release(); // Release a slot
     }
+    public int GetQueueCount()
+    {
+        return _queue.Reader.Count;
+    }
 }

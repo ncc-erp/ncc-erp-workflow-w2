@@ -23,7 +23,7 @@ namespace W2.HostedService
             while (!stoppingToken.IsCancellationRequested)
             {
                 var emailTask = await _taskQueue.DequeueAsync(stoppingToken);
-
+                _logger.LogError($"ERR {DateTime.Now} queue {_taskQueue.GetQueueCount()}");
                 try
                 {
                     await emailTask(stoppingToken);
