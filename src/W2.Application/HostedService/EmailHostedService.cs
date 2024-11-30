@@ -36,8 +36,6 @@ namespace W2.HostedService
                 {
                     _taskQueue.TaskCompleted();
                 }
-                // Add a delay to reduce CPU usage
-                await Task.Delay(TimeSpan.FromMilliseconds(100), stoppingToken);
             }
         }
     }
