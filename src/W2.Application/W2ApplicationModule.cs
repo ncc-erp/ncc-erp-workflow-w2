@@ -37,5 +37,6 @@ public class W2ApplicationModule : AbpModule
 
         var configuration = context.Services.GetConfiguration();
         Configure<Configurations.KomuConfiguration>(configuration.GetSection(nameof(Configurations.KomuConfiguration)));
+        Configure<Configurations.MinIOConfiguration>(configuration.GetSection(nameof(Configurations.MinIOConfiguration)));
     }
 }
