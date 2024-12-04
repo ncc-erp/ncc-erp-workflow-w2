@@ -63,6 +63,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using W2.Authorization.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text.Json;
+using W2.Web.ExceptionSubscriber;
 
 namespace W2.Web;
 
@@ -137,6 +138,8 @@ public class W2WebModule : AbpModule
         {
             options.Contributors.Add(new SocialLoginSettingsPageContributor());
         });
+
+        context.Services.AddTransient<SentryExceptionSubscriber>();
 
         context.Services.AddSameSiteCookiePolicy();
 
@@ -377,6 +380,7 @@ public class W2WebModule : AbpModule
         app.UseAuthentication();
         app.UseJwtTokenMiddleware();
         app.UseHttpActivities();
+        app.UseSentryTracing();
 
         if (MultiTenancyConsts.IsEnabled)
         {
