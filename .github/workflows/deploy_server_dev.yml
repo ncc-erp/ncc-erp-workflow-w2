@@ -85,9 +85,9 @@ jobs:
         ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_DEV }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
         URL_WEB: ${{ secrets.URL_WEB_DEV }}
-        SENTRY_DNS: ${{ secrets.SENTRY_DNS }}
-        SENTRY_DEBUG: ${{ secrets.SENTRY_DEBUG }}
-        SENTRY_TRACES_SAMPLE_RATE: ${{ secrets.SENTRY_TRACES_SAMPLE_RATE }}
+        SENTRY_DNS: ${{ secrets.SENTRY_DNS_DEV }}
+        SENTRY_DEBUG: ${{ secrets.SENTRY_DEBUG_DEV }}
+        SENTRY_TRACES_SAMPLE_RATE: ${{ secrets.SENTRY_TRACES_SAMPLE_RATE_DEV }}
 
     - name: Migrate Database
       run: |
