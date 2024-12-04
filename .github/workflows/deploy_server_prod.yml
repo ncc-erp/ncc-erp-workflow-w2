@@ -93,6 +93,7 @@ jobs:
         SENTRY_DNS: ${{ secrets.SENTRY_DNS_PROD }}
         SENTRY_DEBUG: ${{ secrets.SENTRY_DEBUG_PROD }}
         SENTRY_TRACES_SAMPLE_RATE: ${{ secrets.SENTRY_TRACES_SAMPLE_RATE_PROD }}
+        SENTRY_ENVIRONMENT: ${{ secrets.SENTRY_ENVIRONMENT_PROD }}
             
     - name: Download Migrator & Host from S3
       run: |

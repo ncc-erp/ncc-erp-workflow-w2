@@ -31,3 +31,4 @@ sed "s/WFH_DEFINITIONS_ID/$WFH_DEFINITIONS_ID/g" -i appsettings.json
 sed "s/SENTRY_DNS/$SENTRY_DNS/g" -i appsettings.json
 sed "s/SENTRY_DEBUG/$SENTRY_DEBUG/g" -i appsettings.json
 sed "s/SENTRY_TRACES_SAMPLE_RATE/$SENTRY_TRACES_SAMPLE_RATE/g" -i appsettings.json
+sed "s/SENTRY_ENVIRONMENT/$SENTRY_ENVIRONMENT/g" -i appsettings.json

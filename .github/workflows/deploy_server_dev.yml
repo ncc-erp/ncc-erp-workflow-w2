@@ -88,6 +88,7 @@ jobs:
         SENTRY_DNS: ${{ secrets.SENTRY_DNS_DEV }}
         SENTRY_DEBUG: ${{ secrets.SENTRY_DEBUG_DEV }}
         SENTRY_TRACES_SAMPLE_RATE: ${{ secrets.SENTRY_TRACES_SAMPLE_RATE_DEV }}
+        SENTRY_ENVIRONMENT: ${{ secrets.SENTRY_ENVIRONMENT_DEV }}
 
     - name: Migrate Database
       run: |
