@@ -36,6 +36,8 @@ namespace W2.ExternalResources
         private readonly IProjectClientApi _projectClient;
         private readonly ITimesheetClientApi _timesheetClient;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
+        private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
+
         //private readonly IHrmClientApi _hrmClient;
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
@@ -45,6 +47,7 @@ namespace W2.ExternalResources
             ITimesheetClientApi timesheetClient,
             IConfiguration configuration,
             IdentityUserManager userManager,
+            IRepository<W2CustomIdentityUser, Guid> userRepository,
             IRepository<W2Setting, Guid> settingRepository
             )
         {
@@ -56,6 +59,7 @@ namespace W2.ExternalResources
             _configuration = configuration;
             _userManager = userManager;
             _simpleGuidGenerator = SimpleGuidGenerator.Instance;
+            _userRepository = userRepository;
             _settingRepository = settingRepository;
         }
 
@@ -263,39 +267,43 @@ namespace W2.ExternalResources
             }
             if (user == null)
                 throw new UserFriendlyException("Invalid External Authentication.");
-            //check for the Locked out account
-            var issuer = _configuration["Jwt:Issuer"];
-            var audience = _configuration["Jwt:Audience"];
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+            // user 
+            var userTemp = await _userRepository.FindAsync(x => x.Id == user.Id);
 
-            var rolenames = await _userManager.GetRolesAsync(user);
-            DateTimeOffset now = (DateTimeOffset)DateTime.UtcNow;  // using System;
+            ////check for the Locked out account
+            //var issuer = _configuration["Jwt:Issuer"];
+            //var audience = _configuration["Jwt:Audience"];
+            //var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(AbpClaimTypes.UserId, user.Id.ToString()),
-                    new Claim(AbpClaimTypes.UserName, user.UserName),
-                    new Claim(AbpClaimTypes.Email, user.Email),
-                    new Claim(AbpClaimTypes.Name, user.Name),
-                    new Claim(AbpClaimTypes.Role, rolenames.FirstOrDefault()),
-                    new Claim(JwtRegisteredClaimNames.GivenName, user.Name),
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                    new Claim(JwtRegisteredClaimNames.UniqueName, user.Email),
-                    new Claim(JwtRegisteredClaimNames.AuthTime, now.ToUnixTimeSeconds().ToString()),
-                 }),
-                Expires = DateTime.UtcNow.AddMinutes(30),
-                Issuer = issuer,
-                Audience = audience,
-                SigningCredentials = new SigningCredentials
-               (new SymmetricSecurityKey(key),
-               SecurityAlgorithms.HmacSha512Signature)
-            };
+            //var rolenames = await _userManager.GetRolesAsync(user);
+            //DateTimeOffset now = (DateTimeOffset)DateTime.UtcNow;  // using System;
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var stringToken = tokenHandler.WriteToken(token);
+            //var tokenDescriptor = new SecurityTokenDescriptor
+            //{
+            //    Subject = new ClaimsIdentity(new[]
+            //    {
+            //        new Claim(AbpClaimTypes.UserId, user.Id.ToString()),
+            //        new Claim(AbpClaimTypes.UserName, user.UserName),
+            //        new Claim(AbpClaimTypes.Email, user.Email),
+            //        new Claim(AbpClaimTypes.Name, user.Name),
+            //        new Claim(AbpClaimTypes.Role, rolenames.FirstOrDefault()),
+            //        new Claim(JwtRegisteredClaimNames.GivenName, user.Name),
+            //        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            //        new Claim(JwtRegisteredClaimNames.UniqueName, user.Email),
+            //        new Claim(JwtRegisteredClaimNames.AuthTime, now.ToUnixTimeSeconds().ToString()),
+            //     }),
+            //    Expires = DateTime.UtcNow.AddMinutes(30),
+            //    Issuer = issuer,
+            //    Audience = audience,
+            //    SigningCredentials = new SigningCredentials
+            //   (new SymmetricSecurityKey(key),
+            //   SecurityAlgorithms.HmacSha512Signature)
+            //};
+
+            //var tokenHandler = new JwtSecurityTokenHandler();
+            //var token = tokenHandler.CreateToken(tokenDescriptor);
+            //var stringToken = tokenHandler.WriteToken(token);
+            var stringToken = Utils.JwtHelper.GenerateJwtTokenForUser(userTemp, _configuration);
             return new ExternalAuthUser
             {
                 Token = stringToken
