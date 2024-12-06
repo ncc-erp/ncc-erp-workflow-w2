@@ -248,7 +248,7 @@ namespace W2.ExternalResources
                 user = await _userManager.FindByEmailAsync(payload.Email);
                 if (user == null)
                 {
-                    user = new Volo.Abp.Identity.IdentityUser(_simpleGuidGenerator.Create(), payload.Email, payload.Email);
+                    user = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), payload.Email, payload.Email);
                     user.Name = payload.Name;
                     await _userManager.CreateAsync(user);
                     //prepare and send an email for the email confirmation
