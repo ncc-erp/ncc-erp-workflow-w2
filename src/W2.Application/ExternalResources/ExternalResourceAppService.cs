@@ -2,6 +2,7 @@
 using Google.Apis.Auth.OAuth2.Flows;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -268,8 +269,12 @@ namespace W2.ExternalResources
             if (user == null)
                 throw new UserFriendlyException("Invalid External Authentication.");
             // user 
-            var userTemp = await _userRepository.FindAsync(x => x.Id == user.Id);
-
+            var query = await _userRepository.GetQueryableAsync();
+            var userTemp = await query
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => u.Id == user.Id)
+                .FirstOrDefaultAsync();
             ////check for the Locked out account
             //var issuer = _configuration["Jwt:Issuer"];
             //var audience = _configuration["Jwt:Audience"];
