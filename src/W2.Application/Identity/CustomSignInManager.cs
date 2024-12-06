@@ -11,15 +11,15 @@ using System.Threading.Tasks;
 
 namespace W2.Identity
 {
-    public class CustomSignInManager : SignInManager<Volo.Abp.Identity.IdentityUser>
+    public class CustomSignInManager : SignInManager<W2CustomIdentityUser>
     {
-        public CustomSignInManager(UserManager<Volo.Abp.Identity.IdentityUser> userManager, 
+        public CustomSignInManager(UserManager<W2CustomIdentityUser> userManager, 
             IHttpContextAccessor contextAccessor, 
-            IUserClaimsPrincipalFactory<Volo.Abp.Identity.IdentityUser> claimsFactory, 
+            IUserClaimsPrincipalFactory<W2CustomIdentityUser> claimsFactory, 
             IOptions<IdentityOptions> optionsAccessor, 
-            ILogger<SignInManager<Volo.Abp.Identity.IdentityUser>> logger, 
+            ILogger<SignInManager<W2CustomIdentityUser>> logger, 
             IAuthenticationSchemeProvider schemes, 
-            IUserConfirmation<Volo.Abp.Identity.IdentityUser> confirmation) 
+            IUserConfirmation<W2CustomIdentityUser> confirmation) 
             : base(userManager, contextAccessor, claimsFactory, optionsAccessor, logger, schemes, confirmation)
         {
         }
