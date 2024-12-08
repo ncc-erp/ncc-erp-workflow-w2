@@ -196,7 +196,7 @@ public class MezonAppService : W2AppService, IMezonAppService
             throw new UserFriendlyException(L["Exception:NoStartableWorkflowFound"]);
         }
 
-        var httpRequestModel = GetHttpRequestModel(nameof(HttpMethod.Post), input.Input);
+        var httpRequestModel = GetHttpRequestModel(nameof(HttpMethod.Post), input.DataInputs);
 
         var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(
             startableWorkflow,
@@ -213,7 +213,7 @@ public class MezonAppService : W2AppService, IMezonAppService
                 WorkflowDefinitionId = instance.DefinitionId,
                 WorkflowDefinitionVersionId = instance.DefinitionVersionId,
                 Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(
-                    JsonConvert.SerializeObject(input.Input)),
+                    JsonConvert.SerializeObject(input.DataInputs)),
             };
 
             workflowInstanceStarter.SetCreatorId(currentUserByEmail.Id);
