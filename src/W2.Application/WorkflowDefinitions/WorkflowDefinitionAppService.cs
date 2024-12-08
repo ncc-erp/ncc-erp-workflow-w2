@@ -19,6 +19,8 @@ using W2.Constants;
 using W2.Identity;
 using W2.Specifications;
 using Microsoft.AspNetCore.Authorization;
+using W2.ExternalResources;
+using W2.Settings;
 
 namespace W2.WorkflowDefinitions
 {
@@ -29,15 +31,22 @@ namespace W2.WorkflowDefinitions
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
         private readonly IWorkflowPublisher _workflowPublisher;
+        private readonly IRepository<W2Setting, Guid> _settingRepository;
+        private readonly IExternalResourceAppService _externalResourceAppService;
 
         public WorkflowDefinitionAppService(
             IWorkflowDefinitionStore workflowDefinitionStore,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
-            IWorkflowPublisher workflowPublisher)
+            IWorkflowPublisher workflowPublisher,
+            IRepository<W2Setting, Guid> settingRepository,
+            IExternalResourceAppService externalResourceAppService
+            )
         {
             _workflowDefinitionStore = workflowDefinitionStore;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _workflowPublisher = workflowPublisher;
+            _settingRepository = settingRepository;
+            _externalResourceAppService = externalResourceAppService;
         }
 
         [RequirePermission(W2ApiPermissions.ViewListWorkflowDefinitions)]
