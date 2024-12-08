@@ -33,6 +33,15 @@ public class W2ApplicationAutoMapperProfile : Profile
                     IsRequired = i.IsRequired
                 })
                 .ToList()));
+        CreateMap<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionMezonDto>()
+            .ForMember(d => d.PropertyDefinitions, options =>
+                options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinitionDto
+                    {
+                        Name = i.Name,
+                        Type = i.Type,
+                        IsRequired = i.IsRequired
+                    })
+                    .ToList()));
         CreateMap<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>()
             .ForMember(d => d.PropertyDefinitions, options =>
                 options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinition

@@ -19,6 +19,8 @@ using W2.Constants;
 using W2.Identity;
 using W2.Specifications;
 using Microsoft.AspNetCore.Authorization;
+using W2.ExternalResources;
+using W2.Settings;
 
 namespace W2.WorkflowDefinitions
 {
@@ -29,15 +31,22 @@ namespace W2.WorkflowDefinitions
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
         private readonly IWorkflowPublisher _workflowPublisher;
+        private readonly IRepository<W2Setting, Guid> _settingRepository;
+        private readonly IExternalResourceAppService _externalResourceAppService;
 
         public WorkflowDefinitionAppService(
             IWorkflowDefinitionStore workflowDefinitionStore,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
-            IWorkflowPublisher workflowPublisher)
+            IWorkflowPublisher workflowPublisher,
+            IRepository<W2Setting, Guid> settingRepository,
+            IExternalResourceAppService externalResourceAppService
+            )
         {
             _workflowDefinitionStore = workflowDefinitionStore;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _workflowPublisher = workflowPublisher;
+            _settingRepository = settingRepository;
+            _externalResourceAppService = externalResourceAppService;
         }
 
         [RequirePermission(W2ApiPermissions.ViewListWorkflowDefinitions)]
@@ -218,5 +227,137 @@ namespace W2.WorkflowDefinitions
                 Message = $"Workflow with ID {input.WorkflowId} updated to published: {input.IsPublished}"
             };
         }
+
+        [AllowAnonymous]
+        public async Task<object> ListPropertyDefinitionsByMezonCommand(ListPropertyDefinitionsByMezonCommandDto input)
+        {
+            var currentUserProjects = await GetCurrentUserProjectsAsync(input.Email);
+            var listOffice = await GetListOfOffice();
+
+            var specification = Specification<WorkflowDefinition>.Identity
+                .And(new ListAllWorkflowDefinitionsSpecification(CurrentTenantStrId, null))
+                .And(new PublishedWorkflowDefinitionsSpecification())
+                .And(new GetByNameWorkflowDefinitionsSpecification(input.Keyword));
+
+            var workflowDefinitionsFound = await _workflowDefinitionStore
+                .FindManyAsync(
+                    specification,
+                    new OrderBy<WorkflowDefinition>(x => x.CreatedAt, SortDirection.Descending)
+                );
+
+            var workflowDefinition = workflowDefinitionsFound.FirstOrDefault();
+
+            if (workflowDefinition == null)
+            {
+                throw new UserFriendlyException(L["Exception:WorkflowDefinitionNotFound"]);
+            }
+
+            var wfInputDefinition = await _workflowCustomInputDefinitionRepository
+                .FindAsync(x => x.WorkflowDefinitionId == workflowDefinition.DefinitionId);
+
+            var wfInputDefinitionDto =
+                ObjectMapper.Map<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionMezonDto>(wfInputDefinition);
+            var embed = new List<object>();
+
+            var selectTypes = new List<string> { "MyProject", "MyPMProject", "OfficeList" };
+            foreach (var propertyDef in wfInputDefinitionDto.PropertyDefinitions)
+            {
+                
+                // SELECT = 2, INPUT = 3
+                var type = selectTypes.Contains(propertyDef.Type) ? 3 : 2;
+
+                var optionsMapping = new Dictionary<string, List<OptionsMezonDto>>
+                {
+                    { "MyPMProject", currentUserProjects },
+                    { "MyProject", currentUserProjects },
+                    { "OfficeList", listOffice },
+                };
+                
+                var options = optionsMapping.TryGetValue(propertyDef.Type, out var value) 
+                    ? value 
+                    : new List<OptionsMezonDto>();
+                
+                var component = new
+                {
+                    id = propertyDef.Name,
+                    type = 1, // EMessageSelectType.Text = 1
+                    placeholder = propertyDef.Name,
+                    required = propertyDef.IsRequired,
+                    textarea = propertyDef.Type == "RichText",
+                    options
+                };
+                
+                var inputComponent = new
+                {
+                    id = propertyDef.Name,
+                    type,
+                    component
+                };
+
+                var inputRef = new
+                {
+                    name = propertyDef.Name,
+                    value = "",
+                    inputs = inputComponent
+                };
+
+                embed.Add(inputRef);
+            }
+
+            return new
+            {
+                workflowDefinitionId = workflowDefinition.DefinitionId,
+                embed
+            };
+        }
+        
+        private async Task<List<OptionsMezonDto>> GetListOfOffice()
+        {
+            var setting = await _settingRepository.FirstOrDefaultAsync(setting => setting.Code == SettingCodeEnum.DIRECTOR);
+            var settingValue = setting.ValueObject;
+            List<OptionsMezonDto> officeInfoList = new List<OptionsMezonDto>();
+            settingValue.items.ForEach(item => {
+                officeInfoList.Add(new OptionsMezonDto
+                {
+                    Value = item.code,
+                    Label = item.name,
+                });
+            });
+            return officeInfoList;
+        }
+        
+        private async Task<List<OptionsMezonDto>> GetCurrentUserProjectsAsync(string email)
+        {
+            if (email == null)
+            {
+                throw new UserFriendlyException(L["Exception:EmailNotFound"]);
+            }
+            var userEmail = CurrentUser.Email;
+            if(!string.IsNullOrEmpty(email))
+            {
+                userEmail = email;
+            }
+
+            var projects = await _externalResourceAppService.GetUserProjectsFromApiAsync(userEmail);
+            var listProjectsDto = new List<OptionsMezonDto>();
+            foreach (var project in projects)
+            {
+                listProjectsDto.Add(new OptionsMezonDto
+                {
+                    Value = project.Code,
+                    Label = project.Name,
+                });
+            }
+            
+            return listProjectsDto;
+        }
+    }
+    
+    public class OptionsMezonDto
+    {
+        [JsonProperty("label")]
+        public string Label { get; set; }
+        [JsonProperty("value")]
+        public string Value { get; set; }
     }
 }
