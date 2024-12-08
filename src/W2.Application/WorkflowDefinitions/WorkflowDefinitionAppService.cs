@@ -263,8 +263,9 @@ namespace W2.WorkflowDefinitions
             foreach (var propertyDef in wfInputDefinitionDto.PropertyDefinitions)
             {
                 
-                // SELECT = 2, INPUT = 3
-                var type = selectTypes.Contains(propertyDef.Type) ? 3 : 2;
+                var type = selectTypes.Contains(propertyDef.Type) 
+                    ? MessageComponentTypeEnum.SELECT 
+                    : MessageComponentTypeEnum.INPUT;
 
                 var optionsMapping = new Dictionary<string, List<OptionsMezonDto>>
                 {
@@ -280,7 +281,7 @@ namespace W2.WorkflowDefinitions
                 var component = new
                 {
                     id = propertyDef.Name,
-                    type = 1, // EMessageSelectType.Text = 1
+                    type = MessageSelectTypeEnum.Text,
                     placeholder = propertyDef.Name,
                     required = propertyDef.IsRequired,
                     textarea = propertyDef.Type == "RichText",
