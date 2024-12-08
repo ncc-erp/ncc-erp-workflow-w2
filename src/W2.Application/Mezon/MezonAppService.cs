@@ -4,14 +4,21 @@ using Elsa.Persistence.Specifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Elsa.Services;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using W2.Specifications;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Volo.Abp.Uow;
 using W2.ExternalResources;
+using W2.Identity;
 using W2.Settings;
 using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
 
 namespace W2.Mezon;
 
@@ -21,18 +28,33 @@ public class MezonAppService : W2AppService, IMezonAppService
     private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
     private readonly IRepository<W2Setting, Guid> _settingRepository;
     private readonly IExternalResourceAppService _externalResourceAppService;
+    private readonly Configurations.MezonConfiguration _mezonConfiguration;
+    private readonly IWorkflowLaunchpad _workflowLaunchpad;
+    private readonly IUnitOfWorkManager _unitOfWorkManager;
+    private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
+    private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
 
     public MezonAppService(
+        IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
+        IWorkflowLaunchpad workflowLaunchpad,
+        IUnitOfWorkManager unitOfWorkManager,
         IWorkflowDefinitionStore workflowDefinitionStore,
         IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
         IRepository<W2Setting, Guid> settingRepository,
-        IExternalResourceAppService externalResourceAppService
+        IExternalResourceAppService externalResourceAppService,
+        IOptions<Configurations.MezonConfiguration> mezonConfiguration,
+        IRepository<W2CustomIdentityUser, Guid> userRepository
     )
     {
         _workflowDefinitionStore = workflowDefinitionStore;
         _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
         _settingRepository = settingRepository;
         _externalResourceAppService = externalResourceAppService;
+        _mezonConfiguration = mezonConfiguration.Value;
+        _workflowLaunchpad = workflowLaunchpad;
+        _unitOfWorkManager = unitOfWorkManager;
+        _instanceStarterRepository = instanceStarterRepository;
+        _userRepository = userRepository;
     }
 
     [AllowAnonymous]
@@ -141,13 +163,7 @@ public class MezonAppService : W2AppService, IMezonAppService
             throw new UserFriendlyException(L["Exception:EmailNotFound"]);
         }
 
-        var userEmail = CurrentUser.Email;
-        if (!string.IsNullOrEmpty(email))
-        {
-            userEmail = email;
-        }
-
-        var projects = await _externalResourceAppService.GetUserProjectsFromApiAsync(userEmail);
+        var projects = await _externalResourceAppService.GetUserProjectsFromApiAsync(email);
         var listProjectsDto = new List<OptionDto>();
         foreach (var project in projects)
         {
@@ -160,5 +176,52 @@ public class MezonAppService : W2AppService, IMezonAppService
 
         return listProjectsDto;
     }
+
+    [AllowAnonymous]
+    public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
+    {
+        var currentUserByEmail = await _userRepository.FirstOrDefaultAsync(u => u.Email == input.Email);
+        if (currentUserByEmail == null)
+        {
+            throw new UserFriendlyException(L["Exception:EmailNotFound"]);
+        }
+
+        var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(
+            input.WorkflowDefinitionId,
+            tenantId: CurrentTenantStrId
+        );
+
+        if (startableWorkflow == null)
+        {
+            throw new UserFriendlyException(L["Exception:NoStartableWorkflowFound"]);
+        }
+
+        var httpRequestModel = GetHttpRequestModel(nameof(HttpMethod.Post), input.Input);
+
+        var executionResult = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(
+            startableWorkflow,
+            new WorkflowInput(httpRequestModel)
+        );
+
+        var instance = executionResult.WorkflowInstance;
+        var workflowInstanceStarterResponse = new WorkflowInstanceStarter();
+        using (var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
+        {
+            var workflowInstanceStarter = new WorkflowInstanceStarter
+            {
+                WorkflowInstanceId = instance.Id,
+                WorkflowDefinitionId = instance.DefinitionId,
+                WorkflowDefinitionVersionId = instance.DefinitionVersionId,
+                Input = JsonConvert.DeserializeObject<Dictionary<string, string>>(
+                    JsonConvert.SerializeObject(input.Input)),
+            };
+
+            workflowInstanceStarter.SetCreatorId(currentUserByEmail.Id);
+
+            workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+            await uow.CompleteAsync();
+        }
+
+        return workflowInstanceStarterResponse;
+    }
 }
-    
