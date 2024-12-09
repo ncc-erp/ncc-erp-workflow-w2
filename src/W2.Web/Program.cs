@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -33,6 +34,7 @@ public class Program
                 .UseAutofac()
                 .UseSerilog();
             await builder.AddApplicationAsync<W2WebModule>();
+            builder.WebHost.UseSentry();
             var app = builder.Build();
             await app.InitializeApplicationAsync();
             await app.RunAsync();
