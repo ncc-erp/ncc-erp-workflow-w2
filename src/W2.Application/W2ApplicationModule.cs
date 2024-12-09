@@ -9,6 +9,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using W2.HostedService;
 using W2.Komu;
+using W2.Mezon;
 
 namespace W2;
 
@@ -29,6 +30,7 @@ public class W2ApplicationModule : AbpModule
         context.Services.AddSingleton<ITaskQueue, TaskQueue>();
         context.Services.AddSingleton<IKomuAppService, KomuAppService>();
         context.Services.AddHostedService<EmailHostedService>();
+        context.Services.AddSingleton<IMezonAppService, MezonAppService>();
 
         Configure<AbpAutoMapperOptions>(options =>
         {
@@ -37,5 +39,6 @@ public class W2ApplicationModule : AbpModule
 
         var configuration = context.Services.GetConfiguration();
         Configure<Configurations.KomuConfiguration>(configuration.GetSection(nameof(Configurations.KomuConfiguration)));
+        Configure<Configurations.MezonConfiguration>(configuration.GetSection(nameof(Configurations.MezonConfiguration)));
     }
 }
