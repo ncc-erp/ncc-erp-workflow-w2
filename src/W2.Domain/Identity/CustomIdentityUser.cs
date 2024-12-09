@@ -28,6 +28,18 @@ namespace W2.Identity
         {
         }
 
+        public override void AddRole(Guid roleId)
+        {
+            Check.NotNull(roleId, nameof(roleId));
+
+            if (IsInRole(roleId))
+            {
+                return;
+            }
+
+            Roles.Add(new W2CustomIdentityUserRole(Id, roleId, TenantId));
+        }
+
         public virtual void SetUserName(string userName)
         {
             Check.NotNullOrWhiteSpace(userName, nameof(userName));
