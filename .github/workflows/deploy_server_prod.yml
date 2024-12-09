@@ -90,6 +90,8 @@ jobs:
         ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_PROD }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
         URL_WEB: ${{ secrets.URL_WEB_PROD }}
+        MEZON_SECRET_KEY_HEADER_NAME: ${{ secrets.MEZON_SECRET_KEY_HEADER_NAME_PROD }}
+        MEZON_X_SECRET_KEY: ${{ secrets.MEZON_X_SECRET_KEY_PROD }}
             
     - name: Download Migrator & Host from S3
       run: |
