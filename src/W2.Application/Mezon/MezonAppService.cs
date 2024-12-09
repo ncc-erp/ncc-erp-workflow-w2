@@ -28,7 +28,6 @@ public class MezonAppService : W2AppService, IMezonAppService
     private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
     private readonly IRepository<W2Setting, Guid> _settingRepository;
     private readonly IExternalResourceAppService _externalResourceAppService;
-    private readonly Configurations.MezonConfiguration _mezonConfiguration;
     private readonly IWorkflowLaunchpad _workflowLaunchpad;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
@@ -42,7 +41,6 @@ public class MezonAppService : W2AppService, IMezonAppService
         IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
         IRepository<W2Setting, Guid> settingRepository,
         IExternalResourceAppService externalResourceAppService,
-        IOptions<Configurations.MezonConfiguration> mezonConfiguration,
         IRepository<W2CustomIdentityUser, Guid> userRepository
     )
     {
@@ -50,7 +48,6 @@ public class MezonAppService : W2AppService, IMezonAppService
         _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
         _settingRepository = settingRepository;
         _externalResourceAppService = externalResourceAppService;
-        _mezonConfiguration = mezonConfiguration.Value;
         _workflowLaunchpad = workflowLaunchpad;
         _unitOfWorkManager = unitOfWorkManager;
         _instanceStarterRepository = instanceStarterRepository;
