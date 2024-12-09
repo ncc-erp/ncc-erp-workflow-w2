@@ -5,14 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Elsa.Services;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using W2.Specifications;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
+using Volo.Abp.Security.Claims;
 using Volo.Abp.Uow;
 using W2.ExternalResources;
 using W2.Identity;
@@ -32,6 +34,7 @@ public class MezonAppService : W2AppService, IMezonAppService
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
     private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public MezonAppService(
         IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -41,7 +44,8 @@ public class MezonAppService : W2AppService, IMezonAppService
         IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
         IRepository<W2Setting, Guid> settingRepository,
         IExternalResourceAppService externalResourceAppService,
-        IRepository<W2CustomIdentityUser, Guid> userRepository
+        IRepository<W2CustomIdentityUser, Guid> userRepository,
+        IHttpContextAccessor httpContextAccessor
     )
     {
         _workflowDefinitionStore = workflowDefinitionStore;
@@ -52,10 +56,12 @@ public class MezonAppService : W2AppService, IMezonAppService
         _unitOfWorkManager = unitOfWorkManager;
         _instanceStarterRepository = instanceStarterRepository;
         _userRepository = userRepository;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     [AllowAnonymous]
-    public async Task<MezonAppRequestTemplateDto> ListPropertyDefinitionsByCommand(ListPropertyDefinitionsByMezonCommandDto input)
+    public async Task<MezonAppRequestTemplateDto> ListPropertyDefinitionsByCommand(
+        ListPropertyDefinitionsByMezonCommandDto input)
     {
         var currentUserProjects = await GetCurrentUserProjectsAsync(input.Email);
         var listOffice = await GetListOfOffice();
@@ -177,11 +183,7 @@ public class MezonAppService : W2AppService, IMezonAppService
     [AllowAnonymous]
     public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
     {
-        var currentUserByEmail = await _userRepository.FirstOrDefaultAsync(u => u.Email == input.Email);
-        if (currentUserByEmail == null)
-        {
-            throw new UserFriendlyException(L["Exception:EmailNotFound"]);
-        }
+        await UpdateCurrentUser(input.Email);
 
         var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(
             input.WorkflowDefinitionId,
@@ -213,12 +215,41 @@ public class MezonAppService : W2AppService, IMezonAppService
                     JsonConvert.SerializeObject(input.DataInputs)),
             };
 
-            workflowInstanceStarter.SetCreatorId(currentUserByEmail.Id);
-
             workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
             await uow.CompleteAsync();
         }
 
+        _httpContextAccessor.HttpContext.User = new ClaimsPrincipal();
         return workflowInstanceStarterResponse;
+    }
+
+    private async Task<W2CustomIdentityUser> UpdateCurrentUser(string email)
+    {
+        var userByEmail = await _userRepository.FirstOrDefaultAsync(u => u.Email == email);
+        if (userByEmail == null)
+        {
+            throw new UserFriendlyException(L["Exception:EmailNotFound"]);
+        }
+
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext == null)
+        {
+            throw new Exception("HttpContext is null. Ensure this method is called in a valid HTTP request context.");
+        }
+
+        var claims = new List<Claim>
+        {
+            new Claim(AbpClaimTypes.UserId, userByEmail.Id.ToString()),
+            new Claim(AbpClaimTypes.UserName, userByEmail.UserName),
+            new Claim(AbpClaimTypes.Email, userByEmail.Email),
+            new Claim(AbpClaimTypes.Name, userByEmail.Name),
+        };
+
+        var identity = new ClaimsIdentity(claims);
+        var principal = new ClaimsPrincipal(identity);
+
+        httpContext.User = principal;
+
+        return userByEmail;
     }
 }
