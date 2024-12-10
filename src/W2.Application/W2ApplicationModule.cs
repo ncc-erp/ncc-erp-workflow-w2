@@ -39,6 +39,6 @@ public class W2ApplicationModule : AbpModule
 
         var configuration = context.Services.GetConfiguration();
         Configure<Configurations.KomuConfiguration>(configuration.GetSection(nameof(Configurations.KomuConfiguration)));
-        Configure<Configurations.MezonConfiguration>(configuration.GetSection(nameof(Configurations.MezonConfiguration)));
+        Configure<Configurations.ApiConfiguration>(configuration.GetSection(nameof(Configurations.ApiConfiguration)));
     }
 }

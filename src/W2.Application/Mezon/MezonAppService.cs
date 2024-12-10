@@ -13,13 +13,13 @@ using Volo.Abp.Domain.Repositories;
 using W2.Specifications;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.Uow;
 using W2.ExternalResources;
 using W2.Identity;
 using W2.Settings;
+using W2.Utils;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 
@@ -61,7 +61,7 @@ public class MezonAppService : W2AppService, IMezonAppService
     }
 
     [AllowAnonymous]
-    [ServiceFilter(typeof(SecretKeyFilterAttribute))]
+    [ApiKeyAuth]
     public async Task<MezonAppRequestTemplateDto> ListPropertyDefinitionsByCommand(
         ListPropertyDefinitionsByMezonCommandDto input)
     {
@@ -183,7 +183,7 @@ public class MezonAppService : W2AppService, IMezonAppService
     }
 
     [AllowAnonymous]
-    [ServiceFilter(typeof(SecretKeyFilterAttribute))]
+    [ApiKeyAuth]
     public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
     {
         await UpdateCurrentUser(input.Email);

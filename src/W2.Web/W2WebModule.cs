@@ -63,7 +63,6 @@ using Microsoft.EntityFrameworkCore.Internal;
 using W2.Authorization.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text.Json;
-using W2.Mezon;
 
 namespace W2.Web;
 
@@ -150,8 +149,6 @@ public class W2WebModule : AbpModule
         {
             options.RequestedClaims.Add(CustomClaim.ProjectName);
         });
-        
-        context.Services.AddScoped<SecretKeyFilterAttribute>();
     }
 
     private void ConfigureUrls(IConfiguration configuration)
