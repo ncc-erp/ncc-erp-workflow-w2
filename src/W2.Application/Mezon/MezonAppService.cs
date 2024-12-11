@@ -94,11 +94,16 @@ public class MezonAppService : W2AppService, IMezonAppService
         var embed = new List<EmbedDto>();
 
         var selectTypes = new List<string> { "MyProject", "MyPMProject", "OfficeList" };
+        var dateTimeTypes = new List<string> { "MultiDatetime", "DateTime"};
         foreach (var propertyDef in wfInputDefinitionDto.PropertyDefinitions)
         {
             var type = selectTypes.Contains(propertyDef.Type)
                 ? MessageComponentTypeEnum.SELECT
                 : MessageComponentTypeEnum.INPUT;
+
+            var name = dateTimeTypes.Contains(propertyDef.Type)
+                ? $"{propertyDef.Name} (dd/MM/yyyy)"
+                : propertyDef.Name;
 
             var optionsMapping = new Dictionary<string, List<OptionDto>>
             {
@@ -130,7 +135,7 @@ public class MezonAppService : W2AppService, IMezonAppService
 
             var inputRef = new EmbedDto()
             {
-                Name = propertyDef.Name,
+                Name = name,
                 Value = "",
                 Inputs = inputComponent
             };
