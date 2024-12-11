@@ -28,3 +28,5 @@ sed "s/GG_SECRET/$GG_SECRET/g" -i appsettings.json
 sed "s/TALENT_DF/$TALENT_DF/g" -i appsettings.json
 sed "s/URL_WEB/$URL_WEB/g" -i appsettings.json
 sed "s/WFH_DEFINITIONS_ID/$WFH_DEFINITIONS_ID/g" -i appsettings.json
+sed "s/API_SECRET_KEY_HEADER_NAME/$API_SECRET_KEY_HEADER_NAME/g" -i appsettings.json
+sed "s/API_X_SECRET_KEY/$API_X_SECRET_KEY/g" -i appsettings.json
