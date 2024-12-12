@@ -19,6 +19,7 @@ using W2.Constants;
 using W2.Identity;
 using W2.Specifications;
 using Microsoft.AspNetCore.Authorization;
+using Volo.Abp.Uow;
 using W2.ExternalResources;
 using W2.Settings;
 
@@ -33,20 +34,23 @@ namespace W2.WorkflowDefinitions
         private readonly IWorkflowPublisher _workflowPublisher;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
         private readonly IExternalResourceAppService _externalResourceAppService;
+        private readonly IUnitOfWorkManager _unitOfWorkManager;
 
         public WorkflowDefinitionAppService(
             IWorkflowDefinitionStore workflowDefinitionStore,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
             IWorkflowPublisher workflowPublisher,
             IRepository<W2Setting, Guid> settingRepository,
-            IExternalResourceAppService externalResourceAppService
-            )
+            IExternalResourceAppService externalResourceAppService,
+            IUnitOfWorkManager unitOfWorkManager
+        )
         {
             _workflowDefinitionStore = workflowDefinitionStore;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _workflowPublisher = workflowPublisher;
             _settingRepository = settingRepository;
             _externalResourceAppService = externalResourceAppService;
+            _unitOfWorkManager = unitOfWorkManager;
         }
 
         [RequirePermission(W2ApiPermissions.ViewListWorkflowDefinitions)]
@@ -139,19 +143,33 @@ namespace W2.WorkflowDefinitions
         [RequirePermission(W2ApiPermissions.DefineInputWorkflowDefinition)]
         public async Task SaveWorkflowInputDefinitionAsync(WorkflowCustomInputDefinitionDto input)
         {
-            if (input.DefineJson != null) await UpdateWorkflowDefinitionAsync(input.DefineJson, input.WorkflowDefinitionId);
+            using var uow = _unitOfWorkManager.Begin();
+            try
+            {
+                if (input.DefineJson != null)
+                {
+                    await UpdateWorkflowDefinitionAsync(input.DefineJson, input.WorkflowDefinitionId);
+                }
 
-            if (input.Id == default)
-            {
-                await _workflowCustomInputDefinitionRepository.InsertAsync(
-                    ObjectMapper.Map<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>(input)
-                );
+                if (input.Id == default)
+                {
+                    await _workflowCustomInputDefinitionRepository.InsertAsync(
+                        ObjectMapper.Map<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>(input)
+                    );
+                }
+                else
+                {
+                    var inputDefinition = await _workflowCustomInputDefinitionRepository.GetAsync(input.Id);
+                    ObjectMapper.Map(input, inputDefinition);
+                    await _workflowCustomInputDefinitionRepository.UpdateAsync(inputDefinition);
+                }
+
+                await uow.CompleteAsync();
             }
-            else
+            catch
             {
-                var inputDefinition = await _workflowCustomInputDefinitionRepository.GetAsync(input.Id);
-                ObjectMapper.Map(input, inputDefinition);
-                await _workflowCustomInputDefinitionRepository.UpdateAsync(inputDefinition);
+                await uow.RollbackAsync();
+                throw;
             }
         }
 
@@ -163,13 +181,17 @@ namespace W2.WorkflowDefinitions
 
             workflowDefinition.DefinitionId = currentWorkflowDefineId;
 
-            var existingWorkflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync( workflowDefinition.DefinitionId, VersionOptions.Latest);
+            var existingWorkflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync( workflowDefinition.DefinitionId,VersionOptions.Latest);
 
             if (existingWorkflowDefinition != null)
             {
                 workflowDefinition.Version = existingWorkflowDefinition.Version + 1;
-                workflowDefinition.Id = existingWorkflowDefinition.Id;
-                await _workflowDefinitionStore.UpdateAsync(workflowDefinition);
+                workflowDefinition.Id = Guid.NewGuid().ToString();
+                await _workflowDefinitionStore.AddAsync(workflowDefinition);
+
+                existingWorkflowDefinition.IsLatest = false;
+                existingWorkflowDefinition.IsPublished = false;
+                await _workflowDefinitionStore.UpdateAsync(existingWorkflowDefinition);
             }
         }
 
@@ -211,15 +233,7 @@ namespace W2.WorkflowDefinitions
 
             workflowDefinition.IsPublished = input.IsPublished;
 
-            if (input.IsPublished)
-            {
-                await _workflowPublisher.PublishAsync(workflowDefinition);
-            }
-            else
-            {
-                await _workflowPublisher.SaveDraftAsync(workflowDefinition);
-            }
-
+            await _workflowDefinitionStore.UpdateAsync(workflowDefinition);
             return new
             {
                 WorkflowId = input.WorkflowId,
