@@ -85,6 +85,8 @@ jobs:
         ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_DEV }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
         URL_WEB: ${{ secrets.URL_WEB_DEV }}
+        API_SECRET_KEY_HEADER_NAME: ${{ secrets.API_SECRET_KEY_HEADER_NAME_DEV }}
+        API_X_SECRET_KEY: ${{ secrets.API_X_SECRET_KEY_DEV }}
 
     - name: Migrate Database
       run: |

@@ -23,4 +23,10 @@ namespace W2.WorkflowDefinitions
         public string TitleTemplate { get; set; }
         public bool IsSendKomuMessage { get; set; }
     }
+    public class WorkflowCustomInputDefinitionMezonDto : EntityDto<Guid>
+    {
+        public string WorkflowDefinitionId { get; set; }
+        public SettingsDto Settings { get; set; }
+        public List<WorkflowCustomInputPropertyDefinitionDto> PropertyDefinitions { get; set; }
+    }
 }
