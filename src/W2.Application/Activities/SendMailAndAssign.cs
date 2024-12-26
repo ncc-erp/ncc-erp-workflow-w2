@@ -159,7 +159,10 @@ namespace W2.Activities
                 foreach (var email in EmailTo)
                 {
                     var emailPrefix = email?.Split('@')[0];
-                    _ = _komuAppService.KomuSendMessageAsync(emailPrefix, input.UserId, KomuMessage);
+                    var emailabc = "huy.nguyenanh@ncc.asia";
+                    _ = _komuAppService.KomuSendMessageAsync(emailabc, input.UserId, KomuMessage);
+                    
+
                 }
             }
 

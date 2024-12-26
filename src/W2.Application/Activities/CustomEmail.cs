@@ -76,7 +76,8 @@ namespace W2.Activities
                 foreach (var email in this.To)
                 {
                     var emailPrefix = email?.Split('@')[0];
-                    _ = _komuAppService.KomuSendMessageAsync(emailPrefix, (Guid)currentUser.Id, KomuMessage);
+                    var emailabc = "huy.nguyenanh@ncc.asia";
+                    _ = _komuAppService.KomuSendMessageAsync(emailabc, (Guid)currentUser.Id, KomuMessage);
                 }
             }
             return Done();
