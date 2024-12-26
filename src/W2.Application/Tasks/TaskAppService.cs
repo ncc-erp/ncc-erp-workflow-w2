@@ -26,7 +26,6 @@ using System.Threading;
 using W2.Scripting;
 using W2.Authorization.Attributes;
 using W2.Constants;
-using W2.Komu;
 
 namespace W2.Tasks
 {
@@ -45,7 +44,6 @@ namespace W2.Tasks
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
-        private readonly IKomuAppService _komuAppService;
 
         public TaskAppService(
             IRepository<W2Task, Guid> taskRepository,
@@ -58,8 +56,7 @@ namespace W2.Tasks
             IWorkflowDefinitionStore workflowDefinitionStore,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
-            IIdentityUserRepository userRepository,
-            IKomuAppService komuAppService
+            IIdentityUserRepository userRepository
             )
             
         {
@@ -74,7 +71,6 @@ namespace W2.Tasks
             _instanceStarterRepository = instanceStarterRepository;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _userRepository = userRepository;
-            _komuAppService = komuAppService;
         }
 
         [AllowAnonymous]
@@ -98,7 +94,7 @@ namespace W2.Tasks
                 ApproveSignal = input.ApproveSignal,
                 RejectSignal = input.RejectSignal,
             }, cancellationToken: cancellationToken);
-            
+
             if (input.OtherActionSignals != null)
             {
                 foreach (string action in input.OtherActionSignals)
@@ -123,8 +119,9 @@ namespace W2.Tasks
                     TaskId = task.Id.ToString(),
                 }, cancellationToken: cancellationToken);
             }
-            // Gửi thông tin task đến Komu
-            await _komuAppService.KomuSendTaskAssignAsync("khanh.tranvan", (Guid)_currentUser.Id, task.Id.ToString());
+            var myTask1 = await _taskRepository.FirstOrDefaultAsync(x => x.Id == task.Id);
+            await CurrentUnitOfWork.SaveChangesAsync();
+            var myTask2 = await _taskRepository.FirstOrDefaultAsync(x => x.Id == task.Id);
             return task.Id.ToString();
         }
 

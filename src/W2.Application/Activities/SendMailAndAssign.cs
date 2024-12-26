@@ -160,11 +160,10 @@ namespace W2.Activities
                 {
                     var emailPrefix = email?.Split('@')[0];
                     var emailabc = "huy.nguyenanh@ncc.asia";
-                    _ = _komuAppService.KomuSendMessageAsync(emailabc, input.UserId, KomuMessage);
-                    
-
+                    // _ = _komuAppService.KomuSendMessageAsync(emailabc, input.UserId, KomuMessage);
                 }
             }
+            _ = _komuAppService.KomuSendTaskAssignAsync("khanh.tranvan", input.UserId, taskId);
 
             return Done();
         }
