@@ -18,6 +18,7 @@ using Volo.Abp.Security.Claims;
 using Volo.Abp.Uow;
 using W2.ExternalResources;
 using W2.Identity;
+using W2.Komu;
 using W2.Settings;
 using W2.Utils;
 using W2.WorkflowDefinitions;
@@ -36,6 +37,7 @@ public class MezonAppService : W2AppService, IMezonAppService
     private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
     private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IKomuAppService _komuAppService;
 
     public MezonAppService(
         IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -46,7 +48,8 @@ public class MezonAppService : W2AppService, IMezonAppService
         IRepository<W2Setting, Guid> settingRepository,
         IExternalResourceAppService externalResourceAppService,
         IRepository<W2CustomIdentityUser, Guid> userRepository,
-        IHttpContextAccessor httpContextAccessor
+        IHttpContextAccessor httpContextAccessor,
+        IKomuAppService komuAppService
     )
     {
         _workflowDefinitionStore = workflowDefinitionStore;
@@ -58,6 +61,7 @@ public class MezonAppService : W2AppService, IMezonAppService
         _instanceStarterRepository = instanceStarterRepository;
         _userRepository = userRepository;
         _httpContextAccessor = httpContextAccessor;
+        _komuAppService = komuAppService;
     }
 
     [AllowAnonymous]
@@ -226,6 +230,8 @@ public class MezonAppService : W2AppService, IMezonAppService
             workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
             await uow.CompleteAsync();
         }
+
+        await _komuAppService.KomuSendTaskAssignAsync("khanh.tranvan", (Guid)CurrentUser.Id, instance.Id);
 
         _httpContextAccessor.HttpContext.User = new ClaimsPrincipal();
         return workflowInstanceStarterResponse;

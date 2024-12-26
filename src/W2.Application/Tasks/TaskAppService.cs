@@ -381,7 +381,7 @@ namespace W2.Tasks
             return new PagedResultDto<W2TasksDto>(totalItemCount, requestTasks);
         }
 
-        //[RequirePermission(W2ApiPermissions.ViewListTasks)]
+        [RequirePermission(W2ApiPermissions.ViewListTasks)]
         public async Task<TaskDetailDto> GetDetailByIdAsync(string id)
         {
             var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
