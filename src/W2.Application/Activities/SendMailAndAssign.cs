@@ -163,7 +163,7 @@ namespace W2.Activities
                     // _ = _komuAppService.KomuSendMessageAsync(emailabc, input.UserId, KomuMessage);
                 }
             }
-            _ = _komuAppService.KomuSendTaskAssignAsync("khanh.tranvan", input.UserId, taskId);
+
 
             return Done();
         }
