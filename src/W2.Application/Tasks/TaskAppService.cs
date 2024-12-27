@@ -561,69 +561,76 @@ namespace W2.Tasks
 
         [RemoteService(IsEnabled = false)]
         [AllowAnonymous]
-        public async Task<TaskDetailDto> GetDetailByWfId(string wfId)
+        public async Task<List<TaskDetailDto>> GetTasksByWfId(string wfId)
         {
-            var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == wfId);
-            var taskAction = await _taskActionsRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString());
+            var tasks = await _taskRepository.GetListAsync(x => x.WorkflowInstanceId == wfId);
             var taskEmail = await _taskEmailRepository.GetListAsync();
-            var query = from task in new List<W2Task> { myTask }
-                        join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
-                        join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
-                        let emailList = (
-                             from email in taskEmail
-                             where email.TaskId == task.Id.ToString()
-                             select email.Email
-                         ).ToList()
-                        let actionList = (
-                             from action in actionGroup.DefaultIfEmpty()
-                             select action != null ? new TaskActionsDto
-                             {
-                                 OtherActionSignal = action.OtherActionSignal,
-                                 Status = action.Status
-                             } : null
-                         ).OrderBy(action => action?.OtherActionSignal).ToList()
-                        select new
-                        {
-                            W2task = task,
-                            EmailTo = emailList,
-                            OtherActionSignals = actionList.All(a => a != null) ? actionList : null
-                        };
-            
-            var workflowInstanceId = myTask.WorkflowInstanceId;
-            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
-
-            var data = workflowInstance.Variables.Data;
-
-            var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(query.FirstOrDefault()?.W2task);
-            // todo refactor later 
-            // get all defines
-            var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
-                .Where(i => i.WorkflowDefinitionId == taskDto.WorkflowDefinitionId)
-                .ToDictionary(x => x.WorkflowDefinitionId, x => x);
-            var customInput = (await _instanceStarterRepository.GetQueryableAsync())
-                .Where(i => i.WorkflowInstanceId == taskDto.WorkflowInstanceId).FirstOrDefault();
-
-            if (customInput != null && allDefines.ContainsKey(taskDto.WorkflowDefinitionId))
+            var tasksDetailDto = new List<TaskDetailDto>();
+            foreach (var _task in tasks)
             {
-                var titleFiled = allDefines.GetItem(taskDto.WorkflowDefinitionId);
-                // render title by titleFiled.TitleTemplate
-                var InputClone = new Dictionary<string, string>(customInput.Input)
+                var taskAction = await _taskActionsRepository.GetListAsync(x => x.TaskId == _task.Id.ToString());
+                var query = from task in new List<W2Task> { _task }
+                    join email in taskEmail on new { TaskID = task.Id.ToString() } equals new { TaskID = email.TaskId }
+                    join action in taskAction on task.Id.ToString() equals action.TaskId into actionGroup
+                    let emailList = (
+                        from email in taskEmail
+                        where email.TaskId == task.Id.ToString()
+                        select email.Email
+                    ).ToList()
+                    let actionList = (
+                        from action in actionGroup.DefaultIfEmpty()
+                        select action != null
+                            ? new TaskActionsDto
+                            {
+                                OtherActionSignal = action.OtherActionSignal,
+                                Status = action.Status
+                            }
+                            : null
+                    ).OrderBy(action => action?.OtherActionSignal).ToList()
+                    select new
+                    {
+                        W2task = task,
+                        EmailTo = emailList,
+                        OtherActionSignals = actionList.All(a => a != null) ? actionList : null
+                    };
+
+                var workflowInstanceId = _task.WorkflowInstanceId;
+                var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId);
+
+                var data = workflowInstance.Variables.Data;
+
+                var taskDto = ObjectMapper.Map<W2Task, W2TasksDto>(query.FirstOrDefault()?.W2task);
+                // todo refactor later 
+                // get all defines
+                var allDefines = (await _workflowCustomInputDefinitionRepository.GetQueryableAsync())
+                    .Where(i => i.WorkflowDefinitionId == taskDto.WorkflowDefinitionId)
+                    .ToDictionary(x => x.WorkflowDefinitionId, x => x);
+                var customInput = (await _instanceStarterRepository.GetQueryableAsync())
+                    .Where(i => i.WorkflowInstanceId == taskDto.WorkflowInstanceId).FirstOrDefault();
+
+                if (customInput != null && allDefines.ContainsKey(taskDto.WorkflowDefinitionId))
+                {
+                    var titleFiled = allDefines.GetItem(taskDto.WorkflowDefinitionId);
+                    // render title by titleFiled.TitleTemplate
+                    var InputClone = new Dictionary<string, string>(customInput.Input)
                     {
                         { "RequestUser", taskDto.AuthorName }
                     };
-                var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings.TitleTemplate, InputClone);
-                taskDto.Title = title;
+                    var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings.TitleTemplate,
+                        InputClone);
+                    taskDto.Title = title;
+                }
+
+                tasksDetailDto.Add(new TaskDetailDto
+                {
+                    Tasks = taskDto,
+                    OtherActionSignals = query.FirstOrDefault()?.OtherActionSignals,
+                    EmailTo = query.FirstOrDefault()?.EmailTo,
+                    Input = data,
+                });
             }
 
-            var taskDetailDto = new TaskDetailDto
-            {
-                Tasks = taskDto,
-                OtherActionSignals = query.FirstOrDefault()?.OtherActionSignals,
-                EmailTo = query.FirstOrDefault()?.EmailTo,
-                Input = data,
-            };
-
-            return taskDetailDto;
+            return tasksDetailDto;
         }
     }
 }
