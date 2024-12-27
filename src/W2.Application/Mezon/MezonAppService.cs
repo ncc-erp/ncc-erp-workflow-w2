@@ -231,7 +231,7 @@ public class MezonAppService : W2AppService, IMezonAppService
             await uow.CompleteAsync();
         }
 
-        await _komuAppService.KomuSendTaskAssignAsync("khanh.tranvan", (Guid)CurrentUser.Id, instance.Id);
+        await _komuAppService.KomuSendTaskAssignAsync((Guid)CurrentUser.Id, instance.Id);
 
         _httpContextAccessor.HttpContext.User = new ClaimsPrincipal();
         return workflowInstanceStarterResponse;

@@ -21,6 +21,7 @@ using W2.Tasks;
 using W2.Utils;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
+
 namespace W2.Komu
 {
     [Authorize]
@@ -150,30 +151,32 @@ namespace W2.Komu
                 }
             }
         }
+
         [RemoteService(IsEnabled = false)]
         [AllowAnonymous]
-        public async Task KomuSendTaskAssignAsync(string username, Guid creatorId, string message)
+        public async Task KomuSendTaskAssignAsync(Guid creatorId, string wfId)
         {
-            if (!String.IsNullOrEmpty(username))
+            var komuApiUrl = _komuConfiguration.ApiUrl;
+            var komuXSecretKey = _komuConfiguration.XSecretKey;
+            var taskDetail = await _taskAppService.GetDetailByWfId(wfId);
+            foreach (var email in taskDetail.EmailTo)
             {
-                var komuApiUrl = _komuConfiguration.ApiUrl;
-                var komuXSecretKey = _komuConfiguration.XSecretKey;
-                var taskDetail = await _taskAppService.GetDetailByWfId(message);
+                var username = email?.Split('@')[0];
                 var requestData = new
                 {
                     username,
                     taskDetail
                 };
-
-                var jsonContent = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8, "application/json");
-
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8,
+                    "application/json");
                 var request = new HttpRequestMessage(HttpMethod.Post, komuApiUrl)
                 {
                     Content = jsonContent
                 };
 
                 request.Headers.Add("X-Secret-Key", komuXSecretKey);
-
+                _logger.LogInformation($"Start send komu noti taskId: {taskDetail.Tasks.Id} to email: {email}");
+                var message = $"Send taskId: {taskDetail.Tasks.Id} to email: {email}";
                 try
                 {
                     var systemResponse = await _httpClient.SendAsync(request);
@@ -201,6 +204,8 @@ namespace W2.Komu
 
                     _logger.LogException(ex);
                 }
+
+                _logger.LogInformation($"Finish send komu noti task to email: {email}");
             }
         }
     }

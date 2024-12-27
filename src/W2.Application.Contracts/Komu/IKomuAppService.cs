@@ -12,6 +12,6 @@ namespace W2.Komu
     {
         Task KomuSendMessageAsync(string userName, Guid creatorId, string message);
         Task<List<KomuMessageLogDto>> GetKomuMessageLogListAsync(string userName, string fromTime, string toTime);
-        Task KomuSendTaskAssignAsync(string userName, Guid creatorId, string message);
+        Task KomuSendTaskAssignAsync(Guid creatorId, string wfId);
     }
 }

@@ -198,7 +198,7 @@ namespace W2.WorkflowInstances
 
                 _logger.LogInformation("Saved changes to database");
             }
-            await _komuAppService.KomuSendTaskAssignAsync("khanh.tranvan", (Guid)_currentUser.Id, instance.Id);
+            await _komuAppService.KomuSendTaskAssignAsync((Guid)_currentUser.Id, instance.Id);
 
             return workflowInstanceStarterResponse;
         }
