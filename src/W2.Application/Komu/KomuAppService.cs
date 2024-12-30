@@ -171,7 +171,7 @@ namespace W2.Komu
                     };
                     var jsonContent = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8,
                         "application/json");
-                    var request = new HttpRequestMessage(HttpMethod.Post, komuApiUrl)
+                    var request = new HttpRequestMessage(HttpMethod.Post, komuApiUrl + "sendW2TaskToUser")
                     {
                         Content = jsonContent
                     };
