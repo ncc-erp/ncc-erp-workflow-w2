@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Signaling.Services;
 using Elsa.Services;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
@@ -20,6 +22,8 @@ using W2.ExternalResources;
 using W2.Identity;
 using W2.Komu;
 using W2.Settings;
+using W2.TaskEmail;
+using W2.Tasks;
 using W2.Utils;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
@@ -38,6 +42,9 @@ public class MezonAppService : W2AppService, IMezonAppService
     private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IKomuAppService _komuAppService;
+    private readonly IRepository<W2Task, Guid> _taskRepository;
+    private readonly IRepository<W2TaskEmail, Guid> _taskEmailRepository;
+    private readonly ISignaler _signaler;
 
     public MezonAppService(
         IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -49,7 +56,10 @@ public class MezonAppService : W2AppService, IMezonAppService
         IExternalResourceAppService externalResourceAppService,
         IRepository<W2CustomIdentityUser, Guid> userRepository,
         IHttpContextAccessor httpContextAccessor,
-        IKomuAppService komuAppService
+        IKomuAppService komuAppService,
+        IRepository<W2Task, Guid>taskRepository,
+        IRepository<W2TaskEmail, Guid> taskEmailRepository,
+        ISignaler signaler
     )
     {
         _workflowDefinitionStore = workflowDefinitionStore;
@@ -62,6 +72,9 @@ public class MezonAppService : W2AppService, IMezonAppService
         _userRepository = userRepository;
         _httpContextAccessor = httpContextAccessor;
         _komuAppService = komuAppService;
+        _taskRepository = taskRepository;
+        _signaler = signaler;
+        _taskEmailRepository = taskEmailRepository;
     }
 
     [AllowAnonymous]
@@ -265,5 +278,46 @@ public class MezonAppService : W2AppService, IMezonAppService
         httpContext.User = principal;
 
         return userByEmail;
+    }
+
+    [AllowAnonymous]
+    [ApiKeyAuth]
+    public async Task<string> ApproveW2TaskAsync(ApproveTasksInput input, CancellationToken cancellationToken)
+    {
+        await UpdateCurrentUser(input.Email);
+        var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
+        if (myTask == null || myTask.Status != W2TaskStatus.Pending)
+        {
+            throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+        }
+        
+        var taskEmail = (await _taskEmailRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString()))
+            .Where(x => x.Email == input.Email && x.TaskId == myTask.Id.ToString())
+            .ToList().FirstOrDefault();
+        
+        if (taskEmail == null)
+        {
+            throw new UserFriendlyException(L["Exception:No Permission"]);
+        }
+        
+        var Inputs = new Dictionary<string, string>
+        {
+            { "Reason", $"{myTask.ApproveSignal}" },
+            { "TriggeredBy", $"{input.Email}" },
+            { "TriggeredByName", $"{CurrentUser.Name}" }
+        };
+        
+        if (!string.IsNullOrEmpty(input.DynamicActionData))
+        {
+            myTask.DynamicActionData = input.DynamicActionData;
+        }
+        
+        myTask.Status = W2TaskStatus.Approve;
+        myTask.UpdatedBy = input.Email;
+        await _taskRepository.UpdateAsync(myTask, true);// avoid conflict with approve signal
+        
+        await _signaler.TriggerSignalAsync(myTask.ApproveSignal, Inputs, myTask.WorkflowInstanceId, cancellationToken: cancellationToken);
+
+        return "Approval successful";
     }
 }
