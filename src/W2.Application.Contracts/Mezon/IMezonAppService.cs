@@ -9,4 +9,5 @@ public interface IMezonAppService : IApplicationService
     Task<MezonAppRequestTemplateDto> ListPropertyDefinitionsByCommand(ListPropertyDefinitionsByMezonCommandDto input);
     Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input);
     Task<string> ApproveW2TaskAsync(ApproveTasksInput id, CancellationToken cancellationToken);
+    Task<string> RejectW2TaskAsync(RejectTasksInput id, CancellationToken cancellationToken);
 }
