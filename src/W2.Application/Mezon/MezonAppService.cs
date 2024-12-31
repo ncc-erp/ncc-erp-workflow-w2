@@ -4,6 +4,7 @@ using Elsa.Persistence.Specifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading;
@@ -18,6 +19,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
@@ -318,9 +320,20 @@ public class MezonAppService : W2AppService, IMezonAppService
     {
         await UpdateCurrentUser(input.Email);
         var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
-        if (myTask == null || myTask.Status != W2TaskStatus.Pending)
+        if (myTask == null)
         {
-            throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            throw new EntityNotFoundException(L["Exception:TaskNotFound"]);
+        }
+        if (myTask.Status != W2TaskStatus.Pending)
+        {
+            if (myTask.Status == W2TaskStatus.Approve)
+            { 
+                throw new UserFriendlyException(L["Exception:MyTaskHasBeenApproved"], ((int)HttpStatusCode.Conflict).ToString());
+            }
+            else
+            {
+                throw new UserFriendlyException(L["Exception:MyTaskHasBeenRejected"], ((int)HttpStatusCode.Conflict).ToString());
+            }
         }
         
         var taskEmail = (await _taskEmailRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString()))
@@ -359,9 +372,20 @@ public class MezonAppService : W2AppService, IMezonAppService
     {
         await UpdateCurrentUser(input.Email);
         var myTask = await _taskRepository.FirstOrDefaultAsync(x => x.Id == Guid.Parse(input.Id));
-        if (myTask == null || myTask.Status != W2TaskStatus.Pending)
+        if (myTask == null)
         {
-            throw new UserFriendlyException(L["Exception:MyTaskNotValid"]);
+            throw new EntityNotFoundException(L["Exception:TaskNotFound"]);
+        }
+        if (myTask.Status != W2TaskStatus.Pending)
+        {
+            if (myTask.Status == W2TaskStatus.Approve)
+            { 
+                throw new UserFriendlyException(L["Exception:MyTaskHasBeenApproved"], ((int)HttpStatusCode.Conflict).ToString());
+            }
+            else
+            {
+                throw new UserFriendlyException(L["Exception:MyTaskHasBeenRejected"], ((int)HttpStatusCode.Conflict).ToString());
+            }
         }
 
         var taskEmail = (await _taskEmailRepository.GetListAsync(x => x.TaskId == myTask.Id.ToString()))
