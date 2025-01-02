@@ -63,6 +63,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using W2.Authorization.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace W2.Web;
 
@@ -182,7 +183,7 @@ public class W2WebModule : AbpModule
 
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        context.Services.AddAuthentication()
+        context.Services.AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -197,7 +198,28 @@ public class W2WebModule : AbpModule
                     ValidateIssuerSigningKey = true,
                     AuthenticationType = "Identity.Application"
                 };
+                
+                options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = OnTokenValidated
+                    };
             });
+    }
+
+    private Task OnTokenValidated(TokenValidatedContext context)
+    {
+        if (!HasValidClaims(context))
+        {
+            context.Fail("401 Unauthorized");
+        }
+
+        return Task.CompletedTask;
+    }
+    
+    private bool HasValidClaims(TokenValidatedContext context)
+    {
+        var hasPermissionsClaim = context.Principal != null && context.Principal.HasClaim(claim => claim.Type == "permissions");
+        return hasPermissionsClaim;
     }
 
     private void ConfigureAutoMapper()
