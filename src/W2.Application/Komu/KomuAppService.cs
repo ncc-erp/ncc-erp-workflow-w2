@@ -154,61 +154,59 @@ namespace W2.Komu
 
         [RemoteService(IsEnabled = false)]
         [AllowAnonymous]
-        public async Task KomuSendTaskAssignAsync(Guid creatorId, string wfId)
+        public async Task KomuSendTaskAssignAsync(Guid creatorId, string id, IDictionary<string,object> variablesData)
         {
             var komuApiUrl = _komuConfiguration.ApiUrl;
             var komuXSecretKey = _komuConfiguration.XSecretKey;
-            var tasks = await _taskAppService.GetTasksByWfId(wfId);
-            foreach (var task in tasks)
+            var task = await _taskAppService.GetTaskById(id);
+            task.Input = variablesData;
+            foreach (var email in task.EmailTo)
             {
-                foreach (var email in task.EmailTo)
+                var username = email?.Split('@')[0];
+                var requestData = new
                 {
-                    var username = email?.Split('@')[0];
-                    var requestData = new
-                    {
-                        username,
-                        task
-                    };
-                    var jsonContent = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8,
-                        "application/json");
-                    var request = new HttpRequestMessage(HttpMethod.Post, komuApiUrl + "sendW2TaskToUser")
-                    {
-                        Content = jsonContent
-                    };
+                    username,
+                    task
+                };
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8,
+                    "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Post, komuApiUrl + "sendW2TaskToUser")
+                {
+                    Content = jsonContent
+                };
 
-                    request.Headers.Add("X-Secret-Key", komuXSecretKey);
-                    _logger.LogInformation($"Start send komu noti taskId: {task.Tasks.Id} to email: {email}");
-                    var message = $"Send taskId: {task.Tasks.Id}";
-                    try
+                request.Headers.Add("X-Secret-Key", komuXSecretKey);
+                _logger.LogInformation($"Start send komu noti taskId: {task.Tasks.Id} to email: {email}");
+                var message = $"Send taskId: {task.Tasks.Id}";
+                try
+                {
+                    var systemResponse = await _httpClient.SendAsync(request);
+                    await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
                     {
-                        var systemResponse = await _httpClient.SendAsync(request);
-                        await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
-                        {
-                            SendTo = username,
-                            Message = JsonConvert.SerializeObject(message),
-                            SystemResponse = systemResponse.ToString(),
-                            Status = 1,
-                            CreatorId = creatorId,
-                            CreationTime = DateTime.Now
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
-                        {
-                            SendTo = username,
-                            Message = JsonConvert.SerializeObject(message),
-                            SystemResponse = ex.Message,
-                            Status = 0,
-                            CreatorId = creatorId,
-                            CreationTime = DateTime.Now
-                        });
-
-                        _logger.LogException(ex);
-                    }
-
-                    _logger.LogInformation($"Finish send komu noti task to email: {email}");
+                        SendTo = username,
+                        Message = JsonConvert.SerializeObject(message),
+                        SystemResponse = systemResponse.ToString(),
+                        Status = 1,
+                        CreatorId = creatorId,
+                        CreationTime = DateTime.Now
+                    });
                 }
+                catch (Exception ex)
+                {
+                    await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
+                    {
+                        SendTo = username,
+                        Message = JsonConvert.SerializeObject(message),
+                        SystemResponse = ex.Message,
+                        Status = 0,
+                        CreatorId = creatorId,
+                        CreationTime = DateTime.Now
+                    });
+
+                    _logger.LogException(ex);
+                }
+
+                _logger.LogInformation($"Finish send komu noti task to email: {email}");
             }
         }
     }
