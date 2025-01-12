@@ -15,4 +15,14 @@ namespace W2.Login
     {
         public string Token { get; set; }
     }
+
+    public class UserInfo
+    {
+        public string[] sub { get; set; }
+        public string name { get; set; }
+        public string email { get; set; }
+        public string given_name { get; set; }
+        public string role { get; set; }
+        public string[] permissions { get; set; }
+    }
 }

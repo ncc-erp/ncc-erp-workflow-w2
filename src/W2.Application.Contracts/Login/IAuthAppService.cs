@@ -9,5 +9,7 @@ namespace W2.Login
     public interface IAuthAppService
     {
         Task<AuthUser> LoginAccount(AuthDto authDto);
+        
+        UserInfo CurrentUser();
     }
 }
