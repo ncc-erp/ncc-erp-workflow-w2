@@ -46,6 +46,9 @@
     "WorkflowInstance:SuccessfullyCancelled": "Successfully cancelled request",
     "WorkflowInstance:StakeHolders": "StakeHolders",
     "WorkflowInstance:CurrentState": "Current State",
-    "WorkflowInstance:RequestUser": "Request User"
+    "WorkflowInstance:RequestUser": "Request User",
+    "Exception:MyTaskHasBeenApproved": "The task has been approved",
+    "Exception:MyTaskHasBeenRejected": "The task has been rejected",
+    "Exception:TaskNotFound": "Task not found"
   }
 }

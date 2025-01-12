@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Elsa;
+using Elsa.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,6 +15,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using W2.TaskActions;
+using W2.TaskEmail;
+using W2.Tasks;
+using W2.Utils;
+using W2.WorkflowDefinitions;
+using W2.WorkflowInstances;
 
 namespace W2.Komu
 {
@@ -24,20 +32,37 @@ namespace W2.Komu
         private readonly Configurations.KomuConfiguration _komuConfiguration;
         private readonly ILogger<KomuAppService> _logger;
         private readonly IRepository<W2KomuMessageLogs, Guid> _W2KomuMessageLogsRepository;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IRepository<W2Task, Guid> _taskRepository;
+        private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
+        private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
+        private readonly IRepository<W2TaskEmail, Guid> _taskEmailRepository;
+        private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
+        private readonly ITaskAppService _taskAppService;
 
         public KomuAppService(
             HttpClient httpClient, 
             IConfiguration configuration,
             ILogger<KomuAppService> logger,
             IOptions<Configurations.KomuConfiguration> komuConfigurationOptions,
-            IRepository<W2KomuMessageLogs, Guid> W2KomuMessageLogsRepository)
+            IRepository<W2KomuMessageLogs, Guid> W2KomuMessageLogsRepository,
+            IRepository<W2Task, Guid> taskRepository,
+            IRepository<W2TaskActions, Guid> taskActionsRepository,
+            IRepository<W2TaskEmail, Guid> taskEmailRepository,
+            ITaskAppService taskAppService
+            )
+        
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _komuConfiguration = komuConfigurationOptions.Value;
             _W2KomuMessageLogsRepository = W2KomuMessageLogsRepository;
-        }
+            _taskRepository = taskRepository;
+            _taskActionsRepository = taskActionsRepository;
+            _taskEmailRepository = taskEmailRepository;
+            _taskAppService = taskAppService;
+    }
 
         [AllowAnonymous]
         public async Task<List<KomuMessageLogDto>> GetKomuMessageLogListAsync(
@@ -75,13 +100,13 @@ namespace W2.Komu
 
         [RemoteService(IsEnabled = false)]
         [AllowAnonymous]
-        public async Task KomuSendMessageAsync(string username, Guid creatorId, string message = "")
+        public async Task KomuSendMessageAsync(string username, Guid creatorId, string message )
         {
             if(!String.IsNullOrEmpty(username))
             {
                 var komuApiUrl = _komuConfiguration.ApiUrl;
                 var komuXSecretKey = _komuConfiguration.XSecretKey;
-
+                
                 var requestData = new
                 {
                     username,
@@ -124,6 +149,64 @@ namespace W2.Komu
 
                     _logger.LogException(ex);
                 }
+            }
+        }
+
+        [RemoteService(IsEnabled = false)]
+        [AllowAnonymous]
+        public async Task KomuSendTaskAssignAsync(Guid creatorId, string id, IDictionary<string,object> variablesData)
+        {
+            var komuApiUrl = _komuConfiguration.ApiUrl;
+            var komuXSecretKey = _komuConfiguration.XSecretKey;
+            var task = await _taskAppService.GetTaskById(id);
+            task.Input = variablesData;
+            foreach (var email in task.EmailTo)
+            {
+                var username = email?.Split('@')[0];
+                var requestData = new
+                {
+                    username,
+                    task
+                };
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(requestData), Encoding.UTF8,
+                    "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Post, komuApiUrl + "sendW2TaskToUser")
+                {
+                    Content = jsonContent
+                };
+
+                request.Headers.Add("X-Secret-Key", komuXSecretKey);
+                _logger.LogInformation($"Start send komu noti taskId: {task.Tasks.Id} to email: {email}");
+                var message = $"Send taskId: {task.Tasks.Id}";
+                try
+                {
+                    var systemResponse = await _httpClient.SendAsync(request);
+                    await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
+                    {
+                        SendTo = username,
+                        Message = JsonConvert.SerializeObject(message),
+                        SystemResponse = systemResponse.ToString(),
+                        Status = 1,
+                        CreatorId = creatorId,
+                        CreationTime = DateTime.Now
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await _W2KomuMessageLogsRepository.InsertAsync(new W2KomuMessageLogs
+                    {
+                        SendTo = username,
+                        Message = JsonConvert.SerializeObject(message),
+                        SystemResponse = ex.Message,
+                        Status = 0,
+                        CreatorId = creatorId,
+                        CreationTime = DateTime.Now
+                    });
+
+                    _logger.LogException(ex);
+                }
+
+                _logger.LogInformation($"Finish send komu noti task to email: {email}");
             }
         }
     }
