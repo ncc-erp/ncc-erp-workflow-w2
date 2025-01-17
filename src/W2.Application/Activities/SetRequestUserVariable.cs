@@ -16,9 +16,9 @@ using W2.Settings;
 namespace W2.Activities
 {
     [Activity(
-        DisplayName = "Set RequestUser Variable", 
-        Description = "Set RequestUser variable on the workflow.", 
-        Category = "Primitives", 
+        DisplayName = "Set RequestUser Variable",
+        Description = "Set RequestUser variable on the workflow.",
+        Category = "Primitives",
         Outcomes = new string[] { "Done" })]
     public class SetRequestUserVariable : Activity
     {
@@ -100,7 +100,9 @@ namespace W2.Activities
                 BranchCode = branchResult?.Code,
                 BranchName = branchResult?.DisplayName,
                 ProjectCode = project?.Code,
-                PM = project?.PM?.EmailAddress
+                PM = string.IsNullOrEmpty(project?.PM?.EmailAddress)
+                ? branchResult?.HeadOfOfficeEmail
+                : project?.PM?.EmailAddress
             };
 
             foreach (var emailGroup in emailDict)
@@ -116,7 +118,7 @@ namespace W2.Activities
 
             context.SetVariable(nameof(RequestUser), requestUser);
 
-            return Done(); 
+            return Done();
         }
     }
 }
