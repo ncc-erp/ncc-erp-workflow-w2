@@ -90,6 +90,7 @@ jobs:
         TALENT_DF: ${{ secrets.TALENT_DF_prod }}
         ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_PROD }}
         WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET_PROD }}
         URL_WEB: ${{ secrets.URL_WEB_PROD }}
         API_SECRET_KEY_HEADER_NAME: ${{ secrets.API_SECRET_KEY_HEADER_NAME_PROD }}
         API_X_SECRET_KEY: ${{ secrets.API_X_SECRET_KEY_PROD }}
