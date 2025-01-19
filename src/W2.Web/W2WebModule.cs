@@ -396,7 +396,7 @@ public class W2WebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
-        app.UseAuthentication();
+        //app.UseAuthentication();
         app.UseJwtTokenMiddleware();
         app.UseHttpActivities();
 
@@ -408,7 +408,7 @@ public class W2WebModule : AbpModule
         app.UseUnitOfWork();
         app.UseIdentityServer();
         app.UseCookiePolicy();
-        app.UseAuthorization();
+        //app.UseAuthorization();
 
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
