@@ -31,6 +31,7 @@ using W2.Authorization.Attributes;
 using W2.Constants;
 using W2.ExternalResources;
 using W2.Identity;
+using W2.Komu;
 using W2.Permissions;
 using W2.Specifications;
 using W2.TaskActions;
@@ -62,6 +63,7 @@ namespace W2.WorkflowInstances
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
         private readonly IExternalResourceAppService _externalResourceAppService;
+        private readonly IKomuAppService _komuAppService;
 
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
@@ -80,7 +82,8 @@ namespace W2.WorkflowInstances
             IDataFilter dataFilter,
             ICurrentUser currentUser,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
-            IExternalResourceAppService externalResourceAppService
+            IExternalResourceAppService externalResourceAppService,
+            IKomuAppService komuAppService
             )
         {
             _workflowLaunchpad = workflowLaunchpad;
@@ -101,6 +104,7 @@ namespace W2.WorkflowInstances
             _currentUser = currentUser;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _externalResourceAppService = externalResourceAppService;
+            _komuAppService = komuAppService;
         }
 
         [RequirePermission(W2ApiPermissions.CancelWorkflowInstance)]
@@ -194,6 +198,7 @@ namespace W2.WorkflowInstances
 
                 _logger.LogInformation("Saved changes to database");
             }
+
 
             return workflowInstanceStarterResponse;
         }

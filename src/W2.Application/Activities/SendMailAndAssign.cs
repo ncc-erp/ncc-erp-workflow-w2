@@ -163,6 +163,10 @@ namespace W2.Activities
                 }
             }
 
+            var variablesData = context.WorkflowInstance.Variables.Data;
+
+            await _komuAppService.KomuSendTaskAssignAsync((Guid)currentUser.Id, taskId, variablesData);
+
             return Done();
         }
     }

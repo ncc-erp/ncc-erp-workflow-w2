@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using W2.Authorization.Handlers;
 using W2.Constants;
 
@@ -13,7 +16,6 @@ public static class PermissionAuthorizationExtensions
         this IServiceCollection services)
     {
         services.AddScoped<IAuthorizationHandler, PermissionHandler>();
-
         services.AddAuthorization(options =>
         {
             var permissions = typeof(W2ApiPermissions)
