@@ -16,37 +16,6 @@ public static class PermissionAuthorizationExtensions
         this IServiceCollection services)
     {
         services.AddScoped<IAuthorizationHandler, PermissionHandler>();
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-        .AddCookie(options =>
-        {
-            options.Events = new CookieAuthenticationEvents
-            {
-                OnRedirectToLogin = context =>
-                {
-                    if (context.Request.Path.StartsWithSegments("/api"))
-                    {
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    }
-                    else
-                    {
-                        context.Response.Redirect(context.RedirectUri);
-                    }
-                    return Task.CompletedTask;
-                },
-                OnRedirectToAccessDenied = context =>
-                {
-                    if (context.Request.Path.StartsWithSegments("/api"))
-                    {
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    }
-                    else
-                    {
-                        context.Response.Redirect(context.RedirectUri);
-                    }
-                    return Task.CompletedTask;
-                }
-            };
-        });
         services.AddAuthorization(options =>
         {
             var permissions = typeof(W2ApiPermissions)

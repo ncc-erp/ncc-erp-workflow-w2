@@ -194,7 +194,7 @@ public class W2WebModule : AbpModule
                         Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidateLifetime = false,
+                    ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     AuthenticationType = "Identity.Application"
                 };
@@ -211,6 +211,7 @@ public class W2WebModule : AbpModule
         if (!HasValidClaims(context))
         {
             context.Fail("401 Unauthorized");
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
         }
 
         return Task.CompletedTask;
@@ -396,7 +397,7 @@ public class W2WebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
-        //app.UseAuthentication();
+        app.UseAuthentication();
         app.UseJwtTokenMiddleware();
         app.UseHttpActivities();
 
@@ -408,7 +409,7 @@ public class W2WebModule : AbpModule
         app.UseUnitOfWork();
         app.UseIdentityServer();
         app.UseCookiePolicy();
-        //app.UseAuthorization();
+        app.UseAuthorization();
 
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
