@@ -194,7 +194,7 @@ public class W2WebModule : AbpModule
                         Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
                     ValidateIssuer = true,
                     ValidateAudience = true,
-                    ValidateLifetime = true,
+                    ValidateLifetime = false,
                     ValidateIssuerSigningKey = true,
                     AuthenticationType = "Identity.Application"
                 };
