@@ -84,23 +84,25 @@ namespace W2.Scripting
                 return listOfOffices.FirstOrDefault(x => x.Code == officeCode);
             };
 
-            Func<string, Task<TimesheetProjectItem>> getProjectInfo = async projectCode =>
+            Func<string, TimesheetProjectItem> getProjectInfo = projectCode =>
             {
-                var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(_currentUser.Email);
-                return listOfProjects.FirstOrDefault(x => x.Code.ToLower() == projectCode.ToLower())
-                       ?? new TimesheetProjectItem
-                       {
-                           Code = "Default",
-                           Name = "Default",
-                           PM = new List<ProjectManager>
-                           {
-                               new ProjectManager
-                               {
-                                   FullName = branchResult.HeadOfOfficeEmail?.Split('@')[0],
-                                   EmailAddress = branchResult.HeadOfOfficeEmail,
-                               }
-                           }
-                       };
+                //var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(_currentUser.Email);
+                var project = listOfProjects.FirstOrDefault(x => x.Code.ToLower() == projectCode.ToLower());
+                return project ?? throw new Exception("User's not in any project");
+                //return project
+                //       ?? new TimesheetProjectItem
+                //       {
+                //           Code = "Default",
+                //           Name = "Default",
+                //           PM = new List<ProjectManager>
+                //           {
+                //               new ProjectManager
+                //               {
+                //                   FullName = branchResult.HeadOfOfficeEmail?.Split('@')[0],
+                //                   EmailAddress = branchResult.HeadOfOfficeEmail,
+                //               }
+                //           }
+                //       };
             };
 
             engine.SetValue("getProjectInfo", getProjectInfo);
