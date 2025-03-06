@@ -18,5 +18,9 @@ namespace W2.ExternalResources
         Task<ProjectProjectItem> GetCurrentUserWorkingProjectAsync(string? email = null);
         Task<TimesheetUserInfo> GetUserInfoByEmailAsync(string userEmail);
         Task<ExternalAuthUser> ExternalLogin(ExternalAuthDto externalAuth);
+        string MezonAuthUrl();
+        Task<ExternalAuthUser> MezonLogin(MezonAuthDto mezonAuth);
+
+
     }
 }
