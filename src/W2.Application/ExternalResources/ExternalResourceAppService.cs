@@ -8,11 +8,13 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Caching;
@@ -38,12 +40,13 @@ namespace W2.ExternalResources
         private readonly ITimesheetClientApi _timesheetClient;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
+        private readonly IHrmClientApi _hrmClient;
 
         //private readonly IHrmClientApi _hrmClient;
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
             HttpClient httpClient,
-            //IHrmClientApi hrmClient,
+            IHrmClientApi hrmClient,
             IProjectClientApi projectClient,
             ITimesheetClientApi timesheetClient,
             IConfiguration configuration,
@@ -56,7 +59,7 @@ namespace W2.ExternalResources
             _projectClient = projectClient;
             _timesheetClient = timesheetClient;
             _httpClient = httpClient;
-            //_hrmClient = hrmClient;
+            _hrmClient = hrmClient;
             _configuration = configuration;
             _userManager = userManager;
             _simpleGuidGenerator = SimpleGuidGenerator.Instance;
@@ -234,7 +237,6 @@ namespace W2.ExternalResources
         [AllowAnonymous]
         public async Task<ExternalAuthUser> ExternalLogin(ExternalAuthDto externalAuth)
         {
-            Console.WriteLine("externalAuth", externalAuth);
             var payload = await this.VerifyGoogleToken(externalAuth);
             // verify @ncc.asia email
             if (!payload.Email.Contains("@ncc.asia"))
@@ -336,15 +338,38 @@ namespace W2.ExternalResources
                 var userInfoUrl = $"{host}/userinfo";
 
                 var tokenResponse = await GetMezonAccessTokenAsync(tokenUrl, mezonAuth, authConfig);
-                var userInfo = await GetMezonUserInfoAsync(userInfoUrl, tokenResponse.access_token);
+                var mezonUserInfo = await GetMezonUserInfoAsync(userInfoUrl, tokenResponse.access_token);
+
+                var existedUser = await _userManager.FindByEmailAsync(mezonUserInfo.sub);
+
+
+
+                if (existedUser == null)
+                {
+                    // Create new user if not exist
+                    var response = await _timesheetClient.GetUserInfoByEmailAsync(mezonUserInfo.sub);
+
+                    if (response == null)
+                    {
+                        throw new UserFriendlyException("User info not found from Timesheet");
+                    }
+
+                    var userHrmName = response.Result.FullName;
+                    existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), existedUser.Email, existedUser.Email);
+                    existedUser.Name = ConvertVietnameseToUnsign(userHrmName);
+                    await _userManager.CreateAsync(existedUser);
+                    await _userManager.AddToRoleAsync(existedUser, RoleNames.DefaultUser);
+                    await _userManager.AddDefaultRolesAsync(existedUser);
+                }
 
                 var query = await _userRepository.GetQueryableAsync();
-                var user = await query
+                var finalUser = await query
                     .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
-                    .Where(u => u.Email == userInfo.sub)
+                    .Where(u => u.Email == existedUser.Email)
                     .FirstOrDefaultAsync();
-                var jwtToken = Utils.JwtHelper.GenerateJwtTokenForUser(user, _configuration);
+                
+                var jwtToken = Utils.JwtHelper.GenerateJwtTokenForUser(finalUser, _configuration);
 
                 return new ExternalAuthUser { Token = jwtToken };
             }
@@ -399,6 +424,33 @@ namespace W2.ExternalResources
             return Convert.ToBase64String(randomBytes);
         }
 
+        public static string RemoveDiacritics(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            string normalizedText = text.Normalize(NormalizationForm.FormD);
+            StringBuilder sb = new StringBuilder();
+
+            foreach (char c in normalizedText)
+            {
+                UnicodeCategory unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != UnicodeCategory.NonSpacingMark) // Loại bỏ dấu
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString().Normalize(NormalizationForm.FormC);
+        }
+
+        public static string ConvertVietnameseToUnsign(string text)
+        {
+            string result = RemoveDiacritics(text);
+            result = Regex.Replace(result, @"Đ", "D"); // Chuyển Đ thành D
+            result = Regex.Replace(result, @"đ", "d"); // Chuyển đ thành d
+            return result;
+        }
 
     }
 }
