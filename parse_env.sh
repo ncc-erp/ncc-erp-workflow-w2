@@ -5,6 +5,7 @@ cp appsettings_exp.json  appsettings.json
 export KOMU_API_URL=$(echo "$KOMU_API_URL" | sed 's/\//\\\//g' )
 export API_URL=$(echo "$API_URL" | sed 's/\//\\\//g' )
 export URL_WEB=$(echo "$URL_WEB" | sed 's/\//\\\//g' )
+export MEZON_REDIRECT_URI = $(echo "$MEZON_REDIRECT_URI" | sed 's/\//\\\//g' )
 
 sed "s/KOMU_API_URL/$KOMU_API_URL/g" -i appsettings.json
 sed "s/KOMU_X_SK/$KOMU_X_SK/g" -i appsettings.json
