@@ -1,127 +1,130 @@
 name: Deploy Workflow W2 prod
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
 
 jobs:
-  build:
-    runs-on:  dev
-    name: Build Workflow W2 Production
-    environment: production
-    outputs:
-      date_time: ${{ steps.pushtos3.outputs.date_time }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    
-    - name: Build Migrator
-      run: |
-        export PATH=$PATH:/opt/dotnet6/
-        cd src/W2.DbMigrator
-        dotnet6 publish -c Release
-    
-    - name: Composer Migrator
-      run: |
-        cd src/W2.DbMigrator/bin/Release/net6.0/publish/
-        rm -rf appsettings.json
-        zip -r migrator.zip *
+    build:
+        runs-on: dev
+        name: Build Workflow W2 Production
+        environment: production
+        outputs:
+            date_time: ${{ steps.pushtos3.outputs.date_time }}
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
 
-    - name: Build Host
-      run: |
-        export PATH=$PATH:/opt/dotnet6/
-        export DOTNET_ROOT=/opt/dotnet6/
-        export PATH="$PATH:/home/nccsoft/.dotnet/tools"
-        export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"
-        nvm use 14.15
-        cd src/W2.Web/
-        abp install-libs
-        dotnet6 publish -c Release
-    
-    - name: Composer Host
-      run: |
-        cd src/W2.Web/bin/Release/net6.0/publish/
-        rm -rf appsettings.json
-        zip -r host.zip *
+            - name: Build Migrator
+              run: |
+                  export PATH=$PATH:/opt/dotnet6/
+                  cd src/W2.DbMigrator
+                  dotnet6 publish -c Release
 
-    - name: Pushlish Migrator & Host to S3\
-      id: pushtos3
-      run: |
-        export DATE_TIME=$(date +%Hh-%Mm-%d-%m-%Y)
-        export MIGRATOR="migrator-${DATE_TIME}.zip"
-        export HOST="host-${DATE_TIME}.zip"
-        /usr/local/bin/aws s3 cp src/W2.Web/bin/Release/net6.0/publish/host.zip s3://ncc-erp/artifact/w2/host/$HOST
-        /usr/local/bin/aws s3 cp src/W2.DbMigrator/bin/Release/net6.0/publish/migrator.zip s3://ncc-erp/artifact/w2/migrator/$MIGRATOR
+            - name: Composer Migrator
+              run: |
+                  cd src/W2.DbMigrator/bin/Release/net6.0/publish/
+                  rm -rf appsettings.json
+                  zip -r migrator.zip *
 
-        echo "::set-output name=date_time::$DATE_TIME"
-  deploy:
-    runs-on:  prod
-    name: Deploy Workflow W2 Production
-    environment: production
-    needs:
-      - build
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    
-    - name: Update Appsettings and Backup Database
-      run: |
-        bash parse_env.sh
-        cd /home/erp/.backup_db/ && bash backup_w2.sh
-      env:
-        API_URL: ${{ secrets.API_URL_PROD }}
-        DB_HOST: ${{ secrets.DB_HOST_prod }}
-        DB_NAME: ${{ secrets.DB_NAME_prod }}
-        DB_PASS: ${{ secrets.DB_PASS_prod }}
-        DB_USER: ${{ secrets.DB_USER_prod }}
-        DB_PORT: ${{ secrets.DB_PORT_prod }}
-        PASSPHRASE: ${{ secrets.PASSPHRASE_prod }}
-        SES_HOST: ${{ secrets.SES_HOST_prod }}
-        SES_PORT: ${{ secrets.SES_PORT_prod }}
-        SES_SENDER: ${{ secrets.SES_SENDER_prod }}
-        SES_USER: ${{ secrets.SES_USER_prod }}
-        SES_PASS: ${{ secrets.SES_PASS_prod }}
-        SES_REQ_CRE: ${{ secrets.SES_REQ_CRE_PROD }}
-        KOMU_API_URL: ${{ secrets.KOMU_API_URL_PROD }}
-        KOMU_X_SK: ${{ secrets.KOMU_X_SK_PROD }}
-        GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
-        GG_SECRET: ${{ secrets.GG_SECRET_prod }}
-        TALENT_DF: ${{ secrets.TALENT_DF_prod }}
-        ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_PROD }}
-        WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET_PROD }}
-        URL_WEB: ${{ secrets.URL_WEB_PROD }}
-        API_SECRET_KEY_HEADER_NAME: ${{ secrets.API_SECRET_KEY_HEADER_NAME_PROD }}
-        API_X_SECRET_KEY: ${{ secrets.API_X_SECRET_KEY_PROD }}
-            
-    - name: Download Migrator & Host from S3
-      run: |
-        export MIGRATOR="migrator-${DATE_TIME}.zip"
-        export HOST="host-${DATE_TIME}.zip"
-        /usr/local/bin/aws s3 cp s3://ncc-erp/artifact/w2/host/$HOST /var/www/app/w2/prod-dotnet-host-w2/host.zip --profile artifact
-        /usr/local/bin/aws s3 cp s3://ncc-erp/artifact/w2/migrator/$MIGRATOR /var/www/migrator/w2/prod-dotnet-migrator-w2/migrator.zip --profile artifact
-      env:
-        DATE_TIME: ${{ needs.build.outputs.date_time}}
-    
-    - name: Migrate Database
-      run: |
-        export PATH=$PATH:/opt/dotnet6/
-        cp appsettings.json /var/www/migrator/w2/prod-dotnet-migrator-w2/
-        cd /var/www/migrator/w2/prod-dotnet-migrator-w2/
-        unzip -qo migrator.zip && rm -rf migrator.zip
-        dotnet6 W2.DbMigrator.dll -q
-    
-    - name: Restart Server
-      run: |
-        sudo service erp-w2 stop
-        cp appsettings.json /var/www/app/w2/prod-dotnet-host-w2/
-        cd /var/www/app/w2/prod-dotnet-host-w2/
-        unzip -qo host.zip && rm -rf host.zip
-        mkdir -p /var/www/app/w2/prod-dotnet-host-w2/Logs/
-        touch /var/www/app/w2/prod-dotnet-host-w2/Logs/logs.txt
-        chmod 777 -R Logs/
-        chmod 777 -R wwwroot/
-        cp appsettings.json appsettings.Production.json
-        sudo service erp-w2 start
-        sudo service erp-w2 status
+            - name: Build Host
+              run: |
+                  export PATH=$PATH:/opt/dotnet6/
+                  export DOTNET_ROOT=/opt/dotnet6/
+                  export PATH="$PATH:/home/nccsoft/.dotnet/tools"
+                  export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"
+                  nvm use 14.15
+                  cd src/W2.Web/
+                  abp install-libs
+                  dotnet6 publish -c Release
+
+            - name: Composer Host
+              run: |
+                  cd src/W2.Web/bin/Release/net6.0/publish/
+                  rm -rf appsettings.json
+                  zip -r host.zip *
+
+            - name: Pushlish Migrator & Host to S3\
+              id: pushtos3
+              run: |
+                  export DATE_TIME=$(date +%Hh-%Mm-%d-%m-%Y)
+                  export MIGRATOR="migrator-${DATE_TIME}.zip"
+                  export HOST="host-${DATE_TIME}.zip"
+                  /usr/local/bin/aws s3 cp src/W2.Web/bin/Release/net6.0/publish/host.zip s3://ncc-erp/artifact/w2/host/$HOST
+                  /usr/local/bin/aws s3 cp src/W2.DbMigrator/bin/Release/net6.0/publish/migrator.zip s3://ncc-erp/artifact/w2/migrator/$MIGRATOR
+
+                  echo "::set-output name=date_time::$DATE_TIME"
+    deploy:
+        runs-on: prod
+        name: Deploy Workflow W2 Production
+        environment: production
+        needs:
+            - build
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Update Appsettings and Backup Database
+              run: |
+                  bash parse_env.sh
+                  cd /home/erp/.backup_db/ && bash backup_w2.sh
+              env:
+                  API_URL: ${{ secrets.API_URL_PROD }}
+                  DB_HOST: ${{ secrets.DB_HOST_prod }}
+                  DB_NAME: ${{ secrets.DB_NAME_prod }}
+                  DB_PASS: ${{ secrets.DB_PASS_prod }}
+                  DB_USER: ${{ secrets.DB_USER_prod }}
+                  DB_PORT: ${{ secrets.DB_PORT_prod }}
+                  PASSPHRASE: ${{ secrets.PASSPHRASE_prod }}
+                  SES_HOST: ${{ secrets.SES_HOST_prod }}
+                  SES_PORT: ${{ secrets.SES_PORT_prod }}
+                  SES_SENDER: ${{ secrets.SES_SENDER_prod }}
+                  SES_USER: ${{ secrets.SES_USER_prod }}
+                  SES_PASS: ${{ secrets.SES_PASS_prod }}
+                  SES_REQ_CRE: ${{ secrets.SES_REQ_CRE_PROD }}
+                  KOMU_API_URL: ${{ secrets.KOMU_API_URL_PROD }}
+                  KOMU_X_SK: ${{ secrets.KOMU_X_SK_PROD }}
+                  GG_CLIENT: ${{ secrets.GG_CLIENT_prod }}
+                  GG_SECRET: ${{ secrets.GG_SECRET_prod }}
+                  TALENT_DF: ${{ secrets.TALENT_DF_prod }}
+                  ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_PROD }}
+                  WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_PROD }}
+                  JWT_SECRET: ${{ secrets.JWT_SECRET_PROD }}
+                  URL_WEB: ${{ secrets.URL_WEB_PROD }}
+                  API_SECRET_KEY_HEADER_NAME: ${{ secrets.API_SECRET_KEY_HEADER_NAME_PROD }}
+                  API_X_SECRET_KEY: ${{ secrets.API_X_SECRET_KEY_PROD }}
+                  MEZON_CLIENT: ${{ secrets.MEZON_CLIENT_PROD }}
+                  MEZON_SECRET: ${{ secrets.MEZON_SECRET_PROD }}
+                  MEZON_REDIRECT_URI: ${{ secrets.MEZON_REDIRECT_URI_PROD }}
+
+            - name: Download Migrator & Host from S3
+              run: |
+                  export MIGRATOR="migrator-${DATE_TIME}.zip"
+                  export HOST="host-${DATE_TIME}.zip"
+                  /usr/local/bin/aws s3 cp s3://ncc-erp/artifact/w2/host/$HOST /var/www/app/w2/prod-dotnet-host-w2/host.zip --profile artifact
+                  /usr/local/bin/aws s3 cp s3://ncc-erp/artifact/w2/migrator/$MIGRATOR /var/www/migrator/w2/prod-dotnet-migrator-w2/migrator.zip --profile artifact
+              env:
+                  DATE_TIME: ${{ needs.build.outputs.date_time}}
+
+            - name: Migrate Database
+              run: |
+                  export PATH=$PATH:/opt/dotnet6/
+                  cp appsettings.json /var/www/migrator/w2/prod-dotnet-migrator-w2/
+                  cd /var/www/migrator/w2/prod-dotnet-migrator-w2/
+                  unzip -qo migrator.zip && rm -rf migrator.zip
+                  dotnet6 W2.DbMigrator.dll -q
+
+            - name: Restart Server
+              run: |
+                  sudo service erp-w2 stop
+                  cp appsettings.json /var/www/app/w2/prod-dotnet-host-w2/
+                  cd /var/www/app/w2/prod-dotnet-host-w2/
+                  unzip -qo host.zip && rm -rf host.zip
+                  mkdir -p /var/www/app/w2/prod-dotnet-host-w2/Logs/
+                  touch /var/www/app/w2/prod-dotnet-host-w2/Logs/logs.txt
+                  chmod 777 -R Logs/
+                  chmod 777 -R wwwroot/
+                  cp appsettings.json appsettings.Production.json
+                  sudo service erp-w2 start
+                  sudo service erp-w2 status
