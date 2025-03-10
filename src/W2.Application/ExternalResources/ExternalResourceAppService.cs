@@ -40,13 +40,13 @@ namespace W2.ExternalResources
         private readonly ITimesheetClientApi _timesheetClient;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
-        private readonly IHrmClientApi _hrmClient;
+        //private readonly IHrmClientApi _hrmClient;
 
         //private readonly IHrmClientApi _hrmClient;
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
             HttpClient httpClient,
-            IHrmClientApi hrmClient,
+            //IHrmClientApi hrmClient,
             IProjectClientApi projectClient,
             ITimesheetClientApi timesheetClient,
             IConfiguration configuration,
@@ -59,7 +59,7 @@ namespace W2.ExternalResources
             _projectClient = projectClient;
             _timesheetClient = timesheetClient;
             _httpClient = httpClient;
-            _hrmClient = hrmClient;
+            //_hrmClient = hrmClient;
             _configuration = configuration;
             _userManager = userManager;
             _simpleGuidGenerator = SimpleGuidGenerator.Instance;
