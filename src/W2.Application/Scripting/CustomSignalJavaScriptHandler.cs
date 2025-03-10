@@ -5,6 +5,7 @@ using Elsa.Scripting.JavaScript.Messages;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,7 +86,23 @@ namespace W2.Scripting
 
             Func<string, TimesheetProjectItem> getProjectInfo = projectCode =>
             {
-                return listOfProjects.FirstOrDefault(x => x.Code.ToLower() == projectCode.ToLower()) ?? new TimesheetProjectItem();
+                //var branchResult = await _externalResourceAppService.GetUserBranchInfoAsync(_currentUser.Email);
+                var project = listOfProjects.FirstOrDefault(x => x.Code.ToLower() == projectCode.ToLower());
+                return project ?? throw new Exception("User's not in any project");
+                //return project
+                //       ?? new TimesheetProjectItem
+                //       {
+                //           Code = "Default",
+                //           Name = "Default",
+                //           PM = new List<ProjectManager>
+                //           {
+                //               new ProjectManager
+                //               {
+                //                   FullName = branchResult.HeadOfOfficeEmail?.Split('@')[0],
+                //                   EmailAddress = branchResult.HeadOfOfficeEmail,
+                //               }
+                //           }
+                //       };
             };
 
             engine.SetValue("getProjectInfo", getProjectInfo);

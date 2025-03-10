@@ -1,29 +1,31 @@
-﻿using Google.Apis.Auth;
-using Google.Apis.Auth.OAuth2.Flows;
+﻿using DotLiquid;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Security.Claims;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
-using Volo.Abp.Security.Claims;
 using W2.Identity;
 using W2.Settings;
 using W2.WorkflowDefinitions;
+using static IdentityServer4.Models.IdentityResources;
+using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace W2.ExternalResources
 {
@@ -38,12 +40,13 @@ namespace W2.ExternalResources
         private readonly ITimesheetClientApi _timesheetClient;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
+        private readonly IHrmClientApi _hrmClient;
 
         //private readonly IHrmClientApi _hrmClient;
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
             HttpClient httpClient,
-            //IHrmClientApi hrmClient,
+            IHrmClientApi hrmClient,
             IProjectClientApi projectClient,
             ITimesheetClientApi timesheetClient,
             IConfiguration configuration,
@@ -56,7 +59,7 @@ namespace W2.ExternalResources
             _projectClient = projectClient;
             _timesheetClient = timesheetClient;
             _httpClient = httpClient;
-            //_hrmClient = hrmClient;
+            _hrmClient = hrmClient;
             _configuration = configuration;
             _userManager = userManager;
             _simpleGuidGenerator = SimpleGuidGenerator.Instance;
@@ -314,5 +317,140 @@ namespace W2.ExternalResources
                 Token = stringToken
             };
         }
+
+        public string MezonAuthUrl()
+        {
+            var host = $@"{_configuration["Authentication:Mezon:Domain"]}";
+            var client_id = $@"{_configuration["Authentication:Mezon:ClientId"]}";
+            var redirect_uri = $@"{_configuration["Authentication:Mezon:RedirectUri"]}";
+            var state = GenerateBase64State();
+            var auth_url = $@"{host}/oauth2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=openid offline&state={state}";
+            return auth_url;
+        }
+
+        public async Task<ExternalAuthUser> MezonLogin(MezonAuthDto mezonAuth)
+        {
+            try
+            {
+                var authConfig = _configuration.GetSection("Authentication:Mezon");
+                var host = authConfig["Domain"];
+                var tokenUrl = $"{host}/oauth2/token";
+                var userInfoUrl = $"{host}/userinfo";
+
+                var tokenResponse = await GetMezonAccessTokenAsync(tokenUrl, mezonAuth, authConfig);
+                var mezonUserInfo = await GetMezonUserInfoAsync(userInfoUrl, tokenResponse.access_token);
+
+                var existedUser = await _userManager.FindByEmailAsync(mezonUserInfo.sub);
+
+
+
+                if (existedUser == null)
+                {
+                    // Create new user if not exist
+                    var response = await _timesheetClient.GetUserInfoByEmailAsync(mezonUserInfo.sub);
+
+                    if (response == null)
+                    {
+                        throw new UserFriendlyException("User info not found from Timesheet");
+                    }
+
+                    var userHrmName = response.Result.FullName;
+                    existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), existedUser.Email, existedUser.Email);
+                    existedUser.Name = ConvertVietnameseToUnsign(userHrmName);
+                    await _userManager.CreateAsync(existedUser);
+                    await _userManager.AddToRoleAsync(existedUser, RoleNames.DefaultUser);
+                    await _userManager.AddDefaultRolesAsync(existedUser);
+                }
+
+                var query = await _userRepository.GetQueryableAsync();
+                var finalUser = await query
+                    .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                    .Where(u => u.Email == existedUser.Email)
+                    .FirstOrDefaultAsync();
+                
+                var jwtToken = Utils.JwtHelper.GenerateJwtTokenForUser(finalUser, _configuration);
+
+                return new ExternalAuthUser { Token = jwtToken };
+            }
+            catch (Exception)
+            {
+                throw new UserFriendlyException("Invalid Mezon Authentication.");
+            }
+        }
+
+        private async Task<MezonOauthTokenResponse> GetMezonAccessTokenAsync(
+            string tokenUrl, MezonAuthDto mezonAuth, IConfigurationSection authConfig)
+        {
+            var bodyData = new Dictionary<string, string>
+            {
+                { "code", mezonAuth.code },
+                { "state", mezonAuth.state },
+                { "grant_type", "authorization_code" },
+                { "redirect_uri", authConfig["RedirectUri"] },
+                { "scope", mezonAuth.scope },
+                { "client_id", authConfig["ClientId"] },
+                { "client_secret", authConfig["ClientSecret"] }
+            };
+
+            var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(bodyData));
+            if (!response.IsSuccessStatusCode)
+                throw new UserFriendlyException("Invalid Mezon Authentication.");
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<MezonOauthTokenResponse>(responseContent);
+        }
+
+        private async Task<MezonAuthUserDto> GetMezonUserInfoAsync(string userInfoUrl, string accessToken)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, userInfoUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                throw new UserFriendlyException("Failed to get Mezon user info");
+
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<MezonAuthUserDto>(content);
+        }
+
+        private string GenerateBase64State()
+        {
+            byte[] randomBytes = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            return Convert.ToBase64String(randomBytes);
+        }
+
+        public static string RemoveDiacritics(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            string normalizedText = text.Normalize(NormalizationForm.FormD);
+            StringBuilder sb = new StringBuilder();
+
+            foreach (char c in normalizedText)
+            {
+                UnicodeCategory unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != UnicodeCategory.NonSpacingMark) // Loại bỏ dấu
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString().Normalize(NormalizationForm.FormC);
+        }
+
+        public static string ConvertVietnameseToUnsign(string text)
+        {
+            string result = RemoveDiacritics(text);
+            result = Regex.Replace(result, @"Đ", "D"); // Chuyển Đ thành D
+            result = Regex.Replace(result, @"đ", "d"); // Chuyển đ thành d
+            return result;
+        }
+
     }
 }

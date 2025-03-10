@@ -63,7 +63,7 @@ namespace W2.Activities
             if (dynamicDataByTask != null) { 
                 context.SetVariable("DynamicDataByTask", dynamicDataByTask); 
             }
-            WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.GetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
+            WorkflowDefinitionSummaryDto workflowDefinitionSummaryDto = await _workflowDefinitionAppService.WfGetByDefinitionIdAsync(context.WorkflowInstance.DefinitionId);
 
             var currentUser = context.GetRequestUserVariable();
             _ = _taskQueue.EnqueueAsync(async (cancellationToken) =>

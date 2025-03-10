@@ -211,6 +211,7 @@ public class W2WebModule : AbpModule
         if (!HasValidClaims(context))
         {
             context.Fail("401 Unauthorized");
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
         }
 
         return Task.CompletedTask;

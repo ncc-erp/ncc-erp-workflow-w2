@@ -1,110 +1,112 @@
 name: Deploy Workflow W2 Dev
 on:
-  push:
-    branches:
-      - dev
-      
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to deploy'
-        required: true
-        default: 'dev'
+    push:
+        branches:
+            - dev
+
+    workflow_dispatch:
+        inputs:
+            branch:
+                description: 'Branch to deploy'
+                required: true
+                default: 'dev'
 
 jobs:
-  build:
-    runs-on: dev
-    name: Build Workflow W2 Dev
-    environment: dev
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    
-    - name: Build Migrator
-      run: |
-        export PATH=$PATH:/opt/dotnet6/
-        cd src/W2.DbMigrator
-        dotnet6 publish -c Release
-    
-    - name: Copy New Migrator
-      run: |
-        cd src/W2.DbMigrator/bin/Release/net6.0/publish/
-        rm -rf appsettings.json
-        cp -r * /var/www/migrator/w2/dev-dotnet-migrator-w2/
+    build:
+        runs-on: dev
+        name: Build Workflow W2 Dev
+        environment: dev
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
 
-    
-    - name: Build Host
-      run: |
-        export PATH=$PATH:/opt/dotnet6/
-        export DOTNET_ROOT=/opt/dotnet6/
-        export PATH="$PATH:/home/nccsoft/.dotnet/tools"
-        export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"
-        nvm use 14.15
-        cd src/W2.Web/
-        abp install-libs
-        dotnet6 publish -c Release
-    
-    - name: Copy New Host
-      run: |
-        cd src/W2.Web/bin/Release/net6.0/publish/
-        rm -rf appsettings.json
-        cp -r * /var/www/app/w2/dev-dotnet-host-w2/
-        
-  deploy:
-    runs-on:  dev
-    name: Deploy Workflow W2 Dev
-    environment: dev
-    needs:
-      - build
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      
-    - name: Update Appsettings
-      run: |
-        bash parse_env.sh
-      env:
-        API_URL: ${{ secrets.API_URL_DEV }}
-        DB_HOST: ${{ secrets.DB_HOST_DEV }}
-        DB_NAME: ${{ secrets.DB_NAME_DEV }}
-        DB_PASS: ${{ secrets.DB_PASS_DEV }}
-        DB_USER: ${{ secrets.DB_USER_DEV }}
-        DB_PORT: ${{ secrets.DB_PORT_DEV }}
-        PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
-        SES_HOST: ${{ secrets.SES_HOST_DEV }}
-        SES_PORT: ${{ secrets.SES_PORT_DEV }}
-        SES_SENDER: ${{ secrets.SES_SENDER_DEV }}
-        SES_USER: ${{ secrets.SES_USER_DEV }}
-        SES_PASS: ${{ secrets.SES_PASS_DEV }}
-        SES_REQ_CRE: ${{ secrets.SES_REQ_CRE_DEV }}
-        KOMU_API_URL: ${{ secrets.KOMU_API_URL_DEV }}
-        KOMU_X_SK: ${{ secrets.KOMU_X_SK_DEV }}
-        GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
-        GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
-        TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
-        ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_DEV }}
-        WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET_DEV }}
-        URL_WEB: ${{ secrets.URL_WEB_DEV }}
-        API_SECRET_KEY_HEADER_NAME: ${{ secrets.API_SECRET_KEY_HEADER_NAME_DEV }}
-        API_X_SECRET_KEY: ${{ secrets.API_X_SECRET_KEY_DEV }}
+            - name: Build Migrator
+              run: |
+                  export PATH=$PATH:/opt/dotnet6/
+                  cd src/W2.DbMigrator
+                  dotnet6 publish -c Release
 
-    - name: Migrate Database
-      run: |
-        export PATH=$PATH:/opt/dotnet6/
-        cp appsettings.json /var/www/migrator/w2/dev-dotnet-migrator-w2/
-        cd /var/www/migrator/w2/dev-dotnet-migrator-w2/
-        dotnet6 W2.DbMigrator.dll -q
-    
-    - name: Restart Server
-      run: |
-        sudo service erp-w2 stop
-        cp appsettings.json /var/www/app/w2/dev-dotnet-host-w2/
-        cd /var/www/app/w2/dev-dotnet-host-w2/
-        mkdir -p /var/www/app/w2/dev-dotnet-host-w2/Logs/
-        touch /var/www/app/w2/dev-dotnet-host-w2/Logs/logs.txt
-        chmod 777 -R Logs/
-        chmod 777 -R wwwroot/
-        cp appsettings.json appsettings.Development.json
-        sudo service erp-w2 start
-        sudo service erp-w2 status
+            - name: Copy New Migrator
+              run: |
+                  cd src/W2.DbMigrator/bin/Release/net6.0/publish/
+                  rm -rf appsettings.json
+                  cp -r * /var/www/migrator/w2/dev-dotnet-migrator-w2/
+
+            - name: Build Host
+              run: |
+                  export PATH=$PATH:/opt/dotnet6/
+                  export DOTNET_ROOT=/opt/dotnet6/
+                  export PATH="$PATH:/home/nccsoft/.dotnet/tools"
+                  export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"
+                  nvm use 14.15
+                  cd src/W2.Web/
+                  abp install-libs
+                  dotnet6 publish -c Release
+
+            - name: Copy New Host
+              run: |
+                  cd src/W2.Web/bin/Release/net6.0/publish/
+                  rm -rf appsettings.json
+                  cp -r * /var/www/app/w2/dev-dotnet-host-w2/
+
+    deploy:
+        runs-on: dev
+        name: Deploy Workflow W2 Dev
+        environment: dev
+        needs:
+            - build
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+
+            - name: Update Appsettings
+              run: |
+                  bash parse_env.sh
+              env:
+                  API_URL: ${{ secrets.API_URL_DEV }}
+                  DB_HOST: ${{ secrets.DB_HOST_DEV }}
+                  DB_NAME: ${{ secrets.DB_NAME_DEV }}
+                  DB_PASS: ${{ secrets.DB_PASS_DEV }}
+                  DB_USER: ${{ secrets.DB_USER_DEV }}
+                  DB_PORT: ${{ secrets.DB_PORT_DEV }}
+                  PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
+                  SES_HOST: ${{ secrets.SES_HOST_DEV }}
+                  SES_PORT: ${{ secrets.SES_PORT_DEV }}
+                  SES_SENDER: ${{ secrets.SES_SENDER_DEV }}
+                  SES_USER: ${{ secrets.SES_USER_DEV }}
+                  SES_PASS: ${{ secrets.SES_PASS_DEV }}
+                  SES_REQ_CRE: ${{ secrets.SES_REQ_CRE_DEV }}
+                  KOMU_API_URL: ${{ secrets.KOMU_API_URL_DEV }}
+                  KOMU_X_SK: ${{ secrets.KOMU_X_SK_DEV }}
+                  GG_CLIENT: ${{ secrets.GG_CLIENT_DEV }}
+                  GG_SECRET: ${{ secrets.GG_SECRET_DEV }}
+                  TALENT_DF: ${{ secrets.TALENT_DF_DEV }}
+                  ENABLE_LOCAL_LOGIN: ${{ secrets.ENABLE_LOCAL_LOGIN_DEV }}
+                  WFH_DEFINITIONS_ID: ${{ secrets.WFH_DEFINITIONS_ID_DEV }}
+                  JWT_SECRET: ${{ secrets.JWT_SECRET_DEV }}
+                  URL_WEB: ${{ secrets.URL_WEB_DEV }}
+                  API_SECRET_KEY_HEADER_NAME: ${{ secrets.API_SECRET_KEY_HEADER_NAME_DEV }}
+                  API_X_SECRET_KEY: ${{ secrets.API_X_SECRET_KEY_DEV }}
+                  MEZON_CLIENT: ${{ secrets.MEZON_CLIENT_DEV }}
+                  MEZON_SECRET: ${{ secrets.MEZON_SECRET_DEV }}
+                  MEZON_REDIRECT_URI: ${{ secrets.MEZON_REDIRECT_URI_DEV }}
+
+            - name: Migrate Database
+              run: |
+                  export PATH=$PATH:/opt/dotnet6/
+                  cp appsettings.json /var/www/migrator/w2/dev-dotnet-migrator-w2/
+                  cd /var/www/migrator/w2/dev-dotnet-migrator-w2/
+                  dotnet6 W2.DbMigrator.dll -q
+
+            - name: Restart Server
+              run: |
+                  sudo service erp-w2 stop
+                  cp appsettings.json /var/www/app/w2/dev-dotnet-host-w2/
+                  cd /var/www/app/w2/dev-dotnet-host-w2/
+                  mkdir -p /var/www/app/w2/dev-dotnet-host-w2/Logs/
+                  touch /var/www/app/w2/dev-dotnet-host-w2/Logs/logs.txt
+                  chmod 777 -R Logs/
+                  chmod 777 -R wwwroot/
+                  cp appsettings.json appsettings.Development.json
+                  sudo service erp-w2 start
+                  sudo service erp-w2 status
