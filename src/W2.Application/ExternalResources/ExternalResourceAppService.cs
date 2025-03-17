@@ -355,7 +355,7 @@ namespace W2.ExternalResources
                     }
 
                     var userHrmName = response.Result.FullName;
-                    existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), existedUser.Email, existedUser.Email);
+                    existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), mezonUserInfo.sub, mezonUserInfo.sub);
                     existedUser.Name = ConvertVietnameseToUnsign(userHrmName);
                     await _userManager.CreateAsync(existedUser);
                     await _userManager.AddToRoleAsync(existedUser, RoleNames.DefaultUser);
