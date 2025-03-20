@@ -19,6 +19,8 @@ using Volo.Abp.Security.Claims;
 using W2.Authorization.Attributes;
 using W2.Identity;
 using W2.Permissions;
+using W2.Utils;
+using Volo.Abp.Guids;
 
 namespace W2.Login
 {
@@ -28,6 +30,7 @@ namespace W2.Login
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly SimpleGuidGenerator _simpleGuidGenerator;
 
         public AuthAppService(
             IdentityUserManager userManager,
@@ -40,6 +43,7 @@ namespace W2.Login
             _userRepository = userRepository;
             _configuration = configuration;
             _httpContextAccessor = httpContextAccessor;
+            _simpleGuidGenerator = SimpleGuidGenerator.Instance;
         }
 
         public async Task<AuthUser> LoginAccount(AuthDto authDto)
@@ -68,7 +72,7 @@ namespace W2.Login
                 throw new UserFriendlyException("Invalid username or password.");
             }
 
-            var token = Utils.JwtHelper.GenerateJwtTokenForUser(user, _configuration);
+            var token = JwtHelper.GenerateJwtTokenForUser(user, _configuration);
             return new AuthUser { Token = token };
         }
         
@@ -82,7 +86,7 @@ namespace W2.Login
                 .Where(x => x.Type == JwtRegisteredClaimNames.Sub)
                 .Select(x => x.Value)
                 .ToArray();
-            
+
             var name = claims
                 .First(x => x.Type == AbpClaimTypes.UserName)
                 .Value;
@@ -116,5 +120,57 @@ namespace W2.Login
             };
         }
 
+        public async Task<AuthUser> LoginMezonByHash(AuthMezonByHashDto authMezonByHashDto)
+        {
+            if (string.IsNullOrEmpty(authMezonByHashDto.hashKey) || string.IsNullOrEmpty(authMezonByHashDto.dataCheck))
+            {
+                throw new ArgumentNullException(nameof(authMezonByHashDto.hashKey));
+            }
+
+            var appToken = _configuration["Authentication:Mezon:AppToken"]
+                ?? throw new ArgumentNullException("Mezon AppToken configuration is missing.");
+
+            byte[] secretKey = Hasher.HMAC_SHA256(Encoding.UTF8.GetBytes(appToken), Encoding.UTF8.GetBytes("WebAppData"));
+            var hashedData = Hasher.HEX(Hasher.HMAC_SHA256(secretKey, Encoding.UTF8.GetBytes(authMezonByHashDto.dataCheck)));
+
+            if (!authMezonByHashDto.hashKey.Equals(hashedData))
+            {
+                throw new UserFriendlyException("Authentication failed - Invalid hash key");
+            }
+
+            var query = await _userRepository.GetQueryableAsync();
+            var user = await query
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)                    
+                .Where(u => u.UserName == authMezonByHashDto.userName ||
+                            u.Email == authMezonByHashDto.userEmail)
+                .FirstOrDefaultAsync();
+
+            if (user != null && !user.IsActive)
+            {
+                throw new UserFriendlyException("User is disabled!");
+            }
+            if (user == null)
+            {
+                    user = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), authMezonByHashDto.userEmail, authMezonByHashDto.userEmail);
+                    user.Name = authMezonByHashDto.userName;
+
+                    await _userManager.CreateAsync(user);
+                    await _userManager.AddToRoleAsync(user, RoleNames.DefaultUser);
+                    await _userManager.AddDefaultRolesAsync(user);
+
+                    await _userManager.UpdateAsync(user);
+            }
+
+            var queryTem = await _userRepository.GetQueryableAsync();
+            var userTemp = await queryTem
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => u.Id == user.Id)
+                .FirstOrDefaultAsync();
+
+            var token = JwtHelper.GenerateJwtTokenForUser(userTemp, _configuration);
+            return new AuthUser { Token = token };
+        }
     }
 }
