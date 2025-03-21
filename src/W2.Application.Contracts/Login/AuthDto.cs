@@ -25,4 +25,12 @@ namespace W2.Login
         public string role { get; set; }
         public string[] permissions { get; set; }
     }
+
+    public class AuthMezonByHashDto
+    {
+        public string hashKey { get; set; }
+        public string dataCheck{ get; set; }
+        public string userName { get; set; }
+        public string userEmail { get; set; }
+    }
 }

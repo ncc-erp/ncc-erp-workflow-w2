@@ -11,5 +11,7 @@ namespace W2.Login
         Task<AuthUser> LoginAccount(AuthDto authDto);
         
         UserInfo CurrentUser();
+
+        Task<AuthUser> LoginMezonByHash(AuthMezonByHashDto authMezonByHashDto);
     }
 }
