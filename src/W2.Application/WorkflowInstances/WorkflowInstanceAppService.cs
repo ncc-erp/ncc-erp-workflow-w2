@@ -37,6 +37,7 @@ using W2.Specifications;
 using W2.TaskActions;
 using W2.Tasks;
 using W2.Utils;
+using W2.Webhooks;
 using W2.WorkflowDefinitions;
 
 namespace W2.WorkflowInstances
@@ -64,7 +65,7 @@ namespace W2.WorkflowInstances
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
         private readonly IExternalResourceAppService _externalResourceAppService;
         private readonly IKomuAppService _komuAppService;
-
+        private readonly IWebhookSender _webhookSender;
         public WorkflowInstanceAppService(IWorkflowLaunchpad workflowLaunchpad,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<W2Task, Guid> taskRepository,
@@ -83,7 +84,8 @@ namespace W2.WorkflowInstances
             ICurrentUser currentUser,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
             IExternalResourceAppService externalResourceAppService,
-            IKomuAppService komuAppService
+            IKomuAppService komuAppService,
+            IWebhookSender webhookSender
             )
         {
             _workflowLaunchpad = workflowLaunchpad;
@@ -105,6 +107,7 @@ namespace W2.WorkflowInstances
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _externalResourceAppService = externalResourceAppService;
             _komuAppService = komuAppService;
+            _webhookSender = webhookSender;
         }
 
         [RequirePermission(W2ApiPermissions.CancelWorkflowInstance)]
@@ -165,7 +168,7 @@ namespace W2.WorkflowInstances
 
             return "Cancel Request workflow successful";
         }
-                
+
         //[Authorize(W2Permissions.WorkflowManagementWorkflowInstancesCreate)]
         [RequirePermission(W2ApiPermissions.CreateWorkflowInstance)]
         public async Task<object> CreateNewInstanceAsync(CreateNewWorkflowInstanceDto input)
@@ -194,7 +197,14 @@ namespace W2.WorkflowInstances
                 };
 
                 workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+
                 await uow.CompleteAsync();
+                await _webhookSender.SendCreatedRequest("Request Created", new
+                {
+                    WorkflowInstanceId = instance.Id,
+                    WorkflowDefinitionId = instance.DefinitionId,
+                    CreatorId = workflowInstanceStarterResponse.CreatorId,
+                });
 
                 _logger.LogInformation("Saved changes to database");
             }
@@ -268,7 +278,7 @@ namespace W2.WorkflowInstances
             // migrate all item
             var listUsers = wfInstanceQuery.Select(w => w.CreatorId).ToList();
             var userMap = (await _userRepository.GetListAsync()).Where(u => listUsers.Contains(u.Id)).ToDictionary(x => x.Id.ToString(), x => x.Email);
-            foreach ( var wfh in wfInstanceQuery.ToList())
+            foreach (var wfh in wfInstanceQuery.ToList())
             {
                 // migrate
                 try
@@ -289,7 +299,8 @@ namespace W2.WorkflowInstances
                             WorkflowInstanceStarterId = wfh.Id,
                         }, true);
                     }
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     _logger.LogError("Migrate wfh error: " + wfh, ex);
                 }
@@ -306,16 +317,18 @@ namespace W2.WorkflowInstances
                   (h, wf) => new { history = h, wf }) // selection
                .Where(wf => wf.wf.Status == status)
                 .GroupBy(g => g.history.Email).Count();
-            var result = from w in wfhQuery where w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb
+            var result = from w in wfhQuery
+                         where w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb
                          join wf in wfInstanceQueryJoin on w.WorkflowInstanceStarterId equals wf.Id
                          where wf.Status == status
                          group w by new { w.Email, w.Branch } into egb
-                         select new { 
-                            egb.Key.Email,
-                            egb.Key.Branch,
-                            totalRemoteDay = egb.Select(e => e.RemoteDate).Distinct().Count(),
-                            Dates = egb.Select(e => e.RemoteDate).Distinct().ToList(),
-                            totalRemoteCount = wfhQuery.Where(w => w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb)
+                         select new
+                         {
+                             egb.Key.Email,
+                             egb.Key.Branch,
+                             totalRemoteDay = egb.Select(e => e.RemoteDate).Distinct().Count(),
+                             Dates = egb.Select(e => e.RemoteDate).Distinct().ToList(),
+                             totalRemoteCount = wfhQuery.Where(w => w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb)
                                 .Where(w => w.Email == egb.Key.Email)
                                 .Join(wfInstanceQueryJoin, // the source table of the inner join
                                   x => x.WorkflowInstanceStarterId,        // Select the primary key (the first part of the "on" clause in an sql "join" statement)
@@ -324,9 +337,10 @@ namespace W2.WorkflowInstances
                                 .Where(wf => wf.wf.Status == status)
                                 .GroupBy(g => g.history.WorkflowInstanceId).Count(),
                          };
-            return new { 
-             totalCount,
-             data = result.Skip(offset).Take(limit).ToList(),
+            return new
+            {
+                totalCount,
+                data = result.Skip(offset).Take(limit).ToList(),
             };
         }
 
@@ -406,7 +420,8 @@ namespace W2.WorkflowInstances
                     Status = -1
                 };
                 return newInstanceError;
-            };
+            }
+            ;
 
             return result;
         }
@@ -433,8 +448,8 @@ namespace W2.WorkflowInstances
             .Where(wf => input.Status == WorkflowInstancesStatus.All || wf.wf.Status == input.Status);
 
             var joinQuery = (from w in wfhQuery
-                         where w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb
-                         join wf in wfInstanceQueryJoin on w.WorkflowInstanceStarterId equals wf.Id
+                             where w.RemoteDate >= dateFromDb && w.RemoteDate <= dateToDb
+                             join wf in wfInstanceQueryJoin on w.WorkflowInstanceStarterId equals wf.Id
                              let status = wf.Status
                              where input.Status == WorkflowInstancesStatus.All || status == input.Status
                              select new WFHRequestDto
@@ -499,13 +514,13 @@ namespace W2.WorkflowInstances
             if (!string.IsNullOrWhiteSpace(input?.Status))
             {
                 WorkflowInstancesStatus status = WorkflowInstancesStatus.Pending;
-                switch(input.Status)
+                switch (input.Status)
                 {
                     case "Approved":
                         status = WorkflowInstancesStatus.Approved;
                         break;
                     case "Rejected":
-                        status = WorkflowInstancesStatus.Rejected; 
+                        status = WorkflowInstancesStatus.Rejected;
                         break;
                     case "Pending":
                         status = WorkflowInstancesStatus.Pending;
@@ -599,14 +614,13 @@ namespace W2.WorkflowInstances
                 .ToList();
             var totalCount = workflowInstanceStartersOptQuery.Count();
             var totalResults = instancesQuery.Select(x => new
-                {
-                    instance = x.WorkflowInstance,
-                    task = x.W2task,
-                    instanceStarter = x.WorkflowInstanceStarter,
-                    definition = x.Definition,
-                    user = x.User
-                }).ToList();
-            
+            {
+                instance = x.WorkflowInstance,
+                task = x.W2task,
+                instanceStarter = x.WorkflowInstanceStarter,
+                definition = x.Definition,
+                user = x.User
+            }).ToList();
             var totalResultsAfterMapping = new List<WorkflowInstanceDto>();
             var stakeHolderEmails = new Dictionary<string, string>();
             // get all defines
@@ -688,7 +702,7 @@ namespace W2.WorkflowInstances
                     var InputClone = new Dictionary<string, string>(workflowInstanceStarter.Input)
                     {
                         { "RequestUser", workflowInstanceDto.UserRequestName }
-                    };                                                                                          
+                    };
                     var title = TitleTemplateParser.ParseTitleTemplateToString(titleFiled.Settings?.TitleTemplate ?? "", InputClone);
                     workflowInstanceDto.ShortTitle = title;
                     //workflowInstanceDto.ShortTitle = workflowInstanceStarter.Input.GetItem(titleFiled.Name);
