@@ -43,14 +43,14 @@ namespace W2.Webhooks
         public async Task SendCreatedRequest(string eventName, object payload)
         {
             var (workflowName, creatorName, _) = await ExtractCommonInfo(payload);
-            string messageText = $"[Request] {workflowName} is created by {creatorName}";
+            string messageText = GenerateMessage(workflowName, creatorName, "Created");
             await SendToWebhooks(eventName, messageText);
         }
 
         public async Task SendFinishedRequest(string eventName, object payload)
         {
             var (workflowName, creatorName, _) = await ExtractCommonInfo(payload);
-            string messageText = $"[Request] {workflowName} created by {creatorName} is finished";
+            string messageText = GenerateMessage(workflowName, creatorName, "Finished");
             await SendToWebhooks(eventName, messageText);
         }
 
@@ -67,7 +67,7 @@ namespace W2.Webhooks
                 assigneeName = taskEmail.Email;
             }
 
-            string messageText = $"[Request] {workflowName} created by {creatorName} is assigned to {assigneeName}";
+            string messageText = GenerateMessage(workflowName, creatorName, "Assigned", assigneeName);
             await SendToWebhooks(eventName, messageText);
         }
 
@@ -142,6 +142,15 @@ namespace W2.Webhooks
             };
             return JsonConvert.SerializeObject(formattedPayload);
         }
+        private string GenerateMessage(string workflowName, string creatorName, string eventType, string assigneeName = null)
+        {
+            return eventType switch
+            {
+                "Created" => $"[Request] {workflowName} is created by {creatorName}",
+                "Finished" => $"[Request] {workflowName} created by {creatorName} is finished",
+                "Assigned" when assigneeName != null => $"[Request] {workflowName} created by {creatorName} is assigned to {assigneeName}",
+                _ => "[Request] Unknown event"
+            };
+        }
     }
-
 }
