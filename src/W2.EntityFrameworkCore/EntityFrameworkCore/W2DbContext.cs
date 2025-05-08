@@ -23,6 +23,7 @@ using W2.TaskEmail;
 using W2.Tasks;
 using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
+using System.Text.Json;
 
 namespace W2.EntityFrameworkCore;
 
@@ -218,9 +219,17 @@ public class W2DbContext :
         {
             b.ToTable("W2Webhooks");
             b.HasKey(x => x.Id);
-            b.Property(x => x.EventName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.WebhookName).IsRequired().HasMaxLength(250);
             b.Property(x => x.Url).IsRequired().HasMaxLength(500);
             b.Property(x => x.IsActive).IsRequired();
+            b.Property(x => x.EventNames)
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions)null)
+                )
+                .HasColumnType("jsonb")
+                .IsRequired();
+
             b.Property(x => x.CreationTime).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
     }

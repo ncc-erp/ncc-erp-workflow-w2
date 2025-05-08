@@ -10,6 +10,7 @@ using System;
 using Elsa.Persistence;
 using W2.Identity;
 using W2.TaskEmail;
+using System.Collections.Generic;
 
 namespace W2.Webhooks
 {
@@ -21,6 +22,7 @@ namespace W2.Webhooks
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
         private readonly IRepository<W2TaskEmail, Guid> _taskEmailRepository;
+        private readonly Dictionary<string, Func<object, Task>> _eventHandlers;
 
         public WebhookSender(
             IHttpClientFactory httpClientFactory,
@@ -38,7 +40,6 @@ namespace W2.Webhooks
             _userRepository = userRepository;
             _taskEmailRepository = taskEmailRepository;
         }
-
         public async Task SendCreatedRequest(string eventName, object payload)
         {
             var (workflowName, creatorName, _) = await ExtractCommonInfo(payload);
@@ -102,14 +103,26 @@ namespace W2.Webhooks
 
         private async Task SendToWebhooks(string eventName, string messageText)
         {
-            var webhooks = await _webhookRepository.GetListAsync(x => x.IsActive && x.EventName == eventName);
+            var webhooks = await _webhookRepository.GetListAsync();
             string json = FormatWebhookPayload(messageText);
             foreach (var webhook in webhooks)
             {
-                var client = _httpClientFactory.CreateClient();
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await client.PostAsync(webhook.Url, content);
-                var responseText = await response.Content.ReadAsStringAsync();
+                if (webhook.EventNames == null || !webhook.EventNames.Contains(eventName))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var client = _httpClientFactory.CreateClient();
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync(webhook.Url, content);
+                    var responseText = await response.Content.ReadAsStringAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error sending webhook to {webhook.Url}: {ex.Message}");
+                }
             }
         }
 

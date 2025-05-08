@@ -17,6 +17,8 @@ namespace W2.Webhooks
     public class WebhookAppService : W2AppService, IWebhookAppService
     {
         private readonly IRepository<W2Webhooks, Guid> _webhookRepository;
+        public const int MaxWebhookNameLength = 250;
+        public const int MaxUrlLength = 2048;
 
         public WebhookAppService(
             IRepository<W2Webhooks, Guid> webhookRepository
@@ -50,32 +52,61 @@ namespace W2.Webhooks
         [RequirePermission(W2ApiPermissions.UpdateWebhook)]
         public async Task<WebhooksDto> UpdateAsync(Guid id, UpdateWebhooksInput input)
         {
-            if (!WebhookEvents.ValidEvents.Contains(input.EventName))
-            {
-                throw new UserFriendlyException("Invalid event name.");
-            }
+            var invalidEvents = input.EventNames
+                .Where(e => !WebhookEvents.ValidEvents.Contains(e, StringComparer.OrdinalIgnoreCase))
+                .ToList();
 
-            if (input.Url.Length > 2048)
+            if (invalidEvents.Any())
             {
+                throw new UserFriendlyException($"Invalid event names: {string.Join(", ", invalidEvents)}");
+            }
+            if (input.WebhookName.Length > MaxWebhookNameLength)
+                throw new UserFriendlyException("WebhookName is too long.");
+
+            if (input.Url.Length > MaxUrlLength)
                 throw new UserFriendlyException("URL is too long.");
-            }
 
-            if (string.IsNullOrEmpty(input.Url) || string.IsNullOrEmpty(input.EventName))
-            {
-                throw new UserFriendlyException("URL and EventName cannot be empty.");
-            }
+            if (string.IsNullOrWhiteSpace(input.Url) || string.IsNullOrWhiteSpace(input.WebhookName))
+                throw new UserFriendlyException("URL and WebhookName cannot be empty.");
+
+            if (input.EventNames == null || !input.EventNames.Any())
+                throw new UserFriendlyException("At least one EventName is required.");
+
+            input.EventNames = input.EventNames
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .Select(e => e.Trim())
+                .Distinct()
+                .ToList();
 
             var query = await _webhookRepository.GetQueryableAsync();
-            var existUrl = await query.FirstOrDefaultAsync(w => w.Id != id && w.Url == input.Url.Trim() && w.EventName == input.EventName.Trim());
+
+            var existUrl = await query.FirstOrDefaultAsync(w =>
+                w.Id != id &&
+                w.Url == input.Url.Trim() &&
+                w.WebhookName == input.WebhookName.Trim());
+
             if (existUrl != null)
             {
                 throw new UserFriendlyException("Webhook with this URL already exists.");
             }
+            var existWebhook = await query.FirstOrDefaultAsync(w =>
+                w.Id != id &&
+                w.WebhookName == input.WebhookName.Trim());
+
+            if (existWebhook != null)
+            {
+                throw new UserFriendlyException("Webhook Name already exists.");
+            }
+
+
 
             var webhook = await query.FirstOrDefaultAsync(w => w.Id == id)
                           ?? throw new UserFriendlyException("Webhook not found.");
+
             webhook.Url = input.Url.Trim();
-            webhook.EventName = input.EventName.Trim();
+            webhook.WebhookName = input.WebhookName.Trim();
+            webhook.EventNames = input.EventNames;
+
             await _webhookRepository.UpdateAsync(webhook);
 
             return ObjectMapper.Map<W2Webhooks, WebhooksDto>(webhook);
@@ -84,35 +115,55 @@ namespace W2.Webhooks
         [RequirePermission(W2ApiPermissions.CreateWebhook)]
         public async Task<WebhooksDto> CreateAsync(CreateWebhooksInput input)
         {
-            if (!WebhookEvents.ValidEvents.Contains(input.EventName))
+            var invalidEvents = input.EventNames
+                .Where(e => !WebhookEvents.ValidEvents.Contains(e, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+            if (invalidEvents.Any())
             {
-                throw new UserFriendlyException("Invalid event name.");
+                throw new UserFriendlyException($"Invalid event names: {string.Join(", ", invalidEvents)}");
             }
-
-            if (input.Url.Length > 2048)
-            {
+            if (input.Url.Length > MaxUrlLength)
                 throw new UserFriendlyException("URL is too long.");
-            }
-            if (string.IsNullOrEmpty(input.Url) || string.IsNullOrEmpty(input.EventName))
-            {
-                throw new UserFriendlyException("URL and EventName cannot be empty.");
-            }
+
+            if (string.IsNullOrWhiteSpace(input.Url) || string.IsNullOrWhiteSpace(input.WebhookName))
+                throw new UserFriendlyException("URL and WebhookName cannot be empty.");
+
+            if (input.EventNames == null || !input.EventNames.Any())
+                throw new UserFriendlyException("At least one EventName is required.");
+
+            input.EventNames = input.EventNames
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .Select(e => e.Trim())
+                .Distinct()
+                .ToList();
 
             var query = await _webhookRepository.GetQueryableAsync();
 
-            var existUrl = await query.FirstOrDefaultAsync(w => w.Url == input.Url.Trim() && w.EventName == input.EventName.Trim());
+            var existUrl = await query.FirstOrDefaultAsync(w =>
+                w.Url == input.Url.Trim() &&
+                w.WebhookName == input.WebhookName.Trim());
+
             if (existUrl != null)
-            {
                 throw new UserFriendlyException("Webhook with this URL already exists.");
-            }
 
+            var existWebhook = await query.FirstOrDefaultAsync(w =>
+                w.WebhookName == input.WebhookName.Trim());
 
-            var webhook = new W2Webhooks(GuidGenerator.Create(), input.Url.Trim(), input.EventName.Trim())
-                                ?? throw new UserFriendlyException("Webhook not found.");
+            if (existWebhook != null)
+                throw new UserFriendlyException("Webhook Name already exists.");
+
+            var webhook = new W2Webhooks(
+                GuidGenerator.Create(),
+                input.Url.Trim(),
+                input.WebhookName.Trim(),
+                input.EventNames
+            );
+
             await _webhookRepository.InsertAsync(webhook);
 
             return ObjectMapper.Map<W2Webhooks, WebhooksDto>(webhook);
         }
+
 
         [HttpDelete("{id}")]
         [RequirePermission(W2ApiPermissions.DeleteWebhook)]
