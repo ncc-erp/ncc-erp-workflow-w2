@@ -2,18 +2,18 @@ name: Deploy Workflow W2 Dev
 on:
     push:
         branches:
-            - dev
+            - feature/fix-cicd
 
     workflow_dispatch:
         inputs:
             branch:
                 description: 'Branch to deploy'
                 required: true
-                default: 'dev'
+                default: 'feature/fix-cicd'
 
 jobs:
     build:
-        runs-on: dev
+        runs-on: w2-be-dev
         name: Build Workflow W2 Dev
         environment: dev
         steps:
@@ -50,7 +50,7 @@ jobs:
                   cp -r * /var/www/app/w2/dev-dotnet-host-w2/
 
     deploy:
-        runs-on: dev
+        runs-on: w2-be-dev
         name: Deploy Workflow W2 Dev
         environment: dev
         needs:
