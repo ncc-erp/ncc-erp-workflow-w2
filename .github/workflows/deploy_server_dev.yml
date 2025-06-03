@@ -2,14 +2,14 @@ name: Deploy Workflow W2 Dev
 on:
     push:
         branches:
-            - feature/fix-cicd
+            - dev
 
     workflow_dispatch:
         inputs:
             branch:
                 description: 'Branch to deploy'
                 required: true
-                default: 'feature/fix-cicd'
+                default: 'dev'
 
 jobs:
     build:
