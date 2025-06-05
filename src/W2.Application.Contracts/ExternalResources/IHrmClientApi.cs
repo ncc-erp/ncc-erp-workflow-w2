@@ -8,5 +8,8 @@ namespace W2.ExternalResources
     {
         [Get("/api/services/app/Public/GetEmployeeByEmail")]
         Task<AbpResponse<UserBranchInfo>> GetUserBranchInfoAsync([AliasAs("email")] string email);
+
+        [Get("/api/services/app/Public/GetAllEmployee")]
+        Task<AbpResponse<HrmEmployeeInfo>> GetAllEmployee();
     }
 }

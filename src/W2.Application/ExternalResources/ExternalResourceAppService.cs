@@ -40,13 +40,13 @@ namespace W2.ExternalResources
         private readonly ITimesheetClientApi _timesheetClient;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
-        //private readonly IHrmClientApi _hrmClient;
+        private readonly IHrmClientApi _hrmClient;
 
         //private readonly IHrmClientApi _hrmClient;
         public ExternalResourceAppService(
             IDistributedCache<AllUserInfoCacheItem> userInfoCache,
             HttpClient httpClient,
-            //IHrmClientApi hrmClient,
+            IHrmClientApi hrmClient,
             IProjectClientApi projectClient,
             ITimesheetClientApi timesheetClient,
             IConfiguration configuration,
@@ -59,7 +59,7 @@ namespace W2.ExternalResources
             _projectClient = projectClient;
             _timesheetClient = timesheetClient;
             _httpClient = httpClient;
-            //_hrmClient = hrmClient;
+            _hrmClient = hrmClient;
             _configuration = configuration;
             _userManager = userManager;
             _simpleGuidGenerator = SimpleGuidGenerator.Instance;
@@ -357,6 +357,7 @@ namespace W2.ExternalResources
                     var userHrmName = response.Result.FullName;
                     existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), mezonUserInfo.sub, mezonUserInfo.sub);
                     existedUser.Name = ConvertVietnameseToUnsign(userHrmName);
+                    
                     await _userManager.CreateAsync(existedUser);
                     await _userManager.AddToRoleAsync(existedUser, RoleNames.DefaultUser);
                     await _userManager.AddDefaultRolesAsync(existedUser);
@@ -366,7 +367,7 @@ namespace W2.ExternalResources
                 var finalUser = await query
                     .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
-                    .Where(u => u.Email == existedUser.Email)
+                    .Where(u =>u.MezonUserId == mezonUserInfo.user_id || u.Email == existedUser.Email)
                     .FirstOrDefaultAsync();
                 
                 var jwtToken = Utils.JwtHelper.GenerateJwtTokenForUser(finalUser, _configuration);
@@ -450,6 +451,54 @@ namespace W2.ExternalResources
             result = Regex.Replace(result, @"Đ", "D"); // Chuyển Đ thành D
             result = Regex.Replace(result, @"đ", "d"); // Chuyển đ thành d
             return result;
+        }
+
+        public async Task<List<HrmEmployeeInfo>> SyncHrmUsers()
+        {
+            try
+            {
+                var response = await _hrmClient.GetAllEmployee();
+                var allEmployees = response.Result;
+                var users   =await BulkUpdateUsersAsync(allEmployees);
+
+                return allEmployees;
+            }
+            catch (Exception)
+            {
+                throw new UserFriendlyException("Invalid Mezon Authentication.");
+            }
+        }
+
+        public async Task<List<W2CustomIdentityUser>> BulkUpdateUsersAsync(List<HrmEmployeeInfo> hrmUsers)
+        {
+            if (hrmUsers == null || hrmUsers.Count == 0)
+            {
+                throw new UserFriendlyException("No user data provided.");
+            }
+
+            // Get the list of users that need to be updated based on email
+            var emails = hrmUsers.Select(u => u.Email).ToList();  // Extract emails from the input
+            var usersQuery = await _userRepository.GetQueryableAsync();
+            var users = await usersQuery
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => emails.Contains(u.Email))
+                .ToListAsync();
+
+            //Process each user for update
+            foreach (var user in users)
+                {
+                    var userInput = hrmUsers.FirstOrDefault(u => u.Email == user.Email);
+                    if (userInput == null) continue; // Skip if no input data for this user
+
+                    // Update basic user properties
+                    user.SetUserName(userInput.Email);
+                    user.SetEmail(userInput.Email);
+                    user.SetMezonUserId(userInput.MezonId);
+                }
+
+           await _userRepository.UpdateManyAsync(users);
+           return users;
         }
 
     }

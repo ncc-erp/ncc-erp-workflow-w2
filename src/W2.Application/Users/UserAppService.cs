@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Identity;
 using W2.Authorization.Attributes;
 using W2.Constants;
 using W2.Roles;
+using W2.ExternalResources;
 
 namespace W2.Users
 {
@@ -153,6 +154,8 @@ namespace W2.Users
             user.SetPhoneNumber(input.PhoneNumber);
             user.SetLockoutEnabled(input.LockoutEnabled);
             user.SetIsActive(input.IsActive);
+            user.SetMezonUserId(input.MezonUserId);
+
             if (!input.Password.IsNullOrEmpty())
             {
                 (await _userManager.RemovePasswordAsync(user)).CheckErrors();
@@ -219,5 +222,9 @@ namespace W2.Users
 
             return query;
         }
+
+
+
+
     }
 }
