@@ -27,18 +27,21 @@ namespace W2.Users
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
         private readonly IRepository<W2CustomIdentityRole, Guid> _roleRepository;
         private readonly IRepository<W2Permission, Guid> _permissionRepository;
+        private readonly IHrmClientApi _hrmClient;
 
         public UserAppService(
                 IdentityUserManager userManager,
                 IRepository<W2CustomIdentityUser, Guid> userRepository,
                 IRepository<W2CustomIdentityRole, Guid> roleRepository,
-                IRepository<W2Permission, Guid> permissionRepository
+                IRepository<W2Permission, Guid> permissionRepository,
+                IHrmClientApi hrmClient
             )
         {
             _userManager = userManager;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _permissionRepository = permissionRepository;
+            _hrmClient = hrmClient;
         }
 
         [HttpGet]
@@ -223,8 +226,54 @@ namespace W2.Users
             return query;
         }
 
+        [HttpPost("sync-hrm")]
+        [RequirePermission(W2ApiPermissions.UpdateUser)]
+        public async Task SyncHrmUsers()
+        {
+            try
+            {
+                var response = await _hrmClient.GetAllEmployee();
+                var allEmployees = response.Result;
+                await BulkUpdateUsersAsync(allEmployees);
 
+            }
+            catch (Exception)
+            {
+                throw new UserFriendlyException("Fail to sync HRM Users");
+            }
+        }
 
+        public async Task<List<W2CustomIdentityUser>> BulkUpdateUsersAsync(List<HrmEmployeeInfo> hrmUsers)
+        {
+            if (hrmUsers == null || hrmUsers.Count == 0)
+            {
+                throw new UserFriendlyException("No user data provided.");
+            }
+
+            // Get the list of users that need to be updated based on email
+            var emails = hrmUsers.Select(u => u.Email).ToList();  // Extract emails from the input
+            var usersQuery = await _userRepository.GetQueryableAsync();
+            var users = await usersQuery
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => emails.Contains(u.Email))
+                .ToListAsync();
+
+            //Process each user for update
+            foreach (var user in users)
+            {
+                var userInput = hrmUsers.FirstOrDefault(u => u.Email == user.Email);
+                if (userInput == null) continue; // Skip if no input data for this user
+
+                // Update basic user properties
+                user.SetUserName(userInput.Email);
+                user.SetEmail(userInput.Email);
+                user.SetMezonUserId(userInput.MezonId);
+            }
+
+            await _userRepository.UpdateManyAsync(users);
+            return users;
+        }
 
     }
 }

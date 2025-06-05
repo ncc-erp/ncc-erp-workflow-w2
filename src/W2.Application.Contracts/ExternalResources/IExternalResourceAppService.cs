@@ -20,6 +20,5 @@ namespace W2.ExternalResources
         Task<ExternalAuthUser> ExternalLogin(ExternalAuthDto externalAuth);
         string MezonAuthUrl();
         Task<ExternalAuthUser> MezonLogin(MezonAuthDto mezonAuth);
-        Task<List<HrmEmployeeInfo>> SyncHrmUsers();
     }
 }

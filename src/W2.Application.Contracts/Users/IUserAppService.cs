@@ -12,5 +12,6 @@ namespace W2.Users
         Task<UserRolesDto> GetUserRolesAsync(Guid userId);
         Task<UserPermissionsDto> GetUserPermissionsAsync(Guid userId);
         Task UpdateUserAsync(Guid userId, UpdateUserInput input);
+        Task SyncHrmUsers();
     }
 }
