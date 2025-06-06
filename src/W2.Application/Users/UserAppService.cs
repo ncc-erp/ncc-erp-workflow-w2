@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Identity;
 using W2.Authorization.Attributes;
 using W2.Constants;
 using W2.Roles;
+using W2.ExternalResources;
+using Volo.Abp.Guids;
 
 namespace W2.Users
 {
@@ -26,18 +28,23 @@ namespace W2.Users
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
         private readonly IRepository<W2CustomIdentityRole, Guid> _roleRepository;
         private readonly IRepository<W2Permission, Guid> _permissionRepository;
+        private readonly IHrmClientApi _hrmClient;
+        private readonly SimpleGuidGenerator _simpleGuidGenerator;
 
         public UserAppService(
                 IdentityUserManager userManager,
                 IRepository<W2CustomIdentityUser, Guid> userRepository,
                 IRepository<W2CustomIdentityRole, Guid> roleRepository,
-                IRepository<W2Permission, Guid> permissionRepository
+                IRepository<W2Permission, Guid> permissionRepository,
+                IHrmClientApi hrmClient
             )
         {
             _userManager = userManager;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _permissionRepository = permissionRepository;
+            _hrmClient = hrmClient;
+            _simpleGuidGenerator = SimpleGuidGenerator.Instance;
         }
 
         [HttpGet]
@@ -153,6 +160,8 @@ namespace W2.Users
             user.SetPhoneNumber(input.PhoneNumber);
             user.SetLockoutEnabled(input.LockoutEnabled);
             user.SetIsActive(input.IsActive);
+            user.SetMezonUserId(input.MezonUserId);
+
             if (!input.Password.IsNullOrEmpty())
             {
                 (await _userManager.RemovePasswordAsync(user)).CheckErrors();
@@ -219,5 +228,74 @@ namespace W2.Users
 
             return query;
         }
+
+        [HttpPost("sync-hrm")]
+        [RequirePermission(W2ApiPermissions.UpdateUser)]
+        public async Task SyncHrmUsers()
+        {
+            try
+            {
+                var response = await _hrmClient.GetAllEmployee();
+                var allEmployees = response.Result;
+                await BulkUpdateUsersAsync(allEmployees);
+            }
+            catch (Exception)
+            {
+                throw new UserFriendlyException("Fail to sync HRM Users");
+            }
+        }
+
+        public async Task<List<W2CustomIdentityUser>> BulkUpdateUsersAsync(List<HrmEmployeeInfo> hrmUsers)
+        {
+            if (hrmUsers == null || hrmUsers.Count == 0)
+            {
+                throw new UserFriendlyException("No user data provided.");
+            }
+
+            // Get the list of users that need to be updated based on email
+            var emails = hrmUsers.Select(u => u.Email).ToList();  // Extract emails from the input
+            var usersQuery = await _userRepository.GetQueryableAsync();
+            var existingUsers  = await usersQuery
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => emails.Contains(u.Email))
+                .ToListAsync();
+            var newUsers = new List<W2CustomIdentityUser>();
+
+            //Process each user for update
+            foreach (var userInput in hrmUsers)
+            {
+                var existingUser = existingUsers.FirstOrDefault(u => u.Email == userInput.Email);
+                if (existingUser != null)
+                {
+                    // User exists, update their data
+                    existingUser.SetUserName(userInput.Email);
+                    existingUser.SetEmail(userInput.Email);
+                    existingUser.SetMezonUserId(userInput.MezonUserId);
+                }
+                else
+                {
+                    // User does not exist, create a new one
+                    var existedUser = await _userManager.FindByEmailAsync(userInput.Email);
+                    if (existedUser != null) continue; // Skip if user already exists
+
+                    var newUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), userInput.Email, userInput.Email);
+                    await _userManager.CreateAsync(newUser);
+                    await _userManager.AddToRoleAsync(newUser, RoleNames.DefaultUser);
+                    await _userManager.AddDefaultRolesAsync(newUser);
+                    newUsers.Add(newUser);
+                }
+            }
+
+            // Update existing users in the database
+            if (existingUsers.Any())
+            {
+                await _userRepository.UpdateManyAsync(existingUsers);
+            }
+
+
+            return existingUsers.Concat(newUsers).ToList();
+        }
+
     }
 }

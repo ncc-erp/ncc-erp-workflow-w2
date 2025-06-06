@@ -13,6 +13,8 @@ namespace W2.Identity
     {
         [Column(TypeName = "jsonb")]
         public string CustomPermissions { get; protected internal set; }
+
+        public virtual string MezonUserId { get; set; }
         public virtual ICollection<W2CustomIdentityUserRole> UserRoles { get; protected set; }
 
         protected W2CustomIdentityUser()
@@ -75,6 +77,11 @@ namespace W2.Identity
             {
                 CustomPermissions = JsonSerializer.Serialize(value);
             }
+        }
+
+        public virtual void SetMezonUserId(string mezonUserId)
+        {
+            MezonUserId = mezonUserId;
         }
     }
 }

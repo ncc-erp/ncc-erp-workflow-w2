@@ -50,7 +50,9 @@ namespace W2.ExternalResources
         public long iat { get; set; }    
         public string iss { get; set; }    
         public long rat { get; set; }       
-        public string sub { get; set; }      
+        public string sub { get; set; }    
+        public string user_id { get; set; }
+
     }
 }
 

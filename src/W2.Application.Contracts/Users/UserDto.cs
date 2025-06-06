@@ -28,5 +28,6 @@ namespace W2.Users
         public Guid Id { get; set; }
         public Dictionary<string, object> ExtraProperties { get; set; }
         public List<string> Roles { get; set; }
+        public string MezonUserId { get; set; }
     }
 }
