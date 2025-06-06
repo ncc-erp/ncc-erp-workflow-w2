@@ -340,15 +340,34 @@ namespace W2.ExternalResources
 
                 var tokenResponse = await GetMezonAccessTokenAsync(tokenUrl, mezonAuth, authConfig);
                 var mezonUserInfo = await GetMezonUserInfoAsync(userInfoUrl, tokenResponse.access_token);
+                var mezonUserEmail = mezonUserInfo.sub;
+                var query = await _userRepository.GetQueryableAsync();
 
-                var existedUser = await _userManager.FindByEmailAsync(mezonUserInfo.sub);
+
+                if (!mezonUserEmail.Contains("@ncc.asia"))
+                {
+                    var externalUser = await query
+                        .Include(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                        .Where(u => u.MezonUserId == mezonUserInfo.user_id)
+                        .FirstOrDefaultAsync();
+
+                    if(externalUser == null)
+                    {
+                        throw new UserFriendlyException("Fail to login with external user");
+                    }
+
+                    var externalJwtToken = Utils.JwtHelper.GenerateJwtTokenForUser(externalUser, _configuration);
+
+                    return new ExternalAuthUser { Token = externalJwtToken };
+                }
 
 
-
+                var existedUser = await _userManager.FindByEmailAsync(mezonUserEmail);
                 if (existedUser == null)
                 {
                     // Create new user if not exist
-                    var response = await _timesheetClient.GetUserInfoByEmailAsync(mezonUserInfo.sub);
+                    var response = await _timesheetClient.GetUserInfoByEmailAsync(mezonUserEmail);
 
                     if (response == null)
                     {
@@ -356,7 +375,7 @@ namespace W2.ExternalResources
                     }
 
                     var userHrmName = response.Result.FullName;
-                    existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), mezonUserInfo.sub, mezonUserInfo.sub);
+                    existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), mezonUserEmail, mezonUserEmail);
                     existedUser.Name = ConvertVietnameseToUnsign(userHrmName);
 
                     await _userManager.CreateAsync(existedUser);
@@ -364,7 +383,6 @@ namespace W2.ExternalResources
                     await _userManager.AddDefaultRolesAsync(existedUser);
                 }
 
-                var query = await _userRepository.GetQueryableAsync();
                 var finalUser = await query
                     .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)

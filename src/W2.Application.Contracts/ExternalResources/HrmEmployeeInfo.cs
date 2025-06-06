@@ -28,7 +28,7 @@ namespace W2.ExternalResources
         [JsonProperty("statusName")]
         public string StatusName { get; set; }
 
-        [JsonProperty("mezonId")]
-        public string MezonId { get; set; }
+        [JsonProperty("mezonUserId")]
+        public string MezonUserId { get; set; }
     }
 }
