@@ -3,10 +3,12 @@
 cp appsettings_exp.json  appsettings.json 
 
 export KOMU_API_URL=$(echo "$KOMU_API_URL" | sed 's/\//\\\//g' )
+export HRM_API_URL=$(echo "$HRM_API_URL" | sed 's/\//\\\//g' )
 export API_URL=$(echo "$API_URL" | sed 's/\//\\\//g' )
 export URL_WEB=$(echo "$URL_WEB" | sed 's/\//\\\//g' )
 export MEZON_REDIRECT_URI=$(echo "https://w2-dev2.nccsoft.vn/callback" | sed 's/\//\\\//g' )
 
+sed "s/HRM_API_URL/$HRM_API_URL/g" -i appsettings.json
 sed "s/KOMU_API_URL/$KOMU_API_URL/g" -i appsettings.json
 sed "s/KOMU_X_SK/$KOMU_X_SK/g" -i appsettings.json
 sed "s/API_URL/$API_URL/g" -i appsettings.json
@@ -35,5 +37,4 @@ sed "s/JWT_SECRET/$JWT_SECRET/g" -i appsettings.json
 sed "s/MEZON_CLIENT/$MEZON_CLIENT/g" -i appsettings.json
 sed "s/MEZON_SECRET/$MEZON_SECRET/g" -i appsettings.json
 sed "s/MEZON_REDIRECT_URI/$MEZON_REDIRECT_URI/g" -i appsettings.json
-sed "s/HRM_API_URL/$HRM_API_URL/g" -i appsettings.json
 sed "s/HRM_API_X_SECRET_HEADER/$HRM_API_X_SECRET_HEADER/g" -i appsettings.json
