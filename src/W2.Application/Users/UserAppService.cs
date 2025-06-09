@@ -21,7 +21,7 @@ namespace W2.Users
 {
     [Route("api/app/users")]
     //[Authorize]
-    [RequirePermission(W2ApiPermissions.UsersManagement)]
+    //[RequirePermission(W2ApiPermissions.UsersManagement)]
     public class UserAppService : W2AppService, IUserAppService
     {
         private readonly IdentityUserManager _userManager;
@@ -233,6 +233,10 @@ namespace W2.Users
         [RequirePermission(W2ApiPermissions.UpdateUser)]
         public async Task SyncHrmUsers()
         {
+            await this.InternalSyncHrmUsers();
+        }
+        public async Task InternalSyncHrmUsers()
+        {
             try
             {
                 var response = await _hrmClient.GetAllEmployee();
@@ -244,7 +248,6 @@ namespace W2.Users
                 throw new UserFriendlyException("Fail to sync HRM Users");
             }
         }
-
         public async Task<List<W2CustomIdentityUser>> BulkUpdateUsersAsync(List<HrmEmployeeInfo> hrmUsers)
         {
             if (hrmUsers == null || hrmUsers.Count == 0)
@@ -300,7 +303,6 @@ namespace W2.Users
                 await _userRepository.UpdateManyAsync(existingUsers);
             }
 
-            await CurrentUnitOfWork.SaveChangesAsync();
             return existingUsers.Concat(newUsers).ToList();
         }
 

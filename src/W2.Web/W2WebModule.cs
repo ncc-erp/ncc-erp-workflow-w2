@@ -64,9 +64,10 @@ using W2.Authorization.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text.Json;
 using System.Threading.Tasks;
+using W2.Jobs;
+using Volo.Abp.BackgroundWorkers;
 
 namespace W2.Web;
-
 [DependsOn(
     typeof(W2HttpApiModule),
     typeof(W2ApplicationModule),
@@ -380,6 +381,9 @@ public class W2WebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+
+        var workerManager = context.ServiceProvider.GetRequiredService<IBackgroundWorkerManager>();
+        workerManager.AddAsync(context.ServiceProvider.GetRequiredService<SyncHrmWorker>());
 
         if (env.IsDevelopment())
         {
