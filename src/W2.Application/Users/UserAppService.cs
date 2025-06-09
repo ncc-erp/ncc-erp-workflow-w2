@@ -267,6 +267,7 @@ namespace W2.Users
                     .ThenInclude(ur => ur.Role)
                 .Where(u => userInput.Email == u.Email)
                 .FirstOrDefaultAsync();
+
                 if (existingUser != null)
                 {
                     // User exists, update their data
