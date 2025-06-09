@@ -393,6 +393,10 @@ namespace W2.ExternalResources
 
                 return new ExternalAuthUser { Token = jwtToken };
             }
+            catch (UserFriendlyException ex)
+            {
+                throw ex;
+            }
             catch (Exception)
             {
                 throw new UserFriendlyException("Invalid Mezon Authentication.");
