@@ -259,7 +259,8 @@ namespace W2.Users
             var newUsers = new List<W2CustomIdentityUser>();
 
             //Process each user for update
-            foreach (var userInput in hrmUsers)
+            // filter active users first// todo fixed for all users
+            foreach (var userInput in hrmUsers.Where(u => u.Status == 1))
             {
                 var existingUser = await usersQuery
                 .Include(u => u.UserRoles)
