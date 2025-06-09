@@ -42,9 +42,9 @@ public class W2ApplicationContractsModule : AbpModule
         context.Services
             .AddRefitClient<IAntClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Ant"]));
-        //context.Services
-        //    .AddRefitClient<IHrmClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
-        //    .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]))
-        //    .ConfigureHttpClient(c => c.DefaultRequestHeaders.Add("X-Secret-Key", configuration["Apis:HrmCode"]));
+        context.Services
+            .AddRefitClient<IHrmClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]))
+            .ConfigureHttpClient(c => c.DefaultRequestHeaders.Add("x-secret-key", configuration["Apis:HrmCode"]));
     }
 }

@@ -6,5 +6,7 @@ namespace W2.Identity
     public class UpdateUserInput: IdentityUserUpdateDto
     {
         public List<string> CustomPermissionCodes { get; set; }
+        public string MezonUserId { get; set; }
+
     }
 }
