@@ -264,7 +264,9 @@ namespace W2.Users
                 var existingUser = await usersQuery
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
-                .Where(u => emails.Contains(u.Email)).FirstOrDefaultAsync();
+                .Where(u => userInput.Email == u.Email)
+                .FirstOrDefaultAsync();
+
                 if (existingUser != null)
                 {
                     // User exists, update their data
@@ -282,6 +284,7 @@ namespace W2.Users
 
                     var newUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), userInput.Email, userInput.Email);
 
+                    newUser.SetMezonUserId(userInput.MezonUserId);
                     newUser.SetIsActive(userInput.Status == 1);
                     await _userManager.CreateAsync(newUser);
                     await _userManager.AddToRoleAsync(newUser, RoleNames.DefaultUser);
@@ -296,7 +299,7 @@ namespace W2.Users
                 await _userRepository.UpdateManyAsync(existingUsers);
             }
 
-
+            await CurrentUnitOfWork.SaveChangesAsync();
             return existingUsers.Concat(newUsers).ToList();
         }
 
