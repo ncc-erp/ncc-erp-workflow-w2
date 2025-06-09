@@ -255,23 +255,25 @@ namespace W2.Users
             // Get the list of users that need to be updated based on email
             var emails = hrmUsers.Select(u => u.Email).ToList();  // Extract emails from the input
             var usersQuery = await _userRepository.GetQueryableAsync();
-            var existingUsers  = await usersQuery
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .Where(u => emails.Contains(u.Email))
-                .ToListAsync();
+            var existingUsers  = new List<W2CustomIdentityUser>();
             var newUsers = new List<W2CustomIdentityUser>();
 
             //Process each user for update
             foreach (var userInput in hrmUsers)
             {
-                var existingUser = existingUsers.FirstOrDefault(u => u.Email == userInput.Email);
+                var existingUser = await usersQuery
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => userInput.Email == u.Email)
+                .FirstOrDefaultAsync();
                 if (existingUser != null)
                 {
                     // User exists, update their data
                     existingUser.SetUserName(userInput.Email);
                     existingUser.SetEmail(userInput.Email);
                     existingUser.SetMezonUserId(userInput.MezonUserId);
+                    existingUser.SetIsActive(userInput.Status == 1);
+                    existingUsers.Add(existingUser);
                 }
                 else
                 {
@@ -280,6 +282,9 @@ namespace W2.Users
                     if (existedUser != null) continue; // Skip if user already exists
 
                     var newUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), userInput.Email, userInput.Email);
+
+                    newUser.SetMezonUserId(userInput.MezonUserId);
+                    newUser.SetIsActive(userInput.Status == 1);
                     await _userManager.CreateAsync(newUser);
                     await _userManager.AddToRoleAsync(newUser, RoleNames.DefaultUser);
                     await _userManager.AddDefaultRolesAsync(newUser);
@@ -293,7 +298,7 @@ namespace W2.Users
                 await _userRepository.UpdateManyAsync(existingUsers);
             }
 
-
+            await CurrentUnitOfWork.SaveChangesAsync();
             return existingUsers.Concat(newUsers).ToList();
         }
 
