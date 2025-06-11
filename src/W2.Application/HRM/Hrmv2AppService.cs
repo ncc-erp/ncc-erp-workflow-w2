@@ -79,15 +79,13 @@ public class Hrmv2AppService : W2AppService
     }
 
     [HttpPost("Public/CheckConnect")]
-    public async Task<GetResultConnectDto> CheckConnectToIMSAsync()
+    public Task<GetResultConnectDto> CheckConnectToIMSAsync()
     {
-        bool isConnected = await TryConnectToIMSAsync();
-
-        return new GetResultConnectDto
+        return Task.FromResult(new GetResultConnectDto
         {
-            IsConnected = isConnected,
-            Message = isConnected ? "Connected to IMS successfully" : "Cannot connect to IMS"
-        };
+            IsConnected = true,
+            Message = "Connected to IMS successfully"
+        });
     }
 
     private async Task<W2CustomIdentityUser> GetUserByEmailAsync(string email)
@@ -145,11 +143,5 @@ public class Hrmv2AppService : W2AppService
         {
             Message = message,
         });
-    }
-
-    private async Task<bool> TryConnectToIMSAsync()
-    {
-        await Task.Delay(100);
-        return true;
     }
 }
