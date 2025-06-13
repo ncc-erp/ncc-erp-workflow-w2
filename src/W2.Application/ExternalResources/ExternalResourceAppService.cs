@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
 using W2.Identity;
+using W2.Mezon;
 using W2.Settings;
 using W2.WorkflowDefinitions;
 using static IdentityServer4.Models.IdentityResources;
@@ -40,6 +42,8 @@ namespace W2.ExternalResources
         private readonly ITimesheetClientApi _timesheetClient;
         private readonly IRepository<W2Setting, Guid> _settingRepository;
         private readonly IRepository<W2CustomIdentityUser, Guid> _userRepository;
+        private readonly ILogger<ExternalResourceAppService> _logger;
+
         // private readonly IHrmClientApi _hrmClient;
 
         //private readonly IHrmClientApi _hrmClient;
@@ -51,6 +55,7 @@ namespace W2.ExternalResources
             ITimesheetClientApi timesheetClient,
             IConfiguration configuration,
             IdentityUserManager userManager,
+            ILogger<ExternalResourceAppService> logger,
             IRepository<W2CustomIdentityUser, Guid> userRepository,
             IRepository<W2Setting, Guid> settingRepository
             )
@@ -65,6 +70,7 @@ namespace W2.ExternalResources
             _simpleGuidGenerator = SimpleGuidGenerator.Instance;
             _userRepository = userRepository;
             _settingRepository = settingRepository;
+            _logger = logger;
         }
 
 
@@ -397,8 +403,9 @@ namespace W2.ExternalResources
             {
                 throw ex;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogException(ex);
                 throw new UserFriendlyException("Invalid Mezon Authentication.");
             }
         }
