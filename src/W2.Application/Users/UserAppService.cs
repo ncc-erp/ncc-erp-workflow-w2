@@ -16,6 +16,7 @@ using W2.Constants;
 using W2.Roles;
 using W2.ExternalResources;
 using Volo.Abp.Guids;
+using W2.Utils;
 
 namespace W2.Users
 {
@@ -287,6 +288,7 @@ namespace W2.Users
                     if (existedUser != null) continue; // Skip if user already exists
 
                     var newUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), userInput.Email, userInput.Email);
+                    newUser.Name = Helper.ConvertVietnameseToUnsign(userInput.FullName);
 
                     newUser.SetMezonUserId(userInput.MezonUserId);
                     newUser.SetIsActive(userInput.Status == 1);
