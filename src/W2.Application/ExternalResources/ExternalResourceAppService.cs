@@ -25,6 +25,7 @@ using Volo.Abp.Identity;
 using W2.Identity;
 using W2.Mezon;
 using W2.Settings;
+using W2.Utils;
 using W2.WorkflowDefinitions;
 using static IdentityServer4.Models.IdentityResources;
 using static Volo.Abp.Identity.Settings.IdentitySettingNames;
@@ -382,7 +383,7 @@ namespace W2.ExternalResources
 
                     var userHrmName = response.Result.FullName;
                     existedUser = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), mezonUserEmail, mezonUserEmail);
-                    existedUser.Name = ConvertVietnameseToUnsign(userHrmName);
+                    existedUser.Name = Helper.ConvertVietnameseToUnsign(userHrmName);
 
                     await _userManager.CreateAsync(existedUser);
                     await _userManager.AddToRoleAsync(existedUser, RoleNames.DefaultUser);
@@ -453,34 +454,6 @@ namespace W2.ExternalResources
                 rng.GetBytes(randomBytes);
             }
             return Convert.ToBase64String(randomBytes);
-        }
-
-        public static string RemoveDiacritics(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-                return string.Empty;
-
-            string normalizedText = text.Normalize(NormalizationForm.FormD);
-            StringBuilder sb = new StringBuilder();
-
-            foreach (char c in normalizedText)
-            {
-                UnicodeCategory unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
-                if (unicodeCategory != UnicodeCategory.NonSpacingMark) // Loại bỏ dấu
-                {
-                    sb.Append(c);
-                }
-            }
-
-            return sb.ToString().Normalize(NormalizationForm.FormC);
-        }
-
-        public static string ConvertVietnameseToUnsign(string text)
-        {
-            string result = RemoveDiacritics(text);
-            result = Regex.Replace(result, @"Đ", "D"); // Chuyển Đ thành D
-            result = Regex.Replace(result, @"đ", "d"); // Chuyển đ thành d
-            return result;
         }
     }
 }
