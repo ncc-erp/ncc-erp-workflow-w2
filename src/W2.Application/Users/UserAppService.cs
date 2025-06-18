@@ -217,14 +217,37 @@ namespace W2.Users
                     : query.OrderByDescending(u => u.Email),
 
                 "phonenumber" => isAscending
-                    ? query.OrderBy(u => u.PhoneNumber)
-                    : query.OrderByDescending(u => u.PhoneNumber),
+                    ? query.OrderBy(u => string.IsNullOrEmpty(u.PhoneNumber) ? 1 : 0)
+                        .ThenBy(u => u.PhoneNumber ?? "")
+                    : query.OrderBy(u => string.IsNullOrEmpty(u.PhoneNumber) ? 1 : 0)
+                        .ThenByDescending(u => u.PhoneNumber ?? ""),
 
                 "custompermissions" => isAscending
                     ? query.OrderBy(u => u.CustomPermissions)
                     : query.OrderByDescending(u => u.CustomPermissions),
 
-                _ => query.OrderBy(u => u.CreationTime)
+                "creationtime" => isAscending
+                    ? query.OrderBy(u => u.CreationTime)
+                    : query.OrderByDescending(u => u.CreationTime),
+
+                "lastmodificationtime" => isAscending
+                    ? query.OrderBy(u => u.LastModificationTime)
+                    : query.OrderByDescending(u => u.LastModificationTime),
+
+                "mezonuserid" => isAscending
+                    ? query.OrderBy(u => string.IsNullOrEmpty(u.MezonUserId) ? 1 : 0)
+                        .ThenBy(u => u.MezonUserId ?? "")
+                    : query.OrderBy(u => string.IsNullOrEmpty(u.MezonUserId) ? 1 : 0)
+                        .ThenByDescending(u => u.MezonUserId ?? ""),
+
+                "roles" => isAscending
+                    ? query.OrderBy(u => u.UserRoles.Any() ? 0 : 1)
+                        .ThenBy(u => u.UserRoles.Count())
+                    : query.OrderBy(u => u.UserRoles.Any() ? 0 : 1)
+                        .ThenByDescending(u => u.UserRoles.Count()),
+
+
+                _ => query.OrderBy(u => u.CreationTime),
             };
 
             return query;
