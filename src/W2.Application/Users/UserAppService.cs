@@ -248,7 +248,6 @@ namespace W2.Users
 
                 _ => query.OrderBy(u => u.CreationTime),
 
-               
             };
 
             return query;
