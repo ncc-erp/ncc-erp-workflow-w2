@@ -57,4 +57,11 @@ public static class W2ApiPermissions
     public const string UpdatePermissions = PermissionsManagement + ".Update";
     public const string DeletePermisisons = PermissionsManagement + ".Delete";
 
+    // Webhooks
+    public const string Webhooks = "Webhooks";
+    public const string ViewListWebhooks = Webhooks + ".View";
+    public const string CreateWebhook = Webhooks + ".Create";
+    public const string UpdateWebhook = Webhooks + ".Update";
+    public const string DeleteWebhook = Webhooks + ".Delete";
+
 }

@@ -27,6 +27,7 @@ using Volo.Abp.Domain.Entities;
 using W2.Scripting;
 using W2.Authorization.Attributes;
 using W2.Constants;
+using W2.Webhooks;
 
 namespace W2.Tasks
 {
@@ -45,6 +46,7 @@ namespace W2.Tasks
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
+        private readonly IWebhookSender _webhookSender;
 
         public TaskAppService(
             IRepository<W2Task, Guid> taskRepository,
@@ -57,9 +59,10 @@ namespace W2.Tasks
             IWorkflowDefinitionStore workflowDefinitionStore,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
             IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
-            IIdentityUserRepository userRepository
+            IIdentityUserRepository userRepository,
+            IWebhookSender webhookSender
             )
-            
+
         {
             _signaler = signaler;
             _taskRepository = taskRepository;
@@ -72,6 +75,7 @@ namespace W2.Tasks
             _instanceStarterRepository = instanceStarterRepository;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
             _userRepository = userRepository;
+            _webhookSender = webhookSender;
         }
 
         [AllowAnonymous]
@@ -122,6 +126,13 @@ namespace W2.Tasks
             }
 
             await CurrentUnitOfWork.SaveChangesAsync();
+
+            await _webhookSender.SendAssignedTask("Request Assigned", new
+            {
+                AuthorId = task.Author,
+                WorkflowDefinitionId = task.WorkflowDefinitionId,
+                TaskId = task.Id.ToString(),
+            });
             return task.Id.ToString();
         }
 
@@ -166,7 +177,13 @@ namespace W2.Tasks
             //var signal = new SignalModel(myTask.ApproveSignal, myTask.WorkflowInstanceId);
             //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
 
-            return "Approval successful";
+            await _webhookSender.SendFinishedRequest("Request Finished", new
+            {
+                CreatorId = myTask.Author,
+                WorkflowDefinitionId = myTask.WorkflowDefinitionId
+            });
+
+            return "Approve successful";
         }
 
         [RequirePermission(W2ApiPermissions.UpdateTaskStatus)]
@@ -204,7 +221,11 @@ namespace W2.Tasks
 
             //var signal = new SignalModel(myTask.RejectSignal, myTask.WorkflowInstanceId);
             //await _mediator.Publish(new HttpTriggeredSignal(signal, affectedWorkflows));
-
+            await _webhookSender.SendFinishedRequest("Request Finished", new
+            {
+                CreatorId = myTask.Author,
+                WorkflowDefinitionId = myTask.WorkflowDefinitionId
+            });
             return "Reject successful";
         }
 
@@ -282,7 +303,7 @@ namespace W2.Tasks
                             OtherActionSignals = actionList.All(a => a != null) ? actionList : null
                         };
 
-         
+
             List<Func<W2Task, bool>> checks = new List<Func<W2Task, bool>>();
             var isAdmin = _currentUser.IsInRole("admin");
             if (!isAdmin)
@@ -429,7 +450,7 @@ namespace W2.Tasks
             {
                 var dynamicActionData = task.DynamicActionData;
 
-                if(dynamicActionData.IsNullOrEmpty())
+                if (dynamicActionData.IsNullOrEmpty())
                 {
                     continue;
                 }
@@ -438,14 +459,15 @@ namespace W2.Tasks
                 {
                     List<Dictionary<string, object>> data = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(dynamicActionData);
                     UpdateDynamicData(dynamicData, data);
-                } catch (Exception)
+                }
+                catch (Exception)
                 {
                     continue;
                 }
             }
 
             dynamicData = dynamicData.ToDictionary(
-                item => item.Key, 
+                item => item.Key,
                 item => item.Value.Replace("\n", "</p><p>") + "</p>"
             );
 
