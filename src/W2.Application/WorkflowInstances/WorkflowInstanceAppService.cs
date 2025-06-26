@@ -680,7 +680,7 @@ namespace W2.WorkflowInstances
                 }
 
                 var blockingActivityIds = instance.BlockingActivities.Select(x => x.ActivityId);
-                if (allDefines.ContainsKey(workflowDefinition.DefinitionId))
+                if (workflowDefinition != null && allDefines.ContainsKey(workflowDefinition.DefinitionId))
                 {
                     var titleFiled = allDefines.GetItem(workflowDefinition.DefinitionId);
 
