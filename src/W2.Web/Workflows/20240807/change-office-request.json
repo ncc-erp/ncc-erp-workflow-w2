@@ -12,7 +12,7 @@
     "customAttributes": {
         "$id": "3",
         "data": {
-            "requiresProjectAccess": "true"
+            "requiresProjectAccess": true
         }
     },
     "isSingleton": false,

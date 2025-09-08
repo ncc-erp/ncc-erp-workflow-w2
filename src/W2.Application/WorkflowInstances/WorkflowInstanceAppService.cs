@@ -936,16 +936,9 @@ namespace W2.WorkflowInstances
                     startableWorkflow.WorkflowBlueprint.Id,
                     VersionOptions.Latest);
 
-                if (workflowDefinition?.CustomAttributes?.Data != null)
-                {
-                    var customAttributes = workflowDefinition.CustomAttributes.Data;
-                    if (customAttributes.ContainsKey("requiresProjectAccess"))
-                    {
-                        return customAttributes["requiresProjectAccess"]?.ToString()?.ToLower() == "true";
-                    }
-                }
-
-                return false;
+                return workflowDefinition?.CustomAttributes?.Data is { } attrs
+                    && attrs.TryGetValue("requiresProjectAccess", out var value)
+                    && value is bool b && b;
             }
             catch (Exception ex)
             {
