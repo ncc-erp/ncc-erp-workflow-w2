@@ -953,6 +953,7 @@ namespace W2.WorkflowInstances
             try
             {
                 var userProjects = await _externalResourceAppService.GetCurrentUserProjectsAsync();
+                Console.WriteLine(userProjects);
                 if (userProjects == null || !userProjects.Any())
                 {
                     throw new UserFriendlyException("You are not assigned to any timesheet project. Please contact your administrator to be added to a project before creating this request.");
