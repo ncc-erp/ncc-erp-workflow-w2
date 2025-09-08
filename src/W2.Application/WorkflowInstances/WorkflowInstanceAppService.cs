@@ -930,46 +930,23 @@ namespace W2.WorkflowInstances
 
         private async Task<bool> RequiresProjectAccessValidation(StartableWorkflow startableWorkflow)
         {
-            try
-            {
-                var workflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
-                    startableWorkflow.WorkflowBlueprint.Id,
-                    VersionOptions.Latest);
+            var workflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
+                startableWorkflow.WorkflowBlueprint.Id,
+                VersionOptions.Latest);
 
-                return workflowDefinition?.CustomAttributes?.Data is { } attrs
-                    && attrs.TryGetValue("requiresProjectAccess", out var value)
-                    && value is bool b && b;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to check project access requirement for workflow {WorkflowId}",
-                    startableWorkflow.WorkflowBlueprint.Id);
-                return false;
-            }
+            return workflowDefinition?.CustomAttributes?.Data is { } attrs
+                && attrs.TryGetValue("requiresProjectAccess", out var value)
+                && value is bool b && b;
         }
 
         private async Task ValidateUserProjectAccessAsync()
         {
-            try
-            {
-                var userProjects = await _externalResourceAppService.GetCurrentUserProjectsAsync();
-                Console.WriteLine(userProjects);
-                if (userProjects == null || !userProjects.Any())
-                {
-                    throw new UserFriendlyException("You are not assigned to any timesheet project. Please contact your administrator to be added to a project before creating this request.");
-                }
+            var userProjects = await _externalResourceAppService.GetCurrentUserProjectsAsync();
+            var validProjects = userProjects.Where(p => !string.IsNullOrEmpty(p.Code)).ToList();
 
-                // Check if user has a project with a project code (not null/empty)
-                var validProjects = userProjects.Where(p => !string.IsNullOrEmpty(p.Code)).ToList();
-                if (!validProjects.Any())
-                {
-                    throw new UserFriendlyException("You are not assigned to any valid timesheet project. Please contact your administrator to be added to a project before creating this request.");
-                }
-            }
-            catch (Exception ex) when (!(ex is UserFriendlyException))
+            if (userProjects == null || !userProjects.Any() || !validProjects.Any())
             {
-                _logger.LogError(ex, "Failed to validate user project access for user {Email}", _currentUser.Email);
-                throw new UserFriendlyException("Unable to validate your project assignment. Please try again later or contact your administrator.");
+                throw new UserFriendlyException("You are not assigned to any timesheet project. Please contact administrator");
             }
         }
     }
