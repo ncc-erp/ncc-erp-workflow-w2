@@ -4,6 +4,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
@@ -178,6 +179,12 @@ namespace W2.WorkflowInstances
             if (startableWorkflow == null)
             {
                 throw new UserFriendlyException(L["Exception:NoStartableWorkflowFound"]);
+            }
+
+            // Check if workflow requires project access validation
+            if (await RequiresProjectAccessValidation(startableWorkflow))
+            {
+                await ValidateUserProjectAccessAsync();
             }
 
             var httpRequestModel = GetHttpRequestModel(nameof(HttpMethod.Post), input.Input);
@@ -919,6 +926,57 @@ namespace W2.WorkflowInstances
             };
 
             return workflowInstanceDetailDto;
+        }
+
+        private async Task<bool> RequiresProjectAccessValidation(StartableWorkflow startableWorkflow)
+        {
+            try
+            {
+                var workflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
+                    startableWorkflow.WorkflowBlueprint.Id,
+                    VersionOptions.Latest);
+
+                if (workflowDefinition?.CustomAttributes?.Data != null)
+                {
+                    var customAttributes = workflowDefinition.CustomAttributes.Data;
+                    if (customAttributes.ContainsKey("requiresProjectAccess"))
+                    {
+                        return customAttributes["requiresProjectAccess"]?.ToString()?.ToLower() == "true";
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to check project access requirement for workflow {WorkflowId}",
+                    startableWorkflow.WorkflowBlueprint.Id);
+                return false;
+            }
+        }
+
+        private async Task ValidateUserProjectAccessAsync()
+        {
+            try
+            {
+                var userProjects = await _externalResourceAppService.GetUserProjectsFromApiAsync(_currentUser.Email);
+                if (userProjects == null || !userProjects.Any())
+                {
+                    throw new UserFriendlyException("You are not assigned to any timesheet project. Please contact your administrator to be added to a project before creating this request.");
+                }
+
+                // Check if user has a project with a project code (not null/empty)
+                var validProjects = userProjects.Where(p => !string.IsNullOrEmpty(p.Code)).ToList();
+                if (!validProjects.Any())
+                {
+                    throw new UserFriendlyException("You are not assigned to any valid timesheet project. Please contact your administrator to be added to a project before creating this request.");
+                }
+            }
+            catch (Exception ex) when (!(ex is UserFriendlyException))
+            {
+                _logger.LogError(ex, "Failed to validate user project access for user {Email}", _currentUser.Email);
+                throw new UserFriendlyException("Unable to validate your project assignment. Please try again later or contact your administrator.");
+            }
         }
     }
 }
