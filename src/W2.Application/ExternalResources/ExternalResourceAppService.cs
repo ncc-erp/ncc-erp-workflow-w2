@@ -359,7 +359,7 @@ namespace W2.ExternalResources
                         .Where(u => u.MezonUserId == mezonUserInfo.user_id)
                         .FirstOrDefaultAsync();
 
-                    if(externalUser == null)
+                    if (externalUser == null)
                     {
                         throw new UserFriendlyException("Fail to login with external user");
                     }
