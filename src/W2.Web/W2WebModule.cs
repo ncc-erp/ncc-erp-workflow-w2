@@ -66,6 +66,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using W2.Jobs;
 using Volo.Abp.BackgroundWorkers;
+using W2.Web.Filters;
 
 namespace W2.Web;
 [DependsOn(
@@ -281,18 +282,120 @@ public class W2WebModule : AbpModule
     {
         services.AddSwaggerGen(c =>
         {
+            // Resolve simple conflicts
             c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
-        });
-        services.AddAbpSwaggerGen(
-            options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "W2 API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
-                options.CustomSchemaIds(type => type.FullName);
-            }
-        );
-    }
 
+            // Doc inclusion predicate: decide per-doc (public / protected) using attributes on MethodInfo or endpoint metadata
+            c.DocInclusionPredicate((docName, apiDesc) =>
+            {
+                if (apiDesc == null)
+                    return false;
+
+                // Try endpoint metadata first
+                var endpointMetadata = apiDesc.ActionDescriptor?.EndpointMetadata;
+
+                // Determine HttpMethod presence (ApiDescription may already contain)
+                var hasHttpMethod = !string.IsNullOrEmpty(apiDesc.HttpMethod);
+
+                // Fallback to inspect ControllerActionDescriptor.MethodInfo (covers ABP conventional controllers)
+                var cad = apiDesc.ActionDescriptor as Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
+                var methodInfo = cad?.MethodInfo;
+
+                if (!hasHttpMethod && methodInfo != null)
+                {
+                    // Detect attribute-based HTTP method (HttpGet/HttpPost/HttpPut/HttpDelete/HttpPatch or HttpMethodAttribute)
+                    hasHttpMethod = methodInfo.GetCustomAttributes(true).Any(a =>
+                    {
+                        var n = a.GetType().Name;
+                        return n.StartsWith("HttpGet") || n.StartsWith("HttpPost") ||
+                               n.StartsWith("HttpPut") || n.StartsWith("HttpDelete") ||
+                               n.StartsWith("HttpPatch") || n == "HttpMethodAttribute";
+                    });
+
+                    // If still unknown, check for Route attribute on declaring type (might indicate routing)
+                    if (!hasHttpMethod)
+                    {
+                        hasHttpMethod = methodInfo.DeclaringType?.GetCustomAttributes(true)
+                            .Any(a => a.GetType().Name.Contains("RouteAttribute")) == true;
+                    }
+                }
+
+                // If we cannot determine HTTP method, skip to avoid ambiguous method errors
+                if (!hasHttpMethod)
+                {
+                    return false;
+                }
+
+                // detect AllowAnonymous / Authorize / RequirePermission from endpoint metadata or attributes
+                var hasAllowAnonymous = endpointMetadata?.OfType<Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute>().Any() == true;
+                var hasAuthorizeMeta = endpointMetadata?.Any(m => m.GetType().Name == "AuthorizeAttribute") == true;
+                var hasRequirePermissionMeta = endpointMetadata?.Any(m => m.GetType().Name == "RequirePermissionAttribute") == true;
+
+                var hasAllowAnonymousAttr = methodInfo?.GetCustomAttributes(true).OfType<Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute>().Any() == true
+                                            || methodInfo?.DeclaringType?.GetCustomAttributes(true).OfType<Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute>().Any() == true;
+                var hasAuthorizeAttr = methodInfo?.GetCustomAttributes(true).Any(a => a.GetType().Name == "AuthorizeAttribute") == true
+                                    || methodInfo?.DeclaringType?.GetCustomAttributes(true).Any(a => a.GetType().Name == "AuthorizeAttribute") == true;
+                var hasRequirePermissionAttr = methodInfo?.GetCustomAttributes(true).Any(a => a.GetType().Name == "RequirePermissionAttribute") == true
+                                            || methodInfo?.DeclaringType?.GetCustomAttributes(true).Any(a => a.GetType().Name == "RequirePermissionAttribute") == true;
+
+                var allowAnonymous = hasAllowAnonymous || hasAllowAnonymousAttr;
+                var authorize = hasAuthorizeMeta || hasAuthorizeAttr;
+                var requirePermission = hasRequirePermissionMeta || hasRequirePermissionAttr;
+
+                if (docName == "public")
+                {
+                    // include actions explicitly anonymous OR those without any auth markers
+                    return allowAnonymous || (!authorize && !requirePermission);
+                }
+
+                if (docName == "protected")
+                {
+                    // include actions that require auth/permissions
+                    return authorize || requirePermission;
+                }
+
+                return false;
+            });
+
+            // Use full type names to avoid schema id collisions
+            c.CustomSchemaIds(type => type.FullName);
+
+            // JWT / Bearer definition (shared)
+            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Description = "Enter 'Bearer {token}'",
+                Name = "Authorization",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT"
+            });
+
+            // OperationFilter will add per-operation security where needed
+            c.OperationFilter<AuthorizeCheckOperationFilter>();
+
+            // Optional: include XML comments if exist
+            var xmlFiles = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "W2.Web.xml"),
+                Path.Combine(AppContext.BaseDirectory, "W2.Application.xml"),
+                Path.Combine(AppContext.BaseDirectory, "W2.Application.Contracts.xml")
+            };
+
+            foreach (var xmlFile in xmlFiles)
+                if (File.Exists(xmlFile))
+                    c.IncludeXmlComments(xmlFile, includeControllerXmlComments: true);
+        });
+
+        services.AddAbpSwaggerGen(options =>
+        {
+            options.SwaggerDoc("public", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "W2 API - Public", Version = "v1" });
+            options.SwaggerDoc("protected", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "W2 API - Protected (requires token)", Version = "v1" });
+
+            options.CustomSchemaIds(type => type.FullName);
+        });
+    }
+    
     private void ConfigureElsa(ServiceConfigurationContext context, IConfiguration configuration)
     {
         var elsaConfigurationSection = configuration.GetSection(nameof(ElsaConfiguration));
@@ -418,7 +521,9 @@ public class W2WebModule : AbpModule
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "W2 API");
+            options.SwaggerEndpoint("/swagger/public/swagger.json", "W2 API - Public");
+            options.SwaggerEndpoint("/swagger/protected/swagger.json", "W2 API - Protected (requires token)");
+            options.RoutePrefix = "swagger";
         });
 
         app.UseAuditing();

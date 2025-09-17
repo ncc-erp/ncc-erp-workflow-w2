@@ -259,6 +259,7 @@ namespace W2.Users
         {
             await this.InternalSyncHrmUsers();
         }
+        [NonAction]
         public async Task InternalSyncHrmUsers()
         {
             try
@@ -272,6 +273,7 @@ namespace W2.Users
                 throw new UserFriendlyException("Fail to sync HRM Users");
             }
         }
+        [NonAction]
         public async Task<List<W2CustomIdentityUser>> BulkUpdateUsersAsync(List<HrmEmployeeInfo> hrmUsers)
         {
             if (hrmUsers == null || hrmUsers.Count == 0)

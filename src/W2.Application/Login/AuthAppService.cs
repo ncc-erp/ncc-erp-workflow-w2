@@ -77,7 +77,7 @@ namespace W2.Login
         }
         
         [HttpGet]
-        //[Authorize]
+        [Authorize]
         public new UserInfo CurrentUser()
         {
             var claims = _httpContextAccessor.HttpContext?.User.Claims;
