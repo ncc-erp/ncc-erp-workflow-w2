@@ -14,6 +14,7 @@ using Volo.Abp.Application.Dtos;
 namespace W2.Webhooks
 {
     [Route("api/app/webhooks")]
+    [Authorize]
     public class WebhookAppService : W2AppService, IWebhookAppService
     {
         private readonly IRepository<W2Webhooks, Guid> _webhookRepository;

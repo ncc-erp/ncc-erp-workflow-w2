@@ -17,11 +17,12 @@ using W2.Roles;
 using W2.ExternalResources;
 using Volo.Abp.Guids;
 using W2.Utils;
+using Microsoft.AspNetCore.Authorization;
 
 namespace W2.Users
 {
     [Route("api/app/users")]
-    //[Authorize]
+    [Authorize]
     //[RequirePermission(W2ApiPermissions.UsersManagement)]
     public class UserAppService : W2AppService, IUserAppService
     {

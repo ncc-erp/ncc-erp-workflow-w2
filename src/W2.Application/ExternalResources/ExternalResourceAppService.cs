@@ -32,6 +32,7 @@ using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace W2.ExternalResources
 {
+    [Authorize]
     public class ExternalResourceAppService : W2AppService, IExternalResourceAppService
     {
         private readonly IConfiguration _configuration;
@@ -359,7 +360,7 @@ namespace W2.ExternalResources
                         .Where(u => u.MezonUserId == mezonUserInfo.user_id)
                         .FirstOrDefaultAsync();
 
-                    if(externalUser == null)
+                    if (externalUser == null)
                     {
                         throw new UserFriendlyException("Fail to login with external user");
                     }

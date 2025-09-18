@@ -9,8 +9,9 @@ using Volo.Abp.Guids;
 using W2;
 using W2.Application.Contracts.IMS;
 using W2.Identity;
-
+using Microsoft.AspNetCore.Authorization;
 [Route("api/services/app")]
+[Authorize]
 public class Hrmv2AppService : W2AppService
 {
     private readonly SimpleGuidGenerator _simpleGuidGenerator;

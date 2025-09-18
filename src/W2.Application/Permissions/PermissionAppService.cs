@@ -7,10 +7,11 @@ using W2.Authorization.Attributes;
 using Volo.Abp.PermissionManagement;
 using W2.Constants;
 using W2.Roles;
-
+using Microsoft.AspNetCore.Authorization;
 namespace W2.Permissions
 {
     [Route("api/app/permissions")]
+    [Authorize]
     public class PermissionAppService : W2AppService, IPermissionAppService
     {
         private readonly IRepository<W2Permission, Guid> _permissionRepository;
