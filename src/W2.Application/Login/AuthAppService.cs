@@ -21,6 +21,9 @@ using W2.Identity;
 using W2.Permissions;
 using W2.Utils;
 using Volo.Abp.Guids;
+using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json;
+using System.Security.Cryptography;
 
 namespace W2.Login
 {
@@ -51,7 +54,7 @@ namespace W2.Login
             var query = await _userRepository.GetQueryableAsync();
             var user = await query
                 .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)                    
+                    .ThenInclude(ur => ur.Role)
                 .Where(u => u.UserName == authDto.userNameOrEmailAddress ||
                             u.Email == authDto.userNameOrEmailAddress)
                 .FirstOrDefaultAsync();
@@ -75,7 +78,7 @@ namespace W2.Login
             var token = JwtHelper.GenerateJwtTokenForUser(user, _configuration);
             return new AuthUser { Token = token };
         }
-        
+
         [HttpGet]
         //[Authorize]
         public new UserInfo CurrentUser()
@@ -90,19 +93,19 @@ namespace W2.Login
             var name = claims
                 .First(x => x.Type == AbpClaimTypes.UserName)
                 .Value;
-            
+
             var email = claims
                 .First(x => x.Type == AbpClaimTypes.Email)
                 .Value;
-            
+
             var given_name = claims
                 .First(x => x.Type == AbpClaimTypes.Name)
                 .Value;
-            
+
             var role = claims
                 .First(x => x.Type == JwtClaimTypes.Role)
                 .Value;
-            
+
             var permissions = claims
                 .Where(x => x.Type == "permissions")
                 .Select(x => x.Value)
@@ -120,6 +123,9 @@ namespace W2.Login
             };
         }
 
+        static string HexLower(byte[] bytes) =>
+         Convert.ToHexString(bytes).ToLowerInvariant();
+
         public async Task<AuthUser> LoginMezonByHash(AuthMezonByHashDto authMezonByHashDto)
         {
             if (string.IsNullOrEmpty(authMezonByHashDto.hashKey) || string.IsNullOrEmpty(authMezonByHashDto.dataCheck))
@@ -130,21 +136,34 @@ namespace W2.Login
             var appToken = _configuration["Authentication:Mezon:AppToken"]
                 ?? throw new ArgumentNullException("Mezon AppToken configuration is missing.");
 
-            byte[] secretKey = Hasher.HMAC_SHA256(Encoding.UTF8.GetBytes(appToken), Encoding.UTF8.GetBytes("WebAppData"));
-            var hashedData = Hasher.HEX(Hasher.HMAC_SHA256(secretKey, Encoding.UTF8.GetBytes(authMezonByHashDto.dataCheck)));
+            byte[] md5Bytes;
+            using (var md5 = MD5.Create())
+                md5Bytes = md5.ComputeHash(Encoding.UTF8.GetBytes(appToken));
 
-            if (!authMezonByHashDto.hashKey.Equals(hashedData))
-            {
+            var md5Hex = HexLower(md5Bytes);
+
+
+            var dataCheck = authMezonByHashDto.dataCheck ?? "";
+
+
+            byte[] secretKey = Hasher.HMAC_SHA256(
+                Encoding.UTF8.GetBytes(md5Hex),
+                Encoding.UTF8.GetBytes("WebAppData")
+            );
+
+
+            var hashedData = Hasher.HEX(
+                Hasher.HMAC_SHA256(secretKey, Encoding.UTF8.GetBytes(dataCheck))
+            );
+
+            if (!string.Equals(authMezonByHashDto.hashKey, hashedData, StringComparison.OrdinalIgnoreCase))
                 throw new UserFriendlyException("Authentication failed - Invalid hash key");
-            }
 
             var query = await _userRepository.GetQueryableAsync();
-            var user = await query
-                .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)                    
-                .Where(u => u.UserName == authMezonByHashDto.userName ||
-                            u.Email == authMezonByHashDto.userEmail)
-                .FirstOrDefaultAsync();
+            var user = await _userRepository.FirstOrDefaultAsync(
+                u => u.UserName == authMezonByHashDto.userName
+            );
+
 
             if (user != null && !user.IsActive)
             {
@@ -152,15 +171,37 @@ namespace W2.Login
             }
             if (user == null)
             {
-                    user = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), authMezonByHashDto.userEmail, authMezonByHashDto.userEmail);
-                    user.Name = authMezonByHashDto.userName;
 
-                    await _userManager.CreateAsync(user);
-                    await _userManager.AddToRoleAsync(user, RoleNames.DefaultUser);
-                    await _userManager.AddDefaultRolesAsync(user);
+                var userName = authMezonByHashDto.userName?.Trim();
 
-                    await _userManager.UpdateAsync(user);
+                var email = $"{userName}@ncc.asia";
+
+                user = new W2CustomIdentityUser(
+                    _simpleGuidGenerator.Create(),
+                    userName,
+                    email
+                );
+
+                user.Name = userName;
+
+                var createResult = await _userManager.CreateAsync(user);
+                if (!createResult.Succeeded)
+                    throw new UserFriendlyException(string.Join("; ",
+                        createResult.Errors.Select(e => $"{e.Code}: {e.Description}")));
+
+                await CurrentUnitOfWork.SaveChangesAsync();
+
+                var reloaded = await _userManager.FindByIdAsync(user.Id.ToString());
+                if (reloaded == null)
+                    throw new UserFriendlyException("Cannot reload created user.");
+
+                await _userManager.AddToRoleAsync(reloaded, RoleNames.DefaultUser);
+                await _userManager.AddDefaultRolesAsync(reloaded);
+
+                user = (W2CustomIdentityUser)reloaded;
             }
+
+
 
             var queryTem = await _userRepository.GetQueryableAsync();
             var userTemp = await queryTem
