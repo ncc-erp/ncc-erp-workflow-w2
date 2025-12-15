@@ -24,6 +24,8 @@ public class W2ApplicationAutoMapperProfile : Profile
         CreateMap<W2Task, W2TasksDto>();
         CreateMap<WorkflowDefinition, WorkflowDefinitionSummaryDto>();
         CreateMap<WorkflowCustomInputPropertyDefinition, WorkflowCustomInputPropertyDefinitionDto>();
+        CreateMap<W2Webhooks, WebhooksDto>();
+        CreateMap<WebhooksDto, W2Webhooks>();
         CreateMap<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionDto>()
             .ForMember(d => d.PropertyDefinitions, options =>
                 options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinitionDto
@@ -36,11 +38,11 @@ public class W2ApplicationAutoMapperProfile : Profile
         CreateMap<WorkflowCustomInputDefinition, WorkflowCustomInputDefinitionMezonDto>()
             .ForMember(d => d.PropertyDefinitions, options =>
                 options.MapFrom(s => s.PropertyDefinitions.Select(i => new WorkflowCustomInputPropertyDefinitionDto
-                    {
-                        Name = i.Name,
-                        Type = i.Type,
-                        IsRequired = i.IsRequired
-                    })
+                {
+                    Name = i.Name,
+                    Type = i.Type,
+                    IsRequired = i.IsRequired
+                })
                     .ToList()));
         CreateMap<WorkflowCustomInputDefinitionDto, WorkflowCustomInputDefinition>()
             .ForMember(d => d.PropertyDefinitions, options =>

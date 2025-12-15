@@ -229,7 +229,7 @@ namespace W2.ExternalResources
         }
 
         public Task<List<InputDefinitionTypeItemDto>> GetWorkflowInputDefinitionPropertyTypes()
-        {
+        { // Todo: get from db all list support
             var enumValues = Enum.GetValues(typeof(WorkflowInputDefinitionProperyType))
                                  .Cast<WorkflowInputDefinitionProperyType>()
                                  .Select(e => new InputDefinitionTypeItemDto

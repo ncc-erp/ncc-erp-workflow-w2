@@ -20,6 +20,8 @@ namespace W2.WorkflowDefinitions
         MyPMProject,
         [Display(Name = "Office List")]
         OfficeList,
+        [Display(Name = "Day Off Reason")]
+        DayoffReason,
         [Display(Name = "Multiple Date Time")]
         MultiDatetime,
     }
