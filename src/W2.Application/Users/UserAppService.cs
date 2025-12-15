@@ -17,11 +17,12 @@ using W2.Roles;
 using W2.ExternalResources;
 using Volo.Abp.Guids;
 using W2.Utils;
+using Microsoft.AspNetCore.Authorization;
 
 namespace W2.Users
 {
     [Route("api/app/users")]
-    //[Authorize]
+    [Authorize]
     //[RequirePermission(W2ApiPermissions.UsersManagement)]
     public class UserAppService : W2AppService, IUserAppService
     {
@@ -259,6 +260,7 @@ namespace W2.Users
         {
             await this.InternalSyncHrmUsers();
         }
+        [NonAction]
         public async Task InternalSyncHrmUsers()
         {
             try
@@ -272,6 +274,7 @@ namespace W2.Users
                 throw new UserFriendlyException("Fail to sync HRM Users");
             }
         }
+        [NonAction]
         public async Task<List<W2CustomIdentityUser>> BulkUpdateUsersAsync(List<HrmEmployeeInfo> hrmUsers)
         {
             if (hrmUsers == null || hrmUsers.Count == 0)

@@ -18,7 +18,7 @@ using W2.Users;
 namespace W2.Roles
 {
     [Route("api/app/roles")]
-    //[Authorize]
+    [Authorize]
     public class RoleAppService : W2AppService, IRoleAppService
     {
         private readonly IRepository<W2CustomIdentityRole, Guid> _roleRepository;

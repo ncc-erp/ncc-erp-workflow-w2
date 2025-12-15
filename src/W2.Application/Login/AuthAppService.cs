@@ -24,6 +24,7 @@ using Volo.Abp.Guids;
 
 namespace W2.Login
 {
+    [Authorize]
     public class AuthAppService : W2AppService, IAuthAppService
     {
         private readonly IdentityUserManager _userManager;
@@ -51,7 +52,7 @@ namespace W2.Login
             var query = await _userRepository.GetQueryableAsync();
             var user = await query
                 .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)                    
+                    .ThenInclude(ur => ur.Role)
                 .Where(u => u.UserName == authDto.userNameOrEmailAddress ||
                             u.Email == authDto.userNameOrEmailAddress)
                 .FirstOrDefaultAsync();
@@ -75,9 +76,8 @@ namespace W2.Login
             var token = JwtHelper.GenerateJwtTokenForUser(user, _configuration);
             return new AuthUser { Token = token };
         }
-        
+
         [HttpGet]
-        //[Authorize]
         public new UserInfo CurrentUser()
         {
             var claims = _httpContextAccessor.HttpContext?.User.Claims;
@@ -90,19 +90,19 @@ namespace W2.Login
             var name = claims
                 .First(x => x.Type == AbpClaimTypes.UserName)
                 .Value;
-            
+
             var email = claims
                 .First(x => x.Type == AbpClaimTypes.Email)
                 .Value;
-            
+
             var given_name = claims
                 .First(x => x.Type == AbpClaimTypes.Name)
                 .Value;
-            
+
             var role = claims
                 .First(x => x.Type == JwtClaimTypes.Role)
                 .Value;
-            
+
             var permissions = claims
                 .Where(x => x.Type == "permissions")
                 .Select(x => x.Value)
@@ -141,7 +141,7 @@ namespace W2.Login
             var query = await _userRepository.GetQueryableAsync();
             var user = await query
                 .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)                    
+                .ThenInclude(ur => ur.Role)
                 .Where(u => u.UserName == authMezonByHashDto.userName ||
                             u.Email == authMezonByHashDto.userEmail)
                 .FirstOrDefaultAsync();
@@ -152,14 +152,14 @@ namespace W2.Login
             }
             if (user == null)
             {
-                    user = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), authMezonByHashDto.userEmail, authMezonByHashDto.userEmail);
-                    user.Name = authMezonByHashDto.userName;
+                user = new W2CustomIdentityUser(_simpleGuidGenerator.Create(), authMezonByHashDto.userEmail, authMezonByHashDto.userEmail);
+                user.Name = authMezonByHashDto.userName;
 
-                    await _userManager.CreateAsync(user);
-                    await _userManager.AddToRoleAsync(user, RoleNames.DefaultUser);
-                    await _userManager.AddDefaultRolesAsync(user);
+                await _userManager.CreateAsync(user);
+                await _userManager.AddToRoleAsync(user, RoleNames.DefaultUser);
+                await _userManager.AddDefaultRolesAsync(user);
 
-                    await _userManager.UpdateAsync(user);
+                await _userManager.UpdateAsync(user);
             }
 
             var queryTem = await _userRepository.GetQueryableAsync();
