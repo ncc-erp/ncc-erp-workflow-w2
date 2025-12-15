@@ -54,7 +54,7 @@ namespace W2.Login
             var query = await _userRepository.GetQueryableAsync();
             var user = await query
                 .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)                    
+                    .ThenInclude(ur => ur.Role)
                 .Where(u => u.UserName == authDto.userNameOrEmailAddress ||
                             u.Email == authDto.userNameOrEmailAddress)
                 .FirstOrDefaultAsync();
@@ -78,7 +78,7 @@ namespace W2.Login
             var token = JwtHelper.GenerateJwtTokenForUser(user, _configuration);
             return new AuthUser { Token = token };
         }
-        
+
         [HttpGet]
         //[Authorize]
         public new UserInfo CurrentUser()
@@ -93,19 +93,19 @@ namespace W2.Login
             var name = claims
                 .First(x => x.Type == AbpClaimTypes.UserName)
                 .Value;
-            
+
             var email = claims
                 .First(x => x.Type == AbpClaimTypes.Email)
                 .Value;
-            
+
             var given_name = claims
                 .First(x => x.Type == AbpClaimTypes.Name)
                 .Value;
-            
+
             var role = claims
                 .First(x => x.Type == JwtClaimTypes.Role)
                 .Value;
-            
+
             var permissions = claims
                 .Where(x => x.Type == "permissions")
                 .Select(x => x.Value)
@@ -142,16 +142,16 @@ namespace W2.Login
 
             var md5Hex = HexLower(md5Bytes);
 
-         
+
             var dataCheck = authMezonByHashDto.dataCheck ?? "";
 
-        
+
             byte[] secretKey = Hasher.HMAC_SHA256(
                 Encoding.UTF8.GetBytes(md5Hex),
                 Encoding.UTF8.GetBytes("WebAppData")
             );
 
-          
+
             var hashedData = Hasher.HEX(
                 Hasher.HMAC_SHA256(secretKey, Encoding.UTF8.GetBytes(dataCheck))
             );
@@ -161,8 +161,8 @@ namespace W2.Login
 
             var query = await _userRepository.GetQueryableAsync();
             var user = await _userRepository.FirstOrDefaultAsync(
-    u => u.UserName == authMezonByHashDto.userName
-);
+                u => u.UserName == authMezonByHashDto.userName
+            );
 
 
             if (user != null && !user.IsActive)
@@ -173,7 +173,7 @@ namespace W2.Login
             {
 
                 var userName = authMezonByHashDto.userName?.Trim();
-          
+
                 var email = $"{userName}@ncc.asia";
 
                 user = new W2CustomIdentityUser(
