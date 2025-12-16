@@ -160,9 +160,24 @@ namespace W2.Login
                 throw new UserFriendlyException("Authentication failed - Invalid hash key");
 
             var query = await _userRepository.GetQueryableAsync();
-            var user = await _userRepository.FirstOrDefaultAsync(
-                u => u.UserName == authMezonByHashDto.userName
-            );
+
+            W2CustomIdentityUser user = null;
+
+          
+            if (!string.IsNullOrEmpty(authMezonByHashDto.mezonUserId))
+            {
+                user = await query.FirstOrDefaultAsync(u =>
+                    u.MezonUserId == authMezonByHashDto.mezonUserId
+                );
+            }
+
+          
+            if (user == null && !string.IsNullOrEmpty(authMezonByHashDto.userName))
+            {
+                user = await query.FirstOrDefaultAsync(u =>
+                    u.UserName == authMezonByHashDto.userName
+                );
+            }
 
 
             if (user != null && !user.IsActive)
@@ -171,9 +186,7 @@ namespace W2.Login
             }
             if (user == null)
             {
-
                 var userName = authMezonByHashDto.userName?.Trim();
-
                 var email = $"{userName}@ncc.asia";
 
                 user = new W2CustomIdentityUser(
@@ -184,6 +197,11 @@ namespace W2.Login
 
                 user.Name = userName;
 
+                if (!string.IsNullOrEmpty(authMezonByHashDto.mezonUserId))
+                {
+                    user.SetMezonUserId(authMezonByHashDto.mezonUserId);
+                }
+
                 var createResult = await _userManager.CreateAsync(user);
                 if (!createResult.Succeeded)
                     throw new UserFriendlyException(string.Join("; ",
@@ -191,9 +209,8 @@ namespace W2.Login
 
                 await CurrentUnitOfWork.SaveChangesAsync();
 
-                var reloaded = await _userManager.FindByIdAsync(user.Id.ToString());
-                if (reloaded == null)
-                    throw new UserFriendlyException("Cannot reload created user.");
+                var reloaded = await _userManager.FindByIdAsync(user.Id.ToString())
+                    ?? throw new UserFriendlyException("Cannot reload created user.");
 
                 await _userManager.AddToRoleAsync(reloaded, RoleNames.DefaultUser);
                 await _userManager.AddDefaultRolesAsync(reloaded);
