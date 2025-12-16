@@ -36,5 +36,6 @@ sed "s/API_X_SECRET_KEY/$API_X_SECRET_KEY/g" -i appsettings.json
 sed "s/JWT_SECRET/$JWT_SECRET/g" -i appsettings.json
 sed "s/MEZON_CLIENT/$MEZON_CLIENT/g" -i appsettings.json
 sed "s/MEZON_APP_TOKEN/$MEZON_APP_TOKEN/g" -i appsettings.json
+sed "s/MEZON_SECRET/$MEZON_SECRET/g" -i appsettings.json
 sed "s/MEZON_REDIRECT_URI/$MEZON_REDIRECT_URI/g" -i appsettings.json
 sed "s/HRM_API_X_SECRET_HEADER/$HRM_API_X_SECRET_HEADER/g" -i appsettings.json
