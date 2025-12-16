@@ -89,6 +89,7 @@ jobs:
                   API_X_SECRET_KEY: ${{ secrets.API_X_SECRET_KEY_DEV }}
                   MEZON_CLIENT: ${{ secrets.MEZON_CLIENT_DEV }}
                   MEZON_APP_TOKEN: ${{ secrets.MEZON_APP_TOKEN_DEV }}
+                  MEZON_SECRET: ${{ secrets.MEZON_SECRET_DEV }}
                   MEZON_REDIRECT_URI: ${{ secrets.MEZON_REDIRECT_URI_DEV }}
                   HRM_API_URL: ${{ secrets.HRM_API_URL_DEV }}
                   HRM_API_X_SECRET_HEADER: ${{ secrets.HRM_API_X_SECRET_HEADER_DEV }}
