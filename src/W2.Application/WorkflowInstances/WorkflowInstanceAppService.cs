@@ -27,6 +27,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
+using W2.Activities;
 using W2.Authorization.Attributes;
 using W2.Constants;
 using W2.ExternalResources;
@@ -51,6 +52,9 @@ namespace W2.WorkflowInstances
         private readonly IRepository<W2Task, Guid> _taskRepository;
         private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
         private readonly IRepository<WFHHistory, Guid> _wfhHistoryRepository;
+        private readonly IRepository<W2RequestHistory, Guid> _requestHistoryRepository;
+        private readonly IRepository<W2RequestHistory, Guid> _w2RequestHistoryRepository;
+        private readonly RequestHistoryManager _requestHistoryManager;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
@@ -71,6 +75,8 @@ namespace W2.WorkflowInstances
             IRepository<W2Task, Guid> taskRepository,
                         IRepository<W2TaskActions, Guid> taskActionsRepository,
                         IRepository<WFHHistory, Guid> wfhHistoryRepository,
+            IRepository<W2RequestHistory, Guid> w2RequestHistoryRepository,
+            RequestHistoryManager requestHistoryManager,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
@@ -90,6 +96,8 @@ namespace W2.WorkflowInstances
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
+            _w2RequestHistoryRepository = w2RequestHistoryRepository;
+            _requestHistoryManager = requestHistoryManager;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
             _canceller = canceller;
@@ -143,6 +151,9 @@ namespace W2.WorkflowInstances
 
             workflowInstanceStarter.Status = WorkflowInstancesStatus.Canceled;
             await _instanceStarterRepository.UpdateAsync(workflowInstanceStarter);
+            
+            // Update history status
+            await _requestHistoryManager.UpdateHistoryStatusAsync(workflowInstanceStarter.Id, WorkflowInstancesStatus.Canceled);
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
@@ -197,6 +208,14 @@ namespace W2.WorkflowInstances
                 };
 
                 workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+
+                var currentUserEmail = CurrentUser.Email ?? CurrentUser.UserName;
+                if (!string.IsNullOrEmpty(currentUserEmail))
+                {
+                    await _requestHistoryManager.CreateHistoryRecordsAsync(
+                        workflowInstanceStarterResponse,
+                        currentUserEmail);
+                }
 
                 await uow.CompleteAsync();
                 await _webhookSender.SendCreatedRequest("Request Created", new
@@ -919,6 +938,35 @@ namespace W2.WorkflowInstances
             };
 
             return workflowInstanceDetailDto;
+        }
+
+        [AllowAnonymous]
+        public async Task<List<RequestStatusDto>> GetRequestStatusAsync(GetRequestStatusInput input)
+        {
+            var query = await _w2RequestHistoryRepository.GetQueryableAsync();
+            
+            if (!string.IsNullOrWhiteSpace(input.Email))
+            {
+                query = query.Where(x => x.Email == input.Email);
+            }
+
+            if (input.Date.HasValue)
+            {
+                var dateOnly = input.Date.Value.Date;
+                query = query.Where(x => x.Date.Date == dateOnly);
+            }
+
+            var histories = await AsyncExecuter.ToListAsync(
+                query.OrderByDescending(x => x.CreationTime)
+            );
+
+            return histories.Select(h => new RequestStatusDto
+            {
+                Email = h.Email,
+                Date = h.Date,
+                Status = h.Status,
+                Type = h.RequestType,
+            }).ToList();
         }
     }
 }

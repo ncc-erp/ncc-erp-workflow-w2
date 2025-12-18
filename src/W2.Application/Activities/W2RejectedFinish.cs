@@ -21,13 +21,16 @@ namespace W2.Activities
     {
         private IRepository<W2Task, Guid> _taskRepository;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
+        private readonly RequestHistoryManager _requestHistoryManager;
 
         public W2RejectedFinish(
             IRepository<W2Task, Guid> taskRepository,
-            IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository)
+            IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
+            RequestHistoryManager requestHistoryManager)
         {
             _taskRepository = taskRepository;
             _instanceStarterRepository = instanceStarterRepository;
+            _requestHistoryManager = requestHistoryManager;
         }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -48,6 +51,9 @@ namespace W2.Activities
             var myWorkflow = await _instanceStarterRepository.FirstOrDefaultAsync(x => x.WorkflowInstanceId == context.WorkflowInstance.Id.ToString());
             myWorkflow.Status = WorkflowInstancesStatus.Rejected;
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
+            
+            // Update history status
+            await _requestHistoryManager.UpdateHistoryStatusAsync(myWorkflow.Id, WorkflowInstancesStatus.Rejected);
 
             // Handler Blocking Activities
             await WorkflowUtility.ProcessBlockingActivitiesAsync(context);
