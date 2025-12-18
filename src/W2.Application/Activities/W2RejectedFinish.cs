@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Local;
 using W2.Tasks;
 using W2.WorkflowInstances;
 
@@ -21,16 +22,16 @@ namespace W2.Activities
     {
         private IRepository<W2Task, Guid> _taskRepository;
         private readonly IRepository<WorkflowInstanceStarter, Guid> _instanceStarterRepository;
-        private readonly RequestHistoryManager _requestHistoryManager;
+        private readonly ILocalEventBus _localEventBus;
 
         public W2RejectedFinish(
             IRepository<W2Task, Guid> taskRepository,
             IRepository<WorkflowInstanceStarter, Guid> instanceStarterRepository,
-            RequestHistoryManager requestHistoryManager)
+            ILocalEventBus localEventBus)
         {
             _taskRepository = taskRepository;
             _instanceStarterRepository = instanceStarterRepository;
-            _requestHistoryManager = requestHistoryManager;
+            _localEventBus = localEventBus;
         }
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -52,8 +53,12 @@ namespace W2.Activities
             myWorkflow.Status = WorkflowInstancesStatus.Rejected;
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
             
-            // Update history status
-            await _requestHistoryManager.UpdateHistoryStatusAsync(myWorkflow.Id, WorkflowInstancesStatus.Rejected);
+            // Emit event to update history status
+            await _localEventBus.PublishAsync(new RequestHistoryStatusChangedEvent
+            {
+                WorkflowInstanceStarterId = myWorkflow.Id,
+                NewStatus = WorkflowInstancesStatus.Rejected
+            });
 
             // Handler Blocking Activities
             await WorkflowUtility.ProcessBlockingActivitiesAsync(context);

@@ -25,9 +25,9 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
-using W2.Activities;
 using W2.Authorization.Attributes;
 using W2.Constants;
 using W2.ExternalResources;
@@ -54,7 +54,7 @@ namespace W2.WorkflowInstances
         private readonly IRepository<WFHHistory, Guid> _wfhHistoryRepository;
         private readonly IRepository<W2RequestHistory, Guid> _requestHistoryRepository;
         private readonly IRepository<W2RequestHistory, Guid> _w2RequestHistoryRepository;
-        private readonly RequestHistoryManager _requestHistoryManager;
+        private readonly ILocalEventBus _localEventBus;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
@@ -76,7 +76,7 @@ namespace W2.WorkflowInstances
                         IRepository<W2TaskActions, Guid> taskActionsRepository,
                         IRepository<WFHHistory, Guid> wfhHistoryRepository,
             IRepository<W2RequestHistory, Guid> w2RequestHistoryRepository,
-            RequestHistoryManager requestHistoryManager,
+            ILocalEventBus localEventBus,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
@@ -97,7 +97,7 @@ namespace W2.WorkflowInstances
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
             _w2RequestHistoryRepository = w2RequestHistoryRepository;
-            _requestHistoryManager = requestHistoryManager;
+            _localEventBus = localEventBus;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
             _canceller = canceller;
@@ -152,8 +152,12 @@ namespace W2.WorkflowInstances
             workflowInstanceStarter.Status = WorkflowInstancesStatus.Canceled;
             await _instanceStarterRepository.UpdateAsync(workflowInstanceStarter);
             
-            // Update history status
-            await _requestHistoryManager.UpdateHistoryStatusAsync(workflowInstanceStarter.Id, WorkflowInstancesStatus.Canceled);
+            // Emit event to update history status
+            await _localEventBus.PublishAsync(new RequestHistoryStatusChangedEvent
+            {
+                WorkflowInstanceStarterId = workflowInstanceStarter.Id,
+                NewStatus = WorkflowInstancesStatus.Canceled
+            });
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
@@ -212,9 +216,12 @@ namespace W2.WorkflowInstances
                 var currentUserEmail = CurrentUser.Email ?? CurrentUser.UserName;
                 if (!string.IsNullOrEmpty(currentUserEmail))
                 {
-                    await _requestHistoryManager.CreateHistoryRecordsAsync(
-                        workflowInstanceStarterResponse,
-                        currentUserEmail);
+                    // Emit event to create history records
+                    await _localEventBus.PublishAsync(new RequestHistoryCreatedEvent
+                    {
+                        Starter = workflowInstanceStarterResponse,
+                        Email = currentUserEmail
+                    });
                 }
 
                 await uow.CompleteAsync();

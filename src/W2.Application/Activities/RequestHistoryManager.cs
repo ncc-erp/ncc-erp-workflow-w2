@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -10,7 +8,6 @@ using W2.WorkflowDefinitions;
 using W2.WorkflowInstances;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
-using Microsoft.Extensions.Logging;
 using W2.Specifications;
 using W2.Utils;
 
@@ -21,18 +18,16 @@ namespace W2.Activities
         private readonly IRepository<W2RequestHistory, Guid> _requestHistoryRepository;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IRepository<WorkflowCustomInputDefinition, Guid> _workflowCustomInputDefinitionRepository;
-        private readonly ILogger<RequestHistoryManager> _logger;
 
         public RequestHistoryManager(
             IRepository<W2RequestHistory, Guid> requestHistoryRepository,
             IWorkflowDefinitionStore workflowDefinitionStore,
-            IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository,
-            ILogger<RequestHistoryManager> logger)
+            IRepository<WorkflowCustomInputDefinition, Guid> workflowCustomInputDefinitionRepository
+            )
         {
             _requestHistoryRepository = requestHistoryRepository;
             _workflowDefinitionStore = workflowDefinitionStore;
             _workflowCustomInputDefinitionRepository = workflowCustomInputDefinitionRepository;
-            _logger = logger;
         }
 
         public async Task CreateHistoryRecordsAsync(
