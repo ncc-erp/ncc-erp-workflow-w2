@@ -47,22 +47,19 @@ namespace W2.Activities
             }
 
             // Create history records for each date
-            foreach (var date in dates)
+            var histories = dates.Select(date => new W2RequestHistory
             {
-                var history = new W2RequestHistory
-                {
-                    WorkflowInstanceId = starter.WorkflowInstanceId,
-                    WorkflowDefinitionId = starter.WorkflowDefinitionId,
-                    WorkflowInstanceStarterId = starter.Id,
-                    Email = email,
-                    Date = date,
-                    Status = starter.Status,
-                    RequestType = requestType,
-                    TenantId = starter.TenantId
-                };
+                WorkflowInstanceId = starter.WorkflowInstanceId,
+                WorkflowDefinitionId = starter.WorkflowDefinitionId,
+                WorkflowInstanceStarterId = starter.Id,
+                Email = email,
+                Date = date,
+                Status = starter.Status,
+                RequestType = requestType,
+                TenantId = starter.TenantId    
+            });
 
-                await _requestHistoryRepository.InsertAsync(history, autoSave: true);
-            }
+            await _requestHistoryRepository.InsertManyAsync(histories, autoSave: true);
         }
 
         public async Task UpdateHistoryStatusAsync(
