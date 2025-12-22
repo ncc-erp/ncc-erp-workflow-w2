@@ -62,6 +62,7 @@ namespace W2.WorkflowInstances
         private readonly ILogger<WorkflowInstanceAppService> _logger;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IIdentityUserRepository _userRepository;
+        private readonly IRepository<W2CustomIdentityUser, Guid> _customUserRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
         private readonly IDataFilter _dataFilter;
@@ -84,6 +85,7 @@ namespace W2.WorkflowInstances
             ILogger<WorkflowInstanceAppService> logger,
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
+            IRepository<W2CustomIdentityUser, Guid> customUserRepository,
             IAntClientApi antClientApi,
             IConfiguration configuration,
             IDataFilter dataFilter,
@@ -105,6 +107,7 @@ namespace W2.WorkflowInstances
             _logger = logger;
             _unitOfWorkManager = unitOfWorkManager;
             _userRepository = userRepository;
+            _customUserRepository = customUserRepository;
             _antClientApi = antClientApi;
             _configuration = configuration;
             _taskRepository = taskRepository;
@@ -947,14 +950,52 @@ namespace W2.WorkflowInstances
             return workflowInstanceDetailDto;
         }
 
-        [RequirePermission(W2ApiPermissions.ViewListWorkflowInstances)]
+        [AllowAnonymous]
+        [ApiKeyAuth]
         public async Task<List<RequestStatusDto>> GetRequestStatusAsync(GetRequestStatusInput input)
         {
-            var query = await _w2RequestHistoryRepository.GetQueryableAsync();
-            
-            if (!string.IsNullOrWhiteSpace(input.Email))
+            string targetEmail = null;
+            string targetMezonId = null;
+
+            var customUserQueryable = await _customUserRepository.GetQueryableAsync();
+
+            var mezonId = input.MezonId?.Trim();
+
+            var userByMezon = await AsyncExecuter.FirstOrDefaultAsync(
+                customUserQueryable.Where(u => u.MezonUserId == mezonId)
+            );
+
+            W2CustomIdentityUser user = userByMezon;
+
+            if (user == null)
             {
-                query = query.Where(x => x.Email == input.Email);
+                var normalizedEmail = input.Email?.Trim().ToUpperInvariant();
+
+                if (!string.IsNullOrWhiteSpace(normalizedEmail))
+                {
+                    user = await AsyncExecuter.FirstOrDefaultAsync(
+                        customUserQueryable.Where(u => u.NormalizedEmail == normalizedEmail)
+                    );
+                }
+            }
+
+            if (user != null)
+            {
+                targetEmail = user.Email;
+                targetMezonId = user.MezonUserId;
+            }
+            else
+            {
+                targetEmail = input.Email;
+                targetMezonId = input.MezonId;
+            }
+
+            var query = await _w2RequestHistoryRepository.GetQueryableAsync();
+
+            if (!string.IsNullOrWhiteSpace(targetEmail))
+            {
+                var normalizedTargetEmail = targetEmail.Trim().ToLowerInvariant();
+                query = query.Where(x => x.Email.ToLower() == normalizedTargetEmail);
             }
 
             if (input.Date.HasValue)
@@ -970,6 +1011,7 @@ namespace W2.WorkflowInstances
             return histories.Select(h => new RequestStatusDto
             {
                 Email = h.Email,
+                MezonId = targetMezonId,
                 Date = h.Date,
                 Status = h.Status,
                 Type = h.RequestType,
