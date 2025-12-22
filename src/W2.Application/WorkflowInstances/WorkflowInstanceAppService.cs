@@ -947,7 +947,7 @@ namespace W2.WorkflowInstances
             return workflowInstanceDetailDto;
         }
 
-        [AllowAnonymous]
+        [RequirePermission(W2ApiPermissions.ViewListWorkflowInstances)]
         public async Task<List<RequestStatusDto>> GetRequestStatusAsync(GetRequestStatusInput input)
         {
             var query = await _w2RequestHistoryRepository.GetQueryableAsync();
