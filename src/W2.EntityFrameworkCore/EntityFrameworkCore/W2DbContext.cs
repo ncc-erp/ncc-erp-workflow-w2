@@ -52,6 +52,7 @@ public class W2DbContext :
     public DbSet<WorkflowInstanceStarter> WorkflowInstanceStarters { get; set; }
 
     public DbSet<WFHHistory> WFHHistories { get; set; }
+    public DbSet<W2RequestHistory> W2RequestHistories { get; set; }
     public DbSet<WorkflowCustomInputDefinition> WorkflowCustomInputDefinitions { get; set; }
 
     //Identity
@@ -231,6 +232,17 @@ public class W2DbContext :
                 .IsRequired();
 
             b.Property(x => x.CreationTime).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        builder.Entity<W2RequestHistory>(b =>
+        {
+            b.ToTable("W2RequestHistories");
+            b.Property(x => x.WorkflowInstanceId).IsRequired();
+            b.Property(x => x.Email).IsRequired().HasMaxLength(256);
+            b.Property(x => x.RequestType).IsRequired().HasMaxLength(128);
+            b.HasIndex(x => new { x.Email, x.Date });
+            b.HasIndex(x => x.WorkflowInstanceStarterId);
+            b.HasIndex(x => x.Status);
         });
     }
 }
