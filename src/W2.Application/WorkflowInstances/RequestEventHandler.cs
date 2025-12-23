@@ -5,7 +5,7 @@ using W2.Activities;
 
 namespace W2.WorkflowInstances
 {
-    public class RequestHistoryEventHandler(
+    public class RequestEventHandler(
         RequestHistoryManager requestHistoryManager) :
         ILocalEventHandler<RequestCreatedEvent>,
         ILocalEventHandler<RequestStatusChangedEvent>,
