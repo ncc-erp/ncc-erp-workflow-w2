@@ -54,7 +54,7 @@ namespace W2.Activities
             await _instanceStarterRepository.UpdateAsync(myWorkflow);
             
             // Emit event to update history status
-            await _localEventBus.PublishAsync(new RequestHistoryStatusChangedEvent
+            await _localEventBus.PublishAsync(new RequestStatusChangedEvent
             {
                 WorkflowInstanceStarterId = myWorkflow.Id,
                 NewStatus = WorkflowInstancesStatus.Rejected

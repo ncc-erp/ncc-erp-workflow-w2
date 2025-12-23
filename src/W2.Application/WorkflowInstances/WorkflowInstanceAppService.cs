@@ -156,7 +156,7 @@ namespace W2.WorkflowInstances
             await _instanceStarterRepository.UpdateAsync(workflowInstanceStarter);
             
             // Emit event to update history status
-            await _localEventBus.PublishAsync(new RequestHistoryStatusChangedEvent
+            await _localEventBus.PublishAsync(new RequestStatusChangedEvent
             {
                 WorkflowInstanceStarterId = workflowInstanceStarter.Id,
                 NewStatus = WorkflowInstancesStatus.Canceled
@@ -220,7 +220,7 @@ namespace W2.WorkflowInstances
                 if (!string.IsNullOrEmpty(currentUserEmail))
                 {
                     // Emit event to create history records
-                    await _localEventBus.PublishAsync(new RequestHistoryCreatedEvent
+                    await _localEventBus.PublishAsync(new RequestCreatedEvent
                     {
                         Starter = workflowInstanceStarterResponse,
                         Email = currentUserEmail

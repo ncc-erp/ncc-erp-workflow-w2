@@ -7,18 +7,18 @@ namespace W2.WorkflowInstances
 {
     public class RequestHistoryEventHandler(
         RequestHistoryManager requestHistoryManager) :
-        ILocalEventHandler<RequestHistoryCreatedEvent>,
-        ILocalEventHandler<RequestHistoryStatusChangedEvent>,
+        ILocalEventHandler<RequestCreatedEvent>,
+        ILocalEventHandler<RequestStatusChangedEvent>,
         ITransientDependency
     {
         private readonly RequestHistoryManager _requestHistoryManager = requestHistoryManager;
 
-        public async Task HandleEventAsync(RequestHistoryCreatedEvent eventData)
+        public async Task HandleEventAsync(RequestCreatedEvent eventData)
         {
             await _requestHistoryManager.CreateHistoryRecordsAsync(eventData.Starter, eventData.Email);
         }
 
-        public async Task HandleEventAsync(RequestHistoryStatusChangedEvent eventData)
+        public async Task HandleEventAsync(RequestStatusChangedEvent eventData)
         {
             await _requestHistoryManager.UpdateHistoryStatusAsync(eventData.WorkflowInstanceStarterId, eventData.NewStatus);
         }
