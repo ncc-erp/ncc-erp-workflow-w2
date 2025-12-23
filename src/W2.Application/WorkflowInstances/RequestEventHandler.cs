@@ -5,13 +5,17 @@ using W2.Activities;
 
 namespace W2.WorkflowInstances
 {
-    public class RequestEventHandler(
-        RequestHistoryManager requestHistoryManager) :
+    public class RequestEventHandler :
         ILocalEventHandler<RequestCreatedEvent>,
         ILocalEventHandler<RequestStatusChangedEvent>,
         ITransientDependency
     {
-        private readonly RequestHistoryManager _requestHistoryManager = requestHistoryManager;
+        private readonly RequestHistoryManager _requestHistoryManager;
+
+        public RequestEventHandler(RequestHistoryManager requestHistoryManager)
+        {
+            _requestHistoryManager = requestHistoryManager;
+        }
 
         public async Task HandleEventAsync(RequestCreatedEvent eventData)
         {
