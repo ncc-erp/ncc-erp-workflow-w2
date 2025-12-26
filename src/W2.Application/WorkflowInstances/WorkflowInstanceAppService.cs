@@ -1008,13 +1008,28 @@ namespace W2.WorkflowInstances
                 query.OrderByDescending(x => x.CreationTime)
             );
 
-            return histories.Select(h => new RequestStatusDto
+            var starterIds = histories.Select(h => h.WorkflowInstanceStarterId).ToList();
+            var starters = await _instanceStarterRepository.GetListAsync(x => starterIds.Contains(x.Id));
+            var startersDict = starters.ToDictionary(x => x.Id, x => x);
+
+            return histories.Select(h =>
             {
-                Email = h.Email,
-                MezonId = targetMezonId,
-                Date = h.Date,
-                Status = h.Status,
-                Type = h.RequestType,
+                startersDict.TryGetValue(h.WorkflowInstanceStarterId, out var starter);
+                string meta = null;
+                if (starter != null && starter.Input != null)
+                {
+                    meta = JsonConvert.SerializeObject(starter.Input);
+                }
+
+                return new RequestStatusDto
+                {
+                    Email = h.Email,
+                    MezonId = targetMezonId,
+                    Date = h.Date,
+                    Status = h.Status,
+                    Type = h.RequestType,
+                    Meta = meta,
+                };
             }).ToList();
         }
     }
