@@ -25,6 +25,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 using Volo.Abp.Users;
 using W2.Authorization.Attributes;
@@ -51,6 +52,9 @@ namespace W2.WorkflowInstances
         private readonly IRepository<W2Task, Guid> _taskRepository;
         private readonly IRepository<W2TaskActions, Guid> _taskActionsRepository;
         private readonly IRepository<WFHHistory, Guid> _wfhHistoryRepository;
+        private readonly IRepository<W2RequestHistory, Guid> _requestHistoryRepository;
+        private readonly IRepository<W2RequestHistory, Guid> _w2RequestHistoryRepository;
+        private readonly ILocalEventBus _localEventBus;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowInstanceCanceller _canceller;
@@ -58,6 +62,7 @@ namespace W2.WorkflowInstances
         private readonly ILogger<WorkflowInstanceAppService> _logger;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IIdentityUserRepository _userRepository;
+        private readonly IRepository<W2CustomIdentityUser, Guid> _customUserRepository;
         private readonly IAntClientApi _antClientApi;
         private readonly IConfiguration _configuration;
         private readonly IDataFilter _dataFilter;
@@ -71,6 +76,8 @@ namespace W2.WorkflowInstances
             IRepository<W2Task, Guid> taskRepository,
                         IRepository<W2TaskActions, Guid> taskActionsRepository,
                         IRepository<WFHHistory, Guid> wfhHistoryRepository,
+            IRepository<W2RequestHistory, Guid> w2RequestHistoryRepository,
+            ILocalEventBus localEventBus,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowDefinitionStore workflowDefinitionStore,
             IWorkflowInstanceCanceller canceller,
@@ -78,6 +85,7 @@ namespace W2.WorkflowInstances
             ILogger<WorkflowInstanceAppService> logger,
             IUnitOfWorkManager unitOfWorkManager,
             IIdentityUserRepository userRepository,
+            IRepository<W2CustomIdentityUser, Guid> customUserRepository,
             IAntClientApi antClientApi,
             IConfiguration configuration,
             IDataFilter dataFilter,
@@ -90,6 +98,8 @@ namespace W2.WorkflowInstances
         {
             _workflowLaunchpad = workflowLaunchpad;
             _instanceStarterRepository = instanceStarterRepository;
+            _w2RequestHistoryRepository = w2RequestHistoryRepository;
+            _localEventBus = localEventBus;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowDefinitionStore = workflowDefinitionStore;
             _canceller = canceller;
@@ -97,6 +107,7 @@ namespace W2.WorkflowInstances
             _logger = logger;
             _unitOfWorkManager = unitOfWorkManager;
             _userRepository = userRepository;
+            _customUserRepository = customUserRepository;
             _antClientApi = antClientApi;
             _configuration = configuration;
             _taskRepository = taskRepository;
@@ -143,6 +154,13 @@ namespace W2.WorkflowInstances
 
             workflowInstanceStarter.Status = WorkflowInstancesStatus.Canceled;
             await _instanceStarterRepository.UpdateAsync(workflowInstanceStarter);
+            
+            // Emit event to update history status
+            await _localEventBus.PublishAsync(new RequestStatusChangedEvent
+            {
+                WorkflowInstanceStarterId = workflowInstanceStarter.Id,
+                NewStatus = WorkflowInstancesStatus.Canceled
+            });
 
             var tasks = (await _taskRepository.GetListAsync()).Where(x => x.WorkflowInstanceId == id && x.Status == W2TaskStatus.Pending).ToList();
             if (tasks != null && tasks.Count > 0)
@@ -197,6 +215,17 @@ namespace W2.WorkflowInstances
                 };
 
                 workflowInstanceStarterResponse = await _instanceStarterRepository.InsertAsync(workflowInstanceStarter);
+
+                var currentUserEmail = CurrentUser.Email ?? CurrentUser.UserName;
+                if (!string.IsNullOrEmpty(currentUserEmail))
+                {
+                    // Emit event to create history records
+                    await _localEventBus.PublishAsync(new RequestCreatedEvent
+                    {
+                        Starter = workflowInstanceStarterResponse,
+                        Email = currentUserEmail
+                    });
+                }
 
                 await uow.CompleteAsync();
                 await _webhookSender.SendCreatedRequest("Request Created", new
@@ -919,6 +948,89 @@ namespace W2.WorkflowInstances
             };
 
             return workflowInstanceDetailDto;
+        }
+
+        [AllowAnonymous]
+        [ApiKeyAuth]
+        public async Task<List<RequestStatusDto>> GetRequestStatusAsync(GetRequestStatusInput input)
+        {
+            string targetEmail = null;
+            string targetMezonId = null;
+
+            var customUserQueryable = await _customUserRepository.GetQueryableAsync();
+
+            var mezonId = input.MezonId?.Trim();
+
+            var userByMezon = await AsyncExecuter.FirstOrDefaultAsync(
+                customUserQueryable.Where(u => u.MezonUserId == mezonId)
+            );
+
+            W2CustomIdentityUser user = userByMezon;
+
+            if (user == null)
+            {
+                var normalizedEmail = input.Email?.Trim().ToUpperInvariant();
+
+                if (!string.IsNullOrWhiteSpace(normalizedEmail))
+                {
+                    user = await AsyncExecuter.FirstOrDefaultAsync(
+                        customUserQueryable.Where(u => u.NormalizedEmail == normalizedEmail)
+                    );
+                }
+            }
+
+            if (user != null)
+            {
+                targetEmail = user.Email;
+                targetMezonId = user.MezonUserId;
+            }
+            else
+            {
+                targetEmail = input.Email;
+                targetMezonId = input.MezonId;
+            }
+
+            var query = await _w2RequestHistoryRepository.GetQueryableAsync();
+
+            if (!string.IsNullOrWhiteSpace(targetEmail))
+            {
+                var normalizedTargetEmail = targetEmail.Trim().ToLowerInvariant();
+                query = query.Where(x => x.Email.ToLower() == normalizedTargetEmail);
+            }
+
+            if (input.Date.HasValue)
+            {
+                var dateOnly = input.Date.Value.Date;
+                query = query.Where(x => x.Date.Date == dateOnly);
+            }
+
+            var histories = await AsyncExecuter.ToListAsync(
+                query.OrderByDescending(x => x.CreationTime)
+            );
+
+            var starterIds = histories.Select(h => h.WorkflowInstanceStarterId).ToList();
+            var starters = await _instanceStarterRepository.GetListAsync(x => starterIds.Contains(x.Id));
+            var startersDict = starters.ToDictionary(x => x.Id, x => x);
+
+            return histories.Select(h =>
+            {
+                startersDict.TryGetValue(h.WorkflowInstanceStarterId, out var starter);
+                string meta = null;
+                if (starter != null && starter.Input != null)
+                {
+                    meta = JsonConvert.SerializeObject(starter.Input);
+                }
+
+                return new RequestStatusDto
+                {
+                    Email = h.Email,
+                    MezonId = targetMezonId,
+                    Date = h.Date,
+                    Status = h.Status,
+                    Type = h.RequestType,
+                    Meta = meta,
+                };
+            }).ToList();
         }
     }
 }
