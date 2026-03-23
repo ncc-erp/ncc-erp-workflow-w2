@@ -93,6 +93,8 @@ jobs:
                   MEZON_REDIRECT_URI: ${{ secrets.MEZON_REDIRECT_URI_DEV }}
                   HRM_API_URL: ${{ secrets.HRM_API_URL_DEV }}
                   HRM_API_X_SECRET_HEADER: ${{ secrets.HRM_API_X_SECRET_HEADER_DEV }}
+                  PROJECT_API_X_SECRET_HEADER: ${{ secrets.PROJECT_API_X_SECRET_HEADER_DEV }}
+                  TIMESHEET_API_X_SECRET_HEADER: ${{ secrets.TIMESHEET_API_X_SECRET_HEADER_DEV }}
 
             - name: Migrate Database
               run: |

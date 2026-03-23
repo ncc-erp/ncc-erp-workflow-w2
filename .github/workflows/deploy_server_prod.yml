@@ -100,6 +100,8 @@ jobs:
                   MEZON_REDIRECT_URI: ${{ secrets.MEZON_REDIRECT_URI_PROD }}
                   HRM_API_URL: ${{ secrets.HRM_API_URL_PROD }}
                   HRM_API_X_SECRET_HEADER: ${{ secrets.HRM_API_X_SECRET_HEADER_PROD }}
+                  PROJECT_API_X_SECRET_HEADER: ${{ secrets.PROJECT_API_X_SECRET_HEADER_PROD }}
+                  TIMESHEET_API_X_SECRET_HEADER: ${{ secrets.TIMESHEET_API_X_SECRET_HEADER_PROD }}
 
             - name: Download Migrator & Host from S3
               run: |

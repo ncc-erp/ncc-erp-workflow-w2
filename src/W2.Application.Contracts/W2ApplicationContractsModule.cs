@@ -1,4 +1,4 @@
-﻿using Volo.Abp.Account;
+using Volo.Abp.Account;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Refit;
@@ -33,15 +33,22 @@ public class W2ApplicationContractsModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
+        var secretKey = configuration["ApiConfiguration:XSecretKey"];// todo remove
+        var projectSecretKey = configuration["Apis:ProjectXSecretKey"];
+        var timesheetSecretKey = configuration["Apis:TimesheetXSecretKey"];
+
         context.Services
             .AddRefitClient<IProjectClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Project"]));
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Project"]))
+            .ConfigureHttpClient(c => c.DefaultRequestHeaders.Add("x-secret-key", projectSecretKey));
         context.Services
             .AddRefitClient<ITimesheetClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Timesheet"]));
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Timesheet"]))
+            .ConfigureHttpClient(c => c.DefaultRequestHeaders.Add("x-secret-key", timesheetSecretKey));
         context.Services
             .AddRefitClient<IAntClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Ant"]));
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Ant"]))
+            .ConfigureHttpClient(c => c.DefaultRequestHeaders.Add("x-secret-key", secretKey));
         context.Services
             .AddRefitClient<IHrmClientApi>(RefitExtensions.GetNewtonsoftJsonRefitSettings())
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(configuration["Apis:Hrm"]))
