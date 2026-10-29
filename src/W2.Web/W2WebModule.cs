@@ -66,6 +66,15 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using W2.Jobs;
 using Volo.Abp.BackgroundWorkers;
+using Amazon;
+using Amazon.Runtime;
+using Amazon.SimpleEmailV2;
+using Elsa.Activities.Email.Options;
+using Elsa.Activities.Email.Services;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using MimeKit;
+using Serilog;
+using W2.Email;
 
 namespace W2.Web;
 [DependsOn(
@@ -120,6 +129,7 @@ public class W2WebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureElsa(context, configuration);
+        ConfigureEmail(context, configuration);
         ConfigureExternalLogins(context, configuration);
         ConfigureMultiTenancy(configuration);
         ConfigureRazorPages();
@@ -325,6 +335,84 @@ public class W2WebModule : AbpModule
             options.AutoValidateIgnoredHttpMethods = new HashSet<string> { "PUT", "GET", "POST", "DELETE", "HEAD", "TRACE", "OPTIONS" };
             options.AutoValidateFilter = type => type.Assembly != typeof(Elsa.Server.Api.Endpoints.WorkflowRegistry.Get).Assembly;
         });
+    }
+
+    private void ConfigureEmail(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        Configure<EmailConfiguration>(configuration.GetSection("Email"));
+
+        var provider = configuration["Email:Provider"];
+
+        if (string.IsNullOrWhiteSpace(provider) ||
+            string.Equals(provider, EmailProviders.Smtp, StringComparison.OrdinalIgnoreCase))
+        {
+            Log.Information("E-mail provider: {Provider}", EmailProviders.Smtp);
+            return;
+        }
+
+        if (!string.Equals(provider, EmailProviders.AwsSes, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new AbpException(
+                $"Unsupported e-mail provider '{provider}'. " +
+                $"Supported values are '{EmailProviders.Smtp}' and '{EmailProviders.AwsSes}'.");
+        }
+
+        var awsSes = configuration
+            .GetSection("Email:AwsSes")
+            .Get<AwsSesConfiguration>() ?? new AwsSesConfiguration();
+
+        if (string.IsNullOrWhiteSpace(awsSes.Region))
+        {
+            throw new AbpException(
+                "'Email:AwsSes:Region' must be configured when 'Email:Provider' is 'AwsSes'.");
+        }
+
+        if (string.IsNullOrWhiteSpace(awsSes.AccessKeyId) != string.IsNullOrWhiteSpace(awsSes.SecretAccessKey))
+        {
+            throw new AbpException(
+                "'Email:AwsSes:AccessKeyId' and 'Email:AwsSes:SecretAccessKey' must be configured together.");
+        }
+
+        Log.Information(
+            "E-mail provider: {Provider}, AWS SES region: {Region}",
+            EmailProviders.AwsSes,
+            awsSes.Region);
+
+        if (!string.IsNullOrWhiteSpace(awsSes.FromAddress))
+        {
+            Configure<SmtpOptions>(options =>
+            {
+                var mailbox = MailboxAddress.Parse(awsSes.FromAddress.Trim());
+                var displayName = string.IsNullOrWhiteSpace(awsSes.FromDisplayName)
+                    ? mailbox.Name
+                    : awsSes.FromDisplayName.Trim();
+
+                options.DefaultSender = string.IsNullOrWhiteSpace(displayName)
+                    ? mailbox.Address
+                    : new MailboxAddress(displayName, mailbox.Address).ToString();
+            });
+        }
+
+        context.Services.AddSingleton<IAmazonSimpleEmailServiceV2>(_ => CreateSimpleEmailServiceClient(awsSes));
+        context.Services.Replace(ServiceDescriptor.Singleton<ISmtpService, AwsSesSmtpService>());
+    }
+
+    private static IAmazonSimpleEmailServiceV2 CreateSimpleEmailServiceClient(AwsSesConfiguration awsSes)
+    {
+        var region = RegionEndpoint.GetBySystemName(awsSes.Region);
+
+        if (!string.IsNullOrWhiteSpace(awsSes.AccessKeyId) && !string.IsNullOrWhiteSpace(awsSes.SecretAccessKey))
+        {
+            AWSCredentials credentials = string.IsNullOrWhiteSpace(awsSes.SessionToken)
+                ? new BasicAWSCredentials(awsSes.AccessKeyId, awsSes.SecretAccessKey)
+                : new SessionAWSCredentials(awsSes.AccessKeyId, awsSes.SecretAccessKey, awsSes.SessionToken);
+
+            return new AmazonSimpleEmailServiceV2Client(credentials, region);
+        }
+
+        // Falls back to the default AWS credential chain (environment variables,
+        // shared profile, IAM role, ...).
+        return new AmazonSimpleEmailServiceV2Client(region);
     }
 
     private void ConfigureExternalLogins(ServiceConfigurationContext context, IConfiguration configuration)

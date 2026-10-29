@@ -77,6 +77,14 @@ jobs:
                   DB_USER: ${{ secrets.DB_USER_prod }}
                   DB_PORT: ${{ secrets.DB_PORT_prod }}
                   PASSPHRASE: ${{ secrets.PASSPHRASE_prod }}
+                  EMAIL_PROVIDER: AwsSes
+                  AWS_SES_REGION: ${{ secrets.AWS_SES_REGION_PROD }}
+                  AWS_SES_ACCESS_KEY_ID: ${{ secrets.AWS_SES_ACCESS_KEY_ID_PROD }}
+                  AWS_SES_SECRET_ACCESS_KEY: ${{ secrets.AWS_SES_SECRET_ACCESS_KEY_PROD }}
+                  AWS_SES_SESSION_TOKEN: ${{ secrets.AWS_SES_SESSION_TOKEN_PROD }}
+                  AWS_SES_CONFIGURATION_SET: ${{ secrets.AWS_SES_CONFIGURATION_SET_PROD }}
+                  AWS_SES_FROM_ADDRESS: ${{ secrets.SES_SENDER_prod }}
+                  AWS_SES_FROM_DISPLAY_NAME: ${{ secrets.AWS_SES_FROM_DISPLAY_NAME_PROD }}
                   SES_HOST: ${{ secrets.SES_HOST_prod }}
                   SES_PORT: ${{ secrets.SES_PORT_prod }}
                   SES_SENDER: ${{ secrets.SES_SENDER_prod }}

@@ -70,6 +70,7 @@ jobs:
                   DB_USER: ${{ secrets.DB_USER_DEV }}
                   DB_PORT: ${{ secrets.DB_PORT_DEV }}
                   PASSPHRASE: ${{ secrets.PASSPHRASE_DEV }}
+                  EMAIL_PROVIDER: Smtp
                   SES_HOST: ${{ secrets.SES_HOST_DEV }}
                   SES_PORT: ${{ secrets.SES_PORT_DEV }}
                   SES_SENDER: ${{ secrets.SES_SENDER_DEV }}
