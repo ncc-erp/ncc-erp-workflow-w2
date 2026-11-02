@@ -52,6 +52,7 @@ namespace W2.ExternalResources
         public long rat { get; set; }       
         public string sub { get; set; }    
         public string user_id { get; set; }
+        public string email { get; set; }
 
     }
 }
