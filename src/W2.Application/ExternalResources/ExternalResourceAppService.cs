@@ -347,7 +347,7 @@ namespace W2.ExternalResources
 
                 var tokenResponse = await GetMezonAccessTokenAsync(tokenUrl, mezonAuth, authConfig);
                 var mezonUserInfo = await GetMezonUserInfoAsync(userInfoUrl, tokenResponse.access_token);
-                var mezonUserEmail = mezonUserInfo.sub;
+                var mezonUserEmail = !string.IsNullOrEmpty(mezonUserInfo.email) ? mezonUserInfo.email : mezonUserInfo.sub;
                 var query = await _userRepository.GetQueryableAsync();
 
 
